@@ -1,7 +1,7 @@
 open Sexplib
 
-let () = print_endline "Hello, World!"
-let () = let c = Radatnet.create () in
+let () = main ()
+let main () = let c = Radatnet.create () in
          let module Cmd = Radatnet.Commands in
          Cmd.open_file c "../th07.exe";
          Cmd.analyze_all c Radatnet.Types.LevelThree;

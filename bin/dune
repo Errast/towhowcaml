@@ -1,5 +1,4 @@
 (executable
  (public_name towhowcaml)
  (name main)
- (flags (:standard -cclib -lr_core))
  (libraries towhowcaml radatnet))

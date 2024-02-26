@@ -15,7 +15,7 @@ let operand_type_of_yojson = function
 
 type analysis_Level = LevelOne | LevelTwo | LevelThree
 
-type instr_info = { offset : int; size : char }
+type instr_info = { offset : int; size : int }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
 type function_dissassembly = {
@@ -64,7 +64,7 @@ let operand_of_yojson = function
 type opex = { operands: operand list } [@@deriving of_yojson, sexp]
 
 type opcode = { opex: opex; id: X86_instr.t; address: int [@key "addr"]; prefix: int (* not doing this type now *) }
-[@@deriving of_yojson, sexp]
+[@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
 type jump_table_case = { value: int; jump: int } [@@deriving of_yojson, sexp]
 
@@ -72,7 +72,7 @@ type jump_table = { offset: int; cases: jump_table_case list } [@@deriving of_yo
 
 [@@@warning "-11"]
 type func_block = { offset: int; size: int; jump_to: int option [@key "jump"] [@yojson.option]; 
-                    fail_to: int option [@key "jump"] [@yojson.option]; ops: instr_info list; 
-                    switch_to: jump_table option [@key "switchop"] [@yojson.option] } [@@deriving of_yojson, sexp]
+                    fail_to: int option [@key "fail"] [@yojson.option]; ops: instr_info list; 
+                    switch_to: jump_table option [@key "switchop"] [@yojson.option] } [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
-type func_blocks = { name: string option [@yojson.option]; offset: int; blocks: func_block list } [@@deriving of_yojson, sexp]
+type func_blocks = { name: string option [@yojson.option]; offset: int; blocks: func_block list } [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
