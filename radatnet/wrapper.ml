@@ -1,19 +1,8 @@
-open C
-
-type t = { mutable disposed : bool; core : Types.r2_core }
+type t 
 
 exception Radatnet_disposed
 
-let create () =
-  let core = Functions.r_core_new () in
-  Ctypes.raw_address_of_ptr core |> Nativeint.to_string |> print_endline;
-  { disposed = false; core }
+external create: unit -> t = "radatnet_core_new"
 
-let destroy t =
-  if not t.disposed then (
-    t.disposed <- true;
-    Functions.r_core_free t.core)
+external run: t -> string -> string = "radatnet_core_cmd_str"
 
-let run t str =
-  if t.disposed then raise Radatnet_disposed
-  else (print_endline str; Functions.r_core_cmd_str str t.core)

@@ -1,15 +1,23 @@
 (library
  (name radatnet)
- (libraries yojson)
- (preprocess (pps ppx_yojson_conv))
- (flags (:standard -w -9-27))
- (ctypes
-   (external_library_name "r_core")
-   (function_description 
-     (concurrency sequential)
-     (instance Functions)
-     (functor Function_description))
-    (type_description 
-     (instance Types)
-     (functor Type_description))
-    (generated_entry_point C)))
+ (libraries yojson sexplib)
+ (preprocess (pps ppx_yojson_conv ppx_sexp_conv))
+; (flags (:standard -w -9-27))
+; (ctypes
+;   (external_library_name "r_core")
+;   (function_description 
+;     (concurrency sequential)
+;     (instance Functions)
+;     (functor Function_description))
+;    (type_description 
+;     (instance Types)
+;     (functor Type_description))
+;    (generated_entry_point C))
+ (flags (:standard -cclib -lr_core)
+        ;(-dsource)
+        )
+ (foreign_stubs
+   (language c) 
+   (names stubs)
+   (flags (:standard -I /usr/include/libr -lr_core )))
+ )
