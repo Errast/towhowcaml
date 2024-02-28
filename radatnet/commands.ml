@@ -1,5 +1,5 @@
 [@@@warning "-8"]
-open Wrapper
+open Core
 open Types
 open Yojson.Basic
 
@@ -7,6 +7,8 @@ let open_file t file = "o '" ^ file ^ "'" |> run t |> ignore
 let seek t address = "s " ^ string_of_int address |> run t |> ignore
 let current_address t = run t "s" |> int_of_string
 let seek_relative_opcodes t count = "so " ^ string_of_int count |> run t |> ignore
+
+type analysis_level = LevelOne | LevelTwo | LevelThree
 
 let analyze_all t = function
   | LevelOne -> run t "a" |> ignore

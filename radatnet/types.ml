@@ -13,8 +13,6 @@ let operand_type_of_yojson = function
         | `Int 3 -> Memory
         | yojson -> of_yojson_error "invalid operand type" yojson
 
-type analysis_Level = LevelOne | LevelTwo | LevelThree
-
 type instr_info = { offset : int; size : int }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
