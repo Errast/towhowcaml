@@ -1,4 +1,4 @@
 (executable
  (name mir)
- (libraries sexplib core)
- (preprocess (pps ppx_sexp_conv)))
+ (libraries core)
+ (preprocess (pps ppx_jane)))
