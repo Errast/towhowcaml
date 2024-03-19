@@ -203,4 +203,3 @@ type block = { id: block_ref;
 
 type local = { name: ident; typ: local_type }
 type func_sig = { args: local list; return: local_type }
-type func = { name: ident; blocks: (block, Perms.Export.immutable) Array.Permissioned.t; signature: func_sig; locals: local list }
