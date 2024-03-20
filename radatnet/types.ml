@@ -36,17 +36,17 @@ let x86_segment_reg_of_yojson = function
 
 type operand = 
         | Immediate of { size: int; value: int }
-        | Register of { size: int; reg: (X86reg.any_t [@sexp.opaque]) }
-        | Memory of { size: int; base: (X86reg.any_t option [@sexp.opaque]); index: (X86reg.any_t option [@sexp.opaque]); scale: int; displacement: int; segment: x86_segment_reg option; }
+        | Register of { size: int; reg: (X86reg.t ) }
+        | Memory of { size: int; base: (X86reg.t option ); index: (X86reg.t option ); scale: int; displacement: int; segment: x86_segment_reg option; }
         [@@deriving sexp]
 
 let operand_of_yojson = function
         | `Assoc (("size", `Int size)::_::("type", `String type_str)::rest) as yojson ->
                         (match type_str, rest with
                          | "imm", ["value", `Int value] -> Immediate { size; value }
-                         | "reg", ["value", value] -> Register { size; reg = X86reg.any_t_of_yojson value }
+                         | "reg", ["value", value] -> Register { size; reg = X86reg.t_of_yojson value }
                          | "mem", rest -> 
-                                let base, rest = (match rest with ("base", base)::rest -> Some (X86reg.any_t_of_yojson base), rest
+                                let base, rest = (match rest with ("base", base)::rest -> Some (X86reg.t_of_yojson base), rest
                                                   | _ -> None, rest) in
                                 let scale, rest = (match rest with ("scale", `Int scale)::rest -> scale, rest
                                                    | _ -> of_yojson_error "missing mem operand scale" yojson) in
