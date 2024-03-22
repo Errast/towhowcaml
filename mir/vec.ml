@@ -18,11 +18,8 @@ let add vec value = let len = length vec in
                     then let new_arr = Option_array.create ~len:(Int.min 4 @@ Int.ceil_pow2 @@ len + 1) in
                          Option_array.blito ~src:vec.array ~dst:new_arr ();
                          vec.array <- new_arr;
-                    else (* Option_array.unsafe_set_some vec.array len value *) Option_array.set vec.array len value;
+                    else (* Option_array.unsafe_set_some vec.array len value *) Option_array.set_some vec.array len value;
                     vec.length <- len + 1
-
-let of_array arr = { array=Option_array.of_array_some arr; length = Array.length arr }
-let to_array vec = Array.create ~len:vec.length ((* Option_array.unsafe_get_some_assuming_some *) Option_array.get_some_exn vec.array)
 
 let copy vec = { vec with array = Option_array.copy vec.array; }
 
@@ -47,5 +44,10 @@ include Indexed_container.Make_gen(struct
     let iter = `Custom (fun vec ~f -> iteri vec ~f:(fun _ v -> f v))
     let iteri = `Custom iteri
   end)
+
+
+(* Shadow the indexe-container stuff *)
+let of_array arr = { array=Option_array.of_array_some arr; length = Array.length arr }
+let to_array vec = Array.init vec.length ~f:((* Option_array.unsafe_get_some_assuming_some *) Option_array.get_some_exn vec.array)
 
 include Sexpable.Of_sexpable1(Array)(struct type nonrec 'a t = 'a t let to_sexpable = to_array let of_sexpable = of_array end)

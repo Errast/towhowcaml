@@ -1,4 +1,4 @@
 (executable
  (public_name towhowcaml)
  (name main)
- (libraries towhowcaml radatnet))
+ (libraries mir radatnet))

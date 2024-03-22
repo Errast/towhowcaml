@@ -1,4 +1,4 @@
-(executable
+(library
  (name mir)
  (libraries core)
  (preprocess (pps ppx_jane)))
