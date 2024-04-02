@@ -1,3011 +1,3054 @@
-type t = 
-        | INVALID
-        | AAA
-        | AAD
-        | AAM
-        | AAS
-        | FABS
-        | ADC
-        | ADCX
-        | ADD
-        | ADDPD
-        | ADDPS
-        | ADDSD
-        | ADDSS
-        | ADDSUBPD
-        | ADDSUBPS
-        | FADD
-        | FIADD
-        | FADDP
-        | ADOX
-        | AESDECLAST
-        | AESDEC
-        | AESENCLAST
-        | AESENC
-        | AESIMC
-        | AESKEYGENASSIST
-        | AND
-        | ANDN
-        | ANDNPD
-        | ANDNPS
-        | ANDPD
-        | ANDPS
-        | ARPL
-        | BEXTR
-        | BLCFILL
-        | BLCI
-        | BLCIC
-        | BLCMSK
-        | BLCS
-        | BLENDPD
-        | BLENDPS
-        | BLENDVPD
-        | BLENDVPS
-        | BLSFILL
-        | BLSI
-        | BLSIC
-        | BLSMSK
-        | BLSR
-        | BOUND
-        | BSF
-        | BSR
-        | BSWAP
-        | BT
-        | BTC
-        | BTR
-        | BTS
-        | BZHI
-        | CALL
-        | CBW
-        | CDQ
-        | CDQE
-        | FCHS
-        | CLAC
-        | CLC
-        | CLD
-        | CLFLUSH
-        | CLFLUSHOPT
-        | CLGI
-        | CLI
-        | CLTS
-        | CLWB
-        | CMC
-        | CMOVA
-        | CMOVAE
-        | CMOVB
-        | CMOVBE
-        | FCMOVBE
-        | FCMOVB
-        | CMOVE
-        | FCMOVE
-        | CMOVG
-        | CMOVGE
-        | CMOVL
-        | CMOVLE
-        | FCMOVNBE
-        | FCMOVNB
-        | CMOVNE
-        | FCMOVNE
-        | CMOVNO
-        | CMOVNP
-        | FCMOVNU
-        | CMOVNS
-        | CMOVO
-        | CMOVP
-        | FCMOVU
-        | CMOVS
-        | CMP
-        | CMPSB
-        | CMPSQ
-        | CMPSW
-        | CMPXCHG16B
-        | CMPXCHG
-        | CMPXCHG8B
-        | COMISD
-        | COMISS
-        | FCOMP
-        | FCOMIP
-        | FCOMI
-        | FCOM
-        | FCOS
-        | CPUID
-        | CQO
-        | CRC32
-        | CVTDQ2PD
-        | CVTDQ2PS
-        | CVTPD2DQ
-        | CVTPD2PS
-        | CVTPS2DQ
-        | CVTPS2PD
-        | CVTSD2SI
-        | CVTSD2SS
-        | CVTSI2SD
-        | CVTSI2SS
-        | CVTSS2SD
-        | CVTSS2SI
-        | CVTTPD2DQ
-        | CVTTPS2DQ
-        | CVTTSD2SI
-        | CVTTSS2SI
-        | CWD
-        | CWDE
-        | DAA
-        | DAS
-        | DATA16
-        | DEC
-        | DIV
-        | DIVPD
-        | DIVPS
-        | FDIVR
-        | FIDIVR
-        | FDIVRP
-        | DIVSD
-        | DIVSS
-        | FDIV
-        | FIDIV
-        | FDIVP
-        | DPPD
-        | DPPS
-        | RET
-        | ENCLS
-        | ENCLU
-        | ENTER
-        | EXTRACTPS
-        | EXTRQ
-        | F2XM1
-        | LCALL
-        | LJMP
-        | FBLD
-        | FBSTP
-        | FCOMPP
-        | FDECSTP
-        | FEMMS
-        | FFREE
-        | FICOM
-        | FICOMP
-        | FINCSTP
-        | FLDCW
-        | FLDENV
-        | FLDL2E
-        | FLDL2T
-        | FLDLG2
-        | FLDLN2
-        | FLDPI
-        | FNCLEX
-        | FNINIT
-        | FNOP
-        | FNSTCW
-        | FNSTSW
-        | FPATAN
-        | FPREM
-        | FPREM1
-        | FPTAN
-        | FFREEP
-        | FRNDINT
-        | FRSTOR
-        | FNSAVE
-        | FSCALE
-        | FSETPM
-        | FSINCOS
-        | FNSTENV
-        | FXAM
-        | FXRSTOR
-        | FXRSTOR64
-        | FXSAVE
-        | FXSAVE64
-        | FXTRACT
-        | FYL2X
-        | FYL2XP1
-        | MOVAPD
-        | MOVAPS
-        | ORPD
-        | ORPS
-        | VMOVAPD
-        | VMOVAPS
-        | XORPD
-        | XORPS
-        | GETSEC
-        | HADDPD
-        | HADDPS
-        | HLT
-        | HSUBPD
-        | HSUBPS
-        | IDIV
-        | FILD
-        | IMUL
-        | IN
-        | INC
-        | INSB
-        | INSERTPS
-        | INSERTQ
-        | INSD
-        | INSW
-        | INT
-        | INT1
-        | INT3
-        | INTO
-        | INVD
-        | INVEPT
-        | INVLPG
-        | INVLPGA
-        | INVPCID
-        | INVVPID
-        | IRET
-        | IRETD
-        | IRETQ
-        | FISTTP
-        | FIST
-        | FISTP
-        | UCOMISD
-        | UCOMISS
-        | VCOMISD
-        | VCOMISS
-        | VCVTSD2SS
-        | VCVTSI2SD
-        | VCVTSI2SS
-        | VCVTSS2SD
-        | VCVTTSD2SI
-        | VCVTTSD2USI
-        | VCVTTSS2SI
-        | VCVTTSS2USI
-        | VCVTUSI2SD
-        | VCVTUSI2SS
-        | VUCOMISD
-        | VUCOMISS
-        | JAE
-        | JA
-        | JBE
-        | JB
-        | JCXZ
-        | JECXZ
-        | JE
-        | JGE
-        | JG
-        | JLE
-        | JL
-        | JMP
-        | JNE
-        | JNO
-        | JNP
-        | JNS
-        | JO
-        | JP
-        | JRCXZ
-        | JS
-        | KANDB
-        | KANDD
-        | KANDNB
-        | KANDND
-        | KANDNQ
-        | KANDNW
-        | KANDQ
-        | KANDW
-        | KMOVB
-        | KMOVD
-        | KMOVQ
-        | KMOVW
-        | KNOTB
-        | KNOTD
-        | KNOTQ
-        | KNOTW
-        | KORB
-        | KORD
-        | KORQ
-        | KORTESTB
-        | KORTESTD
-        | KORTESTQ
-        | KORTESTW
-        | KORW
-        | KSHIFTLB
-        | KSHIFTLD
-        | KSHIFTLQ
-        | KSHIFTLW
-        | KSHIFTRB
-        | KSHIFTRD
-        | KSHIFTRQ
-        | KSHIFTRW
-        | KUNPCKBW
-        | KXNORB
-        | KXNORD
-        | KXNORQ
-        | KXNORW
-        | KXORB
-        | KXORD
-        | KXORQ
-        | KXORW
-        | LAHF
-        | LAR
-        | LDDQU
-        | LDMXCSR
-        | LDS
-        | FLDZ
-        | FLD1
-        | FLD
-        | LEA
-        | LEAVE
-        | LES
-        | LFENCE
-        | LFS
-        | LGDT
-        | LGS
-        | LIDT
-        | LLDT
-        | LMSW
-        | OR
-        | SUB
-        | XOR
-        | LODSB
-        | LODSD
-        | LODSQ
-        | LODSW
-        | LOOP
-        | LOOPE
-        | LOOPNE
-        | RETF
-        | RETFQ
-        | LSL
-        | LSS
-        | LTR
-        | XADD
-        | LZCNT
-        | MASKMOVDQU
-        | MAXPD
-        | MAXPS
-        | MAXSD
-        | MAXSS
-        | MFENCE
-        | MINPD
-        | MINPS
-        | MINSD
-        | MINSS
-        | CVTPD2PI
-        | CVTPI2PD
-        | CVTPI2PS
-        | CVTPS2PI
-        | CVTTPD2PI
-        | CVTTPS2PI
-        | EMMS
-        | MASKMOVQ
-        | MOVD
-        | MOVDQ2Q
-        | MOVNTQ
-        | MOVQ2DQ
-        | MOVQ
-        | PABSB
-        | PABSD
-        | PABSW
-        | PACKSSDW
-        | PACKSSWB
-        | PACKUSWB
-        | PADDB
-        | PADDD
-        | PADDQ
-        | PADDSB
-        | PADDSW
-        | PADDUSB
-        | PADDUSW
-        | PADDW
-        | PALIGNR
-        | PANDN
-        | PAND
-        | PAVGB
-        | PAVGW
-        | PCMPEQB
-        | PCMPEQD
-        | PCMPEQW
-        | PCMPGTB
-        | PCMPGTD
-        | PCMPGTW
-        | PEXTRW
-        | PHADDSW
-        | PHADDW
-        | PHADDD
-        | PHSUBD
-        | PHSUBSW
-        | PHSUBW
-        | PINSRW
-        | PMADDUBSW
-        | PMADDWD
-        | PMAXSW
-        | PMAXUB
-        | PMINSW
-        | PMINUB
-        | PMOVMSKB
-        | PMULHRSW
-        | PMULHUW
-        | PMULHW
-        | PMULLW
-        | PMULUDQ
-        | POR
-        | PSADBW
-        | PSHUFB
-        | PSHUFW
-        | PSIGNB
-        | PSIGND
-        | PSIGNW
-        | PSLLD
-        | PSLLQ
-        | PSLLW
-        | PSRAD
-        | PSRAW
-        | PSRLD
-        | PSRLQ
-        | PSRLW
-        | PSUBB
-        | PSUBD
-        | PSUBQ
-        | PSUBSB
-        | PSUBSW
-        | PSUBUSB
-        | PSUBUSW
-        | PSUBW
-        | PUNPCKHBW
-        | PUNPCKHDQ
-        | PUNPCKHWD
-        | PUNPCKLBW
-        | PUNPCKLDQ
-        | PUNPCKLWD
-        | PXOR
-        | MONITOR
-        | MONTMUL
-        | MOV
-        | MOVABS
-        | MOVBE
-        | MOVDDUP
-        | MOVDQA
-        | MOVDQU
-        | MOVHLPS
-        | MOVHPD
-        | MOVHPS
-        | MOVLHPS
-        | MOVLPD
-        | MOVLPS
-        | MOVMSKPD
-        | MOVMSKPS
-        | MOVNTDQA
-        | MOVNTDQ
-        | MOVNTI
-        | MOVNTPD
-        | MOVNTPS
-        | MOVNTSD
-        | MOVNTSS
-        | MOVSB
-        | MOVSD
-        | MOVSHDUP
-        | MOVSLDUP
-        | MOVSQ
-        | MOVSS
-        | MOVSW
-        | MOVSX
-        | MOVSXD
-        | MOVUPD
-        | MOVUPS
-        | MOVZX
-        | MPSADBW
-        | MUL
-        | MULPD
-        | MULPS
-        | MULSD
-        | MULSS
-        | MULX
-        | FMUL
-        | FIMUL
-        | FMULP
-        | MWAIT
-        | NEG
-        | NOP
-        | NOT
-        | OUT
-        | OUTSB
-        | OUTSD
-        | OUTSW
-        | PACKUSDW
-        | PAUSE
-        | PAVGUSB
-        | PBLENDVB
-        | PBLENDW
-        | PCLMULQDQ
-        | PCMPEQQ
-        | PCMPESTRI
-        | PCMPESTRM
-        | PCMPGTQ
-        | PCMPISTRI
-        | PCMPISTRM
-        | PCOMMIT
-        | PDEP
-        | PEXT
-        | PEXTRB
-        | PEXTRD
-        | PEXTRQ
-        | PF2ID
-        | PF2IW
-        | PFACC
-        | PFADD
-        | PFCMPEQ
-        | PFCMPGE
-        | PFCMPGT
-        | PFMAX
-        | PFMIN
-        | PFMUL
-        | PFNACC
-        | PFPNACC
-        | PFRCPIT1
-        | PFRCPIT2
-        | PFRCP
-        | PFRSQIT1
-        | PFRSQRT
-        | PFSUBR
-        | PFSUB
-        | PHMINPOSUW
-        | PI2FD
-        | PI2FW
-        | PINSRB
-        | PINSRD
-        | PINSRQ
-        | PMAXSB
-        | PMAXSD
-        | PMAXUD
-        | PMAXUW
-        | PMINSB
-        | PMINSD
-        | PMINUD
-        | PMINUW
-        | PMOVSXBD
-        | PMOVSXBQ
-        | PMOVSXBW
-        | PMOVSXDQ
-        | PMOVSXWD
-        | PMOVSXWQ
-        | PMOVZXBD
-        | PMOVZXBQ
-        | PMOVZXBW
-        | PMOVZXDQ
-        | PMOVZXWD
-        | PMOVZXWQ
-        | PMULDQ
-        | PMULHRW
-        | PMULLD
-        | POP
-        | POPAW
-        | POPAL
-        | POPCNT
-        | POPF
-        | POPFD
-        | POPFQ
-        | PREFETCH
-        | PREFETCHNTA
-        | PREFETCHT0
-        | PREFETCHT1
-        | PREFETCHT2
-        | PREFETCHW
-        | PSHUFD
-        | PSHUFHW
-        | PSHUFLW
-        | PSLLDQ
-        | PSRLDQ
-        | PSWAPD
-        | PTEST
-        | PUNPCKHQDQ
-        | PUNPCKLQDQ
-        | PUSH
-        | PUSHAW
-        | PUSHAL
-        | PUSHF
-        | PUSHFD
-        | PUSHFQ
-        | RCL
-        | RCPPS
-        | RCPSS
-        | RCR
-        | RDFSBASE
-        | RDGSBASE
-        | RDMSR
-        | RDPMC
-        | RDRAND
-        | RDSEED
-        | RDTSC
-        | RDTSCP
-        | ROL
-        | ROR
-        | RORX
-        | ROUNDPD
-        | ROUNDPS
-        | ROUNDSD
-        | ROUNDSS
-        | RSM
-        | RSQRTPS
-        | RSQRTSS
-        | SAHF
-        | SAL
-        | SALC
-        | SAR
-        | SARX
-        | SBB
-        | SCASB
-        | SCASD
-        | SCASQ
-        | SCASW
-        | SETAE
-        | SETA
-        | SETBE
-        | SETB
-        | SETE
-        | SETGE
-        | SETG
-        | SETLE
-        | SETL
-        | SETNE
-        | SETNO
-        | SETNP
-        | SETNS
-        | SETO
-        | SETP
-        | SETS
-        | SFENCE
-        | SGDT
-        | SHA1MSG1
-        | SHA1MSG2
-        | SHA1NEXTE
-        | SHA1RNDS4
-        | SHA256MSG1
-        | SHA256MSG2
-        | SHA256RNDS2
-        | SHL
-        | SHLD
-        | SHLX
-        | SHR
-        | SHRD
-        | SHRX
-        | SHUFPD
-        | SHUFPS
-        | SIDT
-        | FSIN
-        | SKINIT
-        | SLDT
-        | SMSW
-        | SQRTPD
-        | SQRTPS
-        | SQRTSD
-        | SQRTSS
-        | FSQRT
-        | STAC
-        | STC
-        | STD
-        | STGI
-        | STI
-        | STMXCSR
-        | STOSB
-        | STOSD
-        | STOSQ
-        | STOSW
-        | STR
-        | FST
-        | FSTP
-        | FSTPNCE
-        | FXCH
-        | SUBPD
-        | SUBPS
-        | FSUBR
-        | FISUBR
-        | FSUBRP
-        | SUBSD
-        | SUBSS
-        | FSUB
-        | FISUB
-        | FSUBP
-        | SWAPGS
-        | SYSCALL
-        | SYSENTER
-        | SYSEXIT
-        | SYSRET
-        | T1MSKC
-        | TEST
-        | UD2
-        | FTST
-        | TZCNT
-        | TZMSK
-        | FUCOMIP
-        | FUCOMI
-        | FUCOMPP
-        | FUCOMP
-        | FUCOM
-        | UD2B
-        | UNPCKHPD
-        | UNPCKHPS
-        | UNPCKLPD
-        | UNPCKLPS
-        | VADDPD
-        | VADDPS
-        | VADDSD
-        | VADDSS
-        | VADDSUBPD
-        | VADDSUBPS
-        | VAESDECLAST
-        | VAESDEC
-        | VAESENCLAST
-        | VAESENC
-        | VAESIMC
-        | VAESKEYGENASSIST
-        | VALIGND
-        | VALIGNQ
-        | VANDNPD
-        | VANDNPS
-        | VANDPD
-        | VANDPS
-        | VBLENDMPD
-        | VBLENDMPS
-        | VBLENDPD
-        | VBLENDPS
-        | VBLENDVPD
-        | VBLENDVPS
-        | VBROADCASTF128
-        | VBROADCASTI32X4
-        | VBROADCASTI64X4
-        | VBROADCASTSD
-        | VBROADCASTSS
-        | VCOMPRESSPD
-        | VCOMPRESSPS
-        | VCVTDQ2PD
-        | VCVTDQ2PS
-        | VCVTPD2DQX
-        | VCVTPD2DQ
-        | VCVTPD2PSX
-        | VCVTPD2PS
-        | VCVTPD2UDQ
-        | VCVTPH2PS
-        | VCVTPS2DQ
-        | VCVTPS2PD
-        | VCVTPS2PH
-        | VCVTPS2UDQ
-        | VCVTSD2SI
-        | VCVTSD2USI
-        | VCVTSS2SI
-        | VCVTSS2USI
-        | VCVTTPD2DQX
-        | VCVTTPD2DQ
-        | VCVTTPD2UDQ
-        | VCVTTPS2DQ
-        | VCVTTPS2UDQ
-        | VCVTUDQ2PD
-        | VCVTUDQ2PS
-        | VDIVPD
-        | VDIVPS
-        | VDIVSD
-        | VDIVSS
-        | VDPPD
-        | VDPPS
-        | VERR
-        | VERW
-        | VEXP2PD
-        | VEXP2PS
-        | VEXPANDPD
-        | VEXPANDPS
-        | VEXTRACTF128
-        | VEXTRACTF32X4
-        | VEXTRACTF64X4
-        | VEXTRACTI128
-        | VEXTRACTI32X4
-        | VEXTRACTI64X4
-        | VEXTRACTPS
-        | VFMADD132PD
-        | VFMADD132PS
-        | VFMADDPD
-        | VFMADD213PD
-        | VFMADD231PD
-        | VFMADDPS
-        | VFMADD213PS
-        | VFMADD231PS
-        | VFMADDSD
-        | VFMADD213SD
-        | VFMADD132SD
-        | VFMADD231SD
-        | VFMADDSS
-        | VFMADD213SS
-        | VFMADD132SS
-        | VFMADD231SS
-        | VFMADDSUB132PD
-        | VFMADDSUB132PS
-        | VFMADDSUBPD
-        | VFMADDSUB213PD
-        | VFMADDSUB231PD
-        | VFMADDSUBPS
-        | VFMADDSUB213PS
-        | VFMADDSUB231PS
-        | VFMSUB132PD
-        | VFMSUB132PS
-        | VFMSUBADD132PD
-        | VFMSUBADD132PS
-        | VFMSUBADDPD
-        | VFMSUBADD213PD
-        | VFMSUBADD231PD
-        | VFMSUBADDPS
-        | VFMSUBADD213PS
-        | VFMSUBADD231PS
-        | VFMSUBPD
-        | VFMSUB213PD
-        | VFMSUB231PD
-        | VFMSUBPS
-        | VFMSUB213PS
-        | VFMSUB231PS
-        | VFMSUBSD
-        | VFMSUB213SD
-        | VFMSUB132SD
-        | VFMSUB231SD
-        | VFMSUBSS
-        | VFMSUB213SS
-        | VFMSUB132SS
-        | VFMSUB231SS
-        | VFNMADD132PD
-        | VFNMADD132PS
-        | VFNMADDPD
-        | VFNMADD213PD
-        | VFNMADD231PD
-        | VFNMADDPS
-        | VFNMADD213PS
-        | VFNMADD231PS
-        | VFNMADDSD
-        | VFNMADD213SD
-        | VFNMADD132SD
-        | VFNMADD231SD
-        | VFNMADDSS
-        | VFNMADD213SS
-        | VFNMADD132SS
-        | VFNMADD231SS
-        | VFNMSUB132PD
-        | VFNMSUB132PS
-        | VFNMSUBPD
-        | VFNMSUB213PD
-        | VFNMSUB231PD
-        | VFNMSUBPS
-        | VFNMSUB213PS
-        | VFNMSUB231PS
-        | VFNMSUBSD
-        | VFNMSUB213SD
-        | VFNMSUB132SD
-        | VFNMSUB231SD
-        | VFNMSUBSS
-        | VFNMSUB213SS
-        | VFNMSUB132SS
-        | VFNMSUB231SS
-        | VFRCZPD
-        | VFRCZPS
-        | VFRCZSD
-        | VFRCZSS
-        | VORPD
-        | VORPS
-        | VXORPD
-        | VXORPS
-        | VGATHERDPD
-        | VGATHERDPS
-        | VGATHERPF0DPD
-        | VGATHERPF0DPS
-        | VGATHERPF0QPD
-        | VGATHERPF0QPS
-        | VGATHERPF1DPD
-        | VGATHERPF1DPS
-        | VGATHERPF1QPD
-        | VGATHERPF1QPS
-        | VGATHERQPD
-        | VGATHERQPS
-        | VHADDPD
-        | VHADDPS
-        | VHSUBPD
-        | VHSUBPS
-        | VINSERTF128
-        | VINSERTF32X4
-        | VINSERTF32X8
-        | VINSERTF64X2
-        | VINSERTF64X4
-        | VINSERTI128
-        | VINSERTI32X4
-        | VINSERTI32X8
-        | VINSERTI64X2
-        | VINSERTI64X4
-        | VINSERTPS
-        | VLDDQU
-        | VLDMXCSR
-        | VMASKMOVDQU
-        | VMASKMOVPD
-        | VMASKMOVPS
-        | VMAXPD
-        | VMAXPS
-        | VMAXSD
-        | VMAXSS
-        | VMCALL
-        | VMCLEAR
-        | VMFUNC
-        | VMINPD
-        | VMINPS
-        | VMINSD
-        | VMINSS
-        | VMLAUNCH
-        | VMLOAD
-        | VMMCALL
-        | VMOVQ
-        | VMOVDDUP
-        | VMOVD
-        | VMOVDQA32
-        | VMOVDQA64
-        | VMOVDQA
-        | VMOVDQU16
-        | VMOVDQU32
-        | VMOVDQU64
-        | VMOVDQU8
-        | VMOVDQU
-        | VMOVHLPS
-        | VMOVHPD
-        | VMOVHPS
-        | VMOVLHPS
-        | VMOVLPD
-        | VMOVLPS
-        | VMOVMSKPD
-        | VMOVMSKPS
-        | VMOVNTDQA
-        | VMOVNTDQ
-        | VMOVNTPD
-        | VMOVNTPS
-        | VMOVSD
-        | VMOVSHDUP
-        | VMOVSLDUP
-        | VMOVSS
-        | VMOVUPD
-        | VMOVUPS
-        | VMPSADBW
-        | VMPTRLD
-        | VMPTRST
-        | VMREAD
-        | VMRESUME
-        | VMRUN
-        | VMSAVE
-        | VMULPD
-        | VMULPS
-        | VMULSD
-        | VMULSS
-        | VMWRITE
-        | VMXOFF
-        | VMXON
-        | VPABSB
-        | VPABSD
-        | VPABSQ
-        | VPABSW
-        | VPACKSSDW
-        | VPACKSSWB
-        | VPACKUSDW
-        | VPACKUSWB
-        | VPADDB
-        | VPADDD
-        | VPADDQ
-        | VPADDSB
-        | VPADDSW
-        | VPADDUSB
-        | VPADDUSW
-        | VPADDW
-        | VPALIGNR
-        | VPANDD
-        | VPANDND
-        | VPANDNQ
-        | VPANDN
-        | VPANDQ
-        | VPAND
-        | VPAVGB
-        | VPAVGW
-        | VPBLENDD
-        | VPBLENDMB
-        | VPBLENDMD
-        | VPBLENDMQ
-        | VPBLENDMW
-        | VPBLENDVB
-        | VPBLENDW
-        | VPBROADCASTB
-        | VPBROADCASTD
-        | VPBROADCASTMB2Q
-        | VPBROADCASTMW2D
-        | VPBROADCASTQ
-        | VPBROADCASTW
-        | VPCLMULQDQ
-        | VPCMOV
-        | VPCMPB
-        | VPCMPD
-        | VPCMPEQB
-        | VPCMPEQD
-        | VPCMPEQQ
-        | VPCMPEQW
-        | VPCMPESTRI
-        | VPCMPESTRM
-        | VPCMPGTB
-        | VPCMPGTD
-        | VPCMPGTQ
-        | VPCMPGTW
-        | VPCMPISTRI
-        | VPCMPISTRM
-        | VPCMPQ
-        | VPCMPUB
-        | VPCMPUD
-        | VPCMPUQ
-        | VPCMPUW
-        | VPCMPW
-        | VPCOMB
-        | VPCOMD
-        | VPCOMPRESSD
-        | VPCOMPRESSQ
-        | VPCOMQ
-        | VPCOMUB
-        | VPCOMUD
-        | VPCOMUQ
-        | VPCOMUW
-        | VPCOMW
-        | VPCONFLICTD
-        | VPCONFLICTQ
-        | VPERM2F128
-        | VPERM2I128
-        | VPERMD
-        | VPERMI2D
-        | VPERMI2PD
-        | VPERMI2PS
-        | VPERMI2Q
-        | VPERMIL2PD
-        | VPERMIL2PS
-        | VPERMILPD
-        | VPERMILPS
-        | VPERMPD
-        | VPERMPS
-        | VPERMQ
-        | VPERMT2D
-        | VPERMT2PD
-        | VPERMT2PS
-        | VPERMT2Q
-        | VPEXPANDD
-        | VPEXPANDQ
-        | VPEXTRB
-        | VPEXTRD
-        | VPEXTRQ
-        | VPEXTRW
-        | VPGATHERDD
-        | VPGATHERDQ
-        | VPGATHERQD
-        | VPGATHERQQ
-        | VPHADDBD
-        | VPHADDBQ
-        | VPHADDBW
-        | VPHADDDQ
-        | VPHADDD
-        | VPHADDSW
-        | VPHADDUBD
-        | VPHADDUBQ
-        | VPHADDUBW
-        | VPHADDUDQ
-        | VPHADDUWD
-        | VPHADDUWQ
-        | VPHADDWD
-        | VPHADDWQ
-        | VPHADDW
-        | VPHMINPOSUW
-        | VPHSUBBW
-        | VPHSUBDQ
-        | VPHSUBD
-        | VPHSUBSW
-        | VPHSUBWD
-        | VPHSUBW
-        | VPINSRB
-        | VPINSRD
-        | VPINSRQ
-        | VPINSRW
-        | VPLZCNTD
-        | VPLZCNTQ
-        | VPMACSDD
-        | VPMACSDQH
-        | VPMACSDQL
-        | VPMACSSDD
-        | VPMACSSDQH
-        | VPMACSSDQL
-        | VPMACSSWD
-        | VPMACSSWW
-        | VPMACSWD
-        | VPMACSWW
-        | VPMADCSSWD
-        | VPMADCSWD
-        | VPMADDUBSW
-        | VPMADDWD
-        | VPMASKMOVD
-        | VPMASKMOVQ
-        | VPMAXSB
-        | VPMAXSD
-        | VPMAXSQ
-        | VPMAXSW
-        | VPMAXUB
-        | VPMAXUD
-        | VPMAXUQ
-        | VPMAXUW
-        | VPMINSB
-        | VPMINSD
-        | VPMINSQ
-        | VPMINSW
-        | VPMINUB
-        | VPMINUD
-        | VPMINUQ
-        | VPMINUW
-        | VPMOVDB
-        | VPMOVDW
-        | VPMOVM2B
-        | VPMOVM2D
-        | VPMOVM2Q
-        | VPMOVM2W
-        | VPMOVMSKB
-        | VPMOVQB
-        | VPMOVQD
-        | VPMOVQW
-        | VPMOVSDB
-        | VPMOVSDW
-        | VPMOVSQB
-        | VPMOVSQD
-        | VPMOVSQW
-        | VPMOVSXBD
-        | VPMOVSXBQ
-        | VPMOVSXBW
-        | VPMOVSXDQ
-        | VPMOVSXWD
-        | VPMOVSXWQ
-        | VPMOVUSDB
-        | VPMOVUSDW
-        | VPMOVUSQB
-        | VPMOVUSQD
-        | VPMOVUSQW
-        | VPMOVZXBD
-        | VPMOVZXBQ
-        | VPMOVZXBW
-        | VPMOVZXDQ
-        | VPMOVZXWD
-        | VPMOVZXWQ
-        | VPMULDQ
-        | VPMULHRSW
-        | VPMULHUW
-        | VPMULHW
-        | VPMULLD
-        | VPMULLQ
-        | VPMULLW
-        | VPMULUDQ
-        | VPORD
-        | VPORQ
-        | VPOR
-        | VPPERM
-        | VPROTB
-        | VPROTD
-        | VPROTQ
-        | VPROTW
-        | VPSADBW
-        | VPSCATTERDD
-        | VPSCATTERDQ
-        | VPSCATTERQD
-        | VPSCATTERQQ
-        | VPSHAB
-        | VPSHAD
-        | VPSHAQ
-        | VPSHAW
-        | VPSHLB
-        | VPSHLD
-        | VPSHLQ
-        | VPSHLW
-        | VPSHUFB
-        | VPSHUFD
-        | VPSHUFHW
-        | VPSHUFLW
-        | VPSIGNB
-        | VPSIGND
-        | VPSIGNW
-        | VPSLLDQ
-        | VPSLLD
-        | VPSLLQ
-        | VPSLLVD
-        | VPSLLVQ
-        | VPSLLW
-        | VPSRAD
-        | VPSRAQ
-        | VPSRAVD
-        | VPSRAVQ
-        | VPSRAW
-        | VPSRLDQ
-        | VPSRLD
-        | VPSRLQ
-        | VPSRLVD
-        | VPSRLVQ
-        | VPSRLW
-        | VPSUBB
-        | VPSUBD
-        | VPSUBQ
-        | VPSUBSB
-        | VPSUBSW
-        | VPSUBUSB
-        | VPSUBUSW
-        | VPSUBW
-        | VPTESTMD
-        | VPTESTMQ
-        | VPTESTNMD
-        | VPTESTNMQ
-        | VPTEST
-        | VPUNPCKHBW
-        | VPUNPCKHDQ
-        | VPUNPCKHQDQ
-        | VPUNPCKHWD
-        | VPUNPCKLBW
-        | VPUNPCKLDQ
-        | VPUNPCKLQDQ
-        | VPUNPCKLWD
-        | VPXORD
-        | VPXORQ
-        | VPXOR
-        | VRCP14PD
-        | VRCP14PS
-        | VRCP14SD
-        | VRCP14SS
-        | VRCP28PD
-        | VRCP28PS
-        | VRCP28SD
-        | VRCP28SS
-        | VRCPPS
-        | VRCPSS
-        | VRNDSCALEPD
-        | VRNDSCALEPS
-        | VRNDSCALESD
-        | VRNDSCALESS
-        | VROUNDPD
-        | VROUNDPS
-        | VROUNDSD
-        | VROUNDSS
-        | VRSQRT14PD
-        | VRSQRT14PS
-        | VRSQRT14SD
-        | VRSQRT14SS
-        | VRSQRT28PD
-        | VRSQRT28PS
-        | VRSQRT28SD
-        | VRSQRT28SS
-        | VRSQRTPS
-        | VRSQRTSS
-        | VSCATTERDPD
-        | VSCATTERDPS
-        | VSCATTERPF0DPD
-        | VSCATTERPF0DPS
-        | VSCATTERPF0QPD
-        | VSCATTERPF0QPS
-        | VSCATTERPF1DPD
-        | VSCATTERPF1DPS
-        | VSCATTERPF1QPD
-        | VSCATTERPF1QPS
-        | VSCATTERQPD
-        | VSCATTERQPS
-        | VSHUFPD
-        | VSHUFPS
-        | VSQRTPD
-        | VSQRTPS
-        | VSQRTSD
-        | VSQRTSS
-        | VSTMXCSR
-        | VSUBPD
-        | VSUBPS
-        | VSUBSD
-        | VSUBSS
-        | VTESTPD
-        | VTESTPS
-        | VUNPCKHPD
-        | VUNPCKHPS
-        | VUNPCKLPD
-        | VUNPCKLPS
-        | VZEROALL
-        | VZEROUPPER
-        | WAIT
-        | WBINVD
-        | WRFSBASE
-        | WRGSBASE
-        | WRMSR
-        | XABORT
-        | XACQUIRE
-        | XBEGIN
-        | XCHG
-        | XCRYPTCBC
-        | XCRYPTCFB
-        | XCRYPTCTR
-        | XCRYPTECB
-        | XCRYPTOFB
-        | XEND
-        | XGETBV
-        | XLATB
-        | XRELEASE
-        | XRSTOR
-        | XRSTOR64
-        | XRSTORS
-        | XRSTORS64
-        | XSAVE
-        | XSAVE64
-        | XSAVEC
-        | XSAVEC64
-        | XSAVEOPT
-        | XSAVEOPT64
-        | XSAVES
-        | 	XSAVES64
-        | XSETBV
-        | XSHA1
-        | XSHA256
-        | XSTORE
-        | XTEST
-        | FDISI8087_NOP
-        | FENI8087_NOP
-        | CMPSS
-        | CMPEQSS
-        | CMPLTSS
-        | CMPLESS
-        | CMPUNORDSS
-        | CMPNEQSS
-        | CMPNLTSS
-        | CMPNLESS
-        | CMPORDSS
-        | CMPSD
-        | CMPEQSD
-        | CMPLTSD
-        | CMPLESD
-        | CMPUNORDSD
-        | CMPNEQSD
-        | CMPNLTSD
-        | CMPNLESD
-        | CMPORDSD
-        | CMPPS
-        | CMPEQPS
-        | CMPLTPS
-        | CMPLEPS
-        | CMPUNORDPS
-        | CMPNEQPS
-        | CMPNLTPS
-        | CMPNLEPS
-        | CMPORDPS
-        | CMPPD
-        | CMPEQPD
-        | CMPLTPD
-        | CMPLEPD
-        | CMPUNORDPD
-        | CMPNEQPD
-        | CMPNLTPD
-        | CMPNLEPD
-        | CMPORDPD
-        | VCMPSS
-        | VCMPEQSS
-        | VCMPLTSS
-        | VCMPLESS
-        | VCMPUNORDSS
-        | VCMPNEQSS
-        | VCMPNLTSS
-        | VCMPNLESS
-        | VCMPORDSS
-        | VCMPEQ_UQSS
-        | VCMPNGESS
-        | VCMPNGTSS
-        | VCMPFALSESS
-        | VCMPNEQ_OQSS
-        | VCMPGESS
-        | VCMPGTSS
-        | VCMPTRUESS
-        | VCMPEQ_OSSS
-        | VCMPLT_OQSS
-        | VCMPLE_OQSS
-        | VCMPUNORD_SSS
-        | VCMPNEQ_USSS
-        | VCMPNLT_UQSS
-        | VCMPNLE_UQSS
-        | VCMPORD_SSS
-        | VCMPEQ_USSS
-        | VCMPNGE_UQSS
-        | VCMPNGT_UQSS
-        | VCMPFALSE_OSSS
-        | VCMPNEQ_OSSS
-        | VCMPGE_OQSS
-        | VCMPGT_OQSS
-        | VCMPTRUE_USSS
-        | VCMPSD
-        | VCMPEQSD
-        | VCMPLTSD
-        | VCMPLESD
-        | VCMPUNORDSD
-        | VCMPNEQSD
-        | VCMPNLTSD
-        | VCMPNLESD
-        | VCMPORDSD
-        | VCMPEQ_UQSD
-        | VCMPNGESD
-        | VCMPNGTSD
-        | VCMPFALSESD
-        | VCMPNEQ_OQSD
-        | VCMPGESD
-        | VCMPGTSD
-        | VCMPTRUESD
-        | VCMPEQ_OSSD
-        | VCMPLT_OQSD
-        | VCMPLE_OQSD
-        | VCMPUNORD_SSD
-        | VCMPNEQ_USSD
-        | VCMPNLT_UQSD
-        | VCMPNLE_UQSD
-        | VCMPORD_SSD
-        | VCMPEQ_USSD
-        | VCMPNGE_UQSD
-        | VCMPNGT_UQSD
-        | VCMPFALSE_OSSD
-        | VCMPNEQ_OSSD
-        | VCMPGE_OQSD
-        | VCMPGT_OQSD
-        | VCMPTRUE_USSD
-        | VCMPPS
-        | VCMPEQPS
-        | VCMPLTPS
-        | VCMPLEPS
-        | VCMPUNORDPS
-        | VCMPNEQPS
-        | VCMPNLTPS
-        | VCMPNLEPS
-        | VCMPORDPS
-        | VCMPEQ_UQPS
-        | VCMPNGEPS
-        | VCMPNGTPS
-        | VCMPFALSEPS
-        | VCMPNEQ_OQPS
-        | VCMPGEPS
-        | VCMPGTPS
-        | VCMPTRUEPS
-        | VCMPEQ_OSPS
-        | VCMPLT_OQPS
-        | VCMPLE_OQPS
-        | VCMPUNORD_SPS
-        | VCMPNEQ_USPS
-        | VCMPNLT_UQPS
-        | VCMPNLE_UQPS
-        | VCMPORD_SPS
-        | VCMPEQ_USPS
-        | VCMPNGE_UQPS
-        | VCMPNGT_UQPS
-        | VCMPFALSE_OSPS
-        | VCMPNEQ_OSPS
-        | VCMPGE_OQPS
-        | VCMPGT_OQPS
-        | VCMPTRUE_USPS
-        | VCMPPD
-        | VCMPEQPD
-        | VCMPLTPD
-        | VCMPLEPD
-        | VCMPUNORDPD
-        | VCMPNEQPD
-        | VCMPNLTPD
-        | VCMPNLEPD
-        | VCMPORDPD
-        | VCMPEQ_UQPD
-        | VCMPNGEPD
-        | VCMPNGTPD
-        | VCMPFALSEPD
-        | VCMPNEQ_OQPD
-        | VCMPGEPD
-        | VCMPGTPD
-        | VCMPTRUEPD
-        | VCMPEQ_OSPD
-        | VCMPLT_OQPD
-        | VCMPLE_OQPD
-        | VCMPUNORD_SPD
-        | VCMPNEQ_USPD
-        | VCMPNLT_UQPD
-        | VCMPNLE_UQPD
-        | VCMPORD_SPD
-        | VCMPEQ_USPD
-        | VCMPNGE_UQPD
-        | VCMPNGT_UQPD
-        | VCMPFALSE_OSPD
-        | VCMPNEQ_OSPD
-        | VCMPGE_OQPD
-        | VCMPGT_OQPD
-        | VCMPTRUE_USPD
-        | UD0
-        | ENDBR32
-        | ENDBR64
-        [@@deriving sexp]
-
-
+type t =
+  | AAA
+  | AAD
+  | AAM
+  | AAS
+  | FABS
+  | ADC
+  | ADCX
+  | ADD
+  | ADDPD
+  | ADDPS
+  | ADDSD
+  | ADDSS
+  | ADDSUBPD
+  | ADDSUBPS
+  | FADD
+  | FIADD
+  | ADOX
+  | AESDECLAST
+  | AESDEC
+  | AESENCLAST
+  | AESENC
+  | AESIMC
+  | AESKEYGENASSIST
+  | AND
+  | ANDN
+  | ANDNPD
+  | ANDNPS
+  | ANDPD
+  | ANDPS
+  | ARPL
+  | BEXTR
+  | BLCFILL
+  | BLCI
+  | BLCIC
+  | BLCMSK
+  | BLCS
+  | BLENDPD
+  | BLENDPS
+  | BLENDVPD
+  | BLENDVPS
+  | BLSFILL
+  | BLSI
+  | BLSIC
+  | BLSMSK
+  | BLSR
+  | BNDCL
+  | BNDCN
+  | BNDCU
+  | BNDLDX
+  | BNDMK
+  | BNDMOV
+  | BNDSTX
+  | BOUND
+  | BSF
+  | BSR
+  | BSWAP
+  | BT
+  | BTC
+  | BTR
+  | BTS
+  | BZHI
+  | CALL
+  | CBW
+  | CDQ
+  | CDQE
+  | FCHS
+  | CLAC
+  | CLC
+  | CLD
+  | CLDEMOTE
+  | CLFLUSH
+  | CLFLUSHOPT
+  | CLGI
+  | CLI
+  | CLRSSBSY
+  | CLTS
+  | CLWB
+  | CLZERO
+  | CMC
+  | CMOVA
+  | CMOVAE
+  | CMOVB
+  | CMOVBE
+  | FCMOVBE
+  | FCMOVB
+  | CMOVE
+  | FCMOVE
+  | CMOVG
+  | CMOVGE
+  | CMOVL
+  | CMOVLE
+  | FCMOVNBE
+  | FCMOVNB
+  | CMOVNE
+  | FCMOVNE
+  | CMOVNO
+  | CMOVNP
+  | FCMOVNU
+  | FCMOVNP
+  | CMOVNS
+  | CMOVO
+  | CMOVP
+  | FCMOVU
+  | CMOVS
+  | CMP
+  | CMPPD
+  | CMPPS
+  | CMPSB
+  | CMPSD
+  | CMPSQ
+  | CMPSS
+  | CMPSW
+  | CMPXCHG16B
+  | CMPXCHG
+  | CMPXCHG8B
+  | COMISD
+  | COMISS
+  | FCOMP
+  | FCOMPI
+  | FCOMI
+  | FCOM
+  | FCOS
+  | CPUID
+  | CQO
+  | CRC32
+  | CVTDQ2PD
+  | CVTDQ2PS
+  | CVTPD2DQ
+  | CVTPD2PS
+  | CVTPS2DQ
+  | CVTPS2PD
+  | CVTSD2SI
+  | CVTSD2SS
+  | CVTSI2SD
+  | CVTSI2SS
+  | CVTSS2SD
+  | CVTSS2SI
+  | CVTTPD2DQ
+  | CVTTPS2DQ
+  | CVTTSD2SI
+  | CVTTSS2SI
+  | CWD
+  | CWDE
+  | DAA
+  | DAS
+  | DATA16
+  | DEC
+  | DIV
+  | DIVPD
+  | DIVPS
+  | FDIVR
+  | FIDIVR
+  | FDIVRP
+  | DIVSD
+  | DIVSS
+  | FDIV
+  | FIDIV
+  | FDIVP
+  | DPPD
+  | DPPS
+  | ENCLS
+  | ENCLU
+  | ENCLV
+  | ENDBR32
+  | ENDBR64
+  | ENTER
+  | EXTRACTPS
+  | EXTRQ
+  | F2XM1
+  | LCALL
+  | LJMP
+  | JMP
+  | FBLD
+  | FBSTP
+  | FCOMPP
+  | FDECSTP
+  | FDISI8087_NOP
+  | FEMMS
+  | FENI8087_NOP
+  | FFREE
+  | FFREEP
+  | FICOM
+  | FICOMP
+  | FINCSTP
+  | FLDCW
+  | FLDENV
+  | FLDL2E
+  | FLDL2T
+  | FLDLG2
+  | FLDLN2
+  | FLDPI
+  | FNCLEX
+  | FNINIT
+  | FNOP
+  | FNSTCW
+  | FNSTSW
+  | FPATAN
+  | FSTPNCE
+  | FPREM
+  | FPREM1
+  | FPTAN
+  | FRNDINT
+  | FRSTOR
+  | FNSAVE
+  | FSCALE
+  | FSETPM
+  | FSINCOS
+  | FNSTENV
+  | FXAM
+  | FXRSTOR
+  | FXRSTOR64
+  | FXSAVE
+  | FXSAVE64
+  | FXTRACT
+  | FYL2X
+  | FYL2XP1
+  | GETSEC
+  | GF2P8AFFINEINVQB
+  | GF2P8AFFINEQB
+  | GF2P8MULB
+  | HADDPD
+  | HADDPS
+  | HLT
+  | HSUBPD
+  | HSUBPS
+  | IDIV
+  | FILD
+  | IMUL
+  | IN
+  | INC
+  | INCSSPD
+  | INCSSPQ
+  | INSB
+  | INSERTPS
+  | INSERTQ
+  | INSD
+  | INSW
+  | INT
+  | INT1
+  | INT3
+  | INTO
+  | INVD
+  | INVEPT
+  | INVLPG
+  | INVLPGA
+  | INVPCID
+  | INVVPID
+  | IRET
+  | IRETD
+  | IRETQ
+  | FISTTP
+  | FIST
+  | FISTP
+  | JAE
+  | JA
+  | JBE
+  | JB
+  | JCXZ
+  | JECXZ
+  | JE
+  | JGE
+  | JG
+  | JLE
+  | JL
+  | JNE
+  | JNO
+  | JNP
+  | JNS
+  | JO
+  | JP
+  | JRCXZ
+  | JS
+  | KADDB
+  | KADDD
+  | KADDQ
+  | KADDW
+  | KANDB
+  | KANDD
+  | KANDNB
+  | KANDND
+  | KANDNQ
+  | KANDNW
+  | KANDQ
+  | KANDW
+  | KMOVB
+  | KMOVD
+  | KMOVQ
+  | KMOVW
+  | KNOTB
+  | KNOTD
+  | KNOTQ
+  | KNOTW
+  | KORB
+  | KORD
+  | KORQ
+  | KORTESTB
+  | KORTESTD
+  | KORTESTQ
+  | KORTESTW
+  | KORW
+  | KSHIFTLB
+  | KSHIFTLD
+  | KSHIFTLQ
+  | KSHIFTLW
+  | KSHIFTRB
+  | KSHIFTRD
+  | KSHIFTRQ
+  | KSHIFTRW
+  | KTESTB
+  | KTESTD
+  | KTESTQ
+  | KTESTW
+  | KUNPCKBW
+  | KUNPCKDQ
+  | KUNPCKWD
+  | KXNORB
+  | KXNORD
+  | KXNORQ
+  | KXNORW
+  | KXORB
+  | KXORD
+  | KXORQ
+  | KXORW
+  | LAHF
+  | LAR
+  | LDDQU
+  | LDMXCSR
+  | LDS
+  | FLDZ
+  | FLD1
+  | FLD
+  | LEA
+  | LEAVE
+  | LES
+  | LFENCE
+  | LFS
+  | LGDT
+  | LGS
+  | LIDT
+  | LLDT
+  | LLWPCB
+  | LMSW
+  | LOCK
+  | LODSB
+  | LODSD
+  | LODSQ
+  | LODSW
+  | LOOP
+  | LOOPE
+  | LOOPNE
+  | RETF
+  | RETFQ
+  | LSL
+  | LSS
+  | LTR
+  | LWPINS
+  | LWPVAL
+  | LZCNT
+  | MASKMOVDQU
+  | MAXPD
+  | MAXPS
+  | MAXSD
+  | MAXSS
+  | MFENCE
+  | MINPD
+  | MINPS
+  | MINSD
+  | MINSS
+  | CVTPD2PI
+  | CVTPI2PD
+  | CVTPI2PS
+  | CVTPS2PI
+  | CVTTPD2PI
+  | CVTTPS2PI
+  | EMMS
+  | MASKMOVQ
+  | MOVD
+  | MOVQ
+  | MOVDQ2Q
+  | MOVNTQ
+  | MOVQ2DQ
+  | PABSB
+  | PABSD
+  | PABSW
+  | PACKSSDW
+  | PACKSSWB
+  | PACKUSWB
+  | PADDB
+  | PADDD
+  | PADDQ
+  | PADDSB
+  | PADDSW
+  | PADDUSB
+  | PADDUSW
+  | PADDW
+  | PALIGNR
+  | PANDN
+  | PAND
+  | PAVGB
+  | PAVGW
+  | PCMPEQB
+  | PCMPEQD
+  | PCMPEQW
+  | PCMPGTB
+  | PCMPGTD
+  | PCMPGTW
+  | PEXTRW
+  | PHADDD
+  | PHADDSW
+  | PHADDW
+  | PHSUBD
+  | PHSUBSW
+  | PHSUBW
+  | PINSRW
+  | PMADDUBSW
+  | PMADDWD
+  | PMAXSW
+  | PMAXUB
+  | PMINSW
+  | PMINUB
+  | PMOVMSKB
+  | PMULHRSW
+  | PMULHUW
+  | PMULHW
+  | PMULLW
+  | PMULUDQ
+  | POR
+  | PSADBW
+  | PSHUFB
+  | PSHUFW
+  | PSIGNB
+  | PSIGND
+  | PSIGNW
+  | PSLLD
+  | PSLLQ
+  | PSLLW
+  | PSRAD
+  | PSRAW
+  | PSRLD
+  | PSRLQ
+  | PSRLW
+  | PSUBB
+  | PSUBD
+  | PSUBQ
+  | PSUBSB
+  | PSUBSW
+  | PSUBUSB
+  | PSUBUSW
+  | PSUBW
+  | PUNPCKHBW
+  | PUNPCKHDQ
+  | PUNPCKHWD
+  | PUNPCKLBW
+  | PUNPCKLDQ
+  | PUNPCKLWD
+  | PXOR
+  | MONITORX
+  | MONITOR
+  | MONTMUL
+  | MOV
+  | MOVABS
+  | MOVAPD
+  | MOVAPS
+  | MOVBE
+  | MOVDDUP
+  | MOVDIR64B
+  | MOVDIRI
+  | MOVDQA
+  | MOVDQU
+  | MOVHLPS
+  | MOVHPD
+  | MOVHPS
+  | MOVLHPS
+  | MOVLPD
+  | MOVLPS
+  | MOVMSKPD
+  | MOVMSKPS
+  | MOVNTDQA
+  | MOVNTDQ
+  | MOVNTI
+  | MOVNTPD
+  | MOVNTPS
+  | MOVNTSD
+  | MOVNTSS
+  | MOVSB
+  | MOVSD
+  | MOVSHDUP
+  | MOVSLDUP
+  | MOVSQ
+  | MOVSS
+  | MOVSW
+  | MOVSX
+  | MOVSXD
+  | MOVUPD
+  | MOVUPS
+  | MOVZX
+  | MPSADBW
+  | MUL
+  | MULPD
+  | MULPS
+  | MULSD
+  | MULSS
+  | MULX
+  | FMUL
+  | FIMUL
+  | FMULP
+  | MWAITX
+  | MWAIT
+  | NEG
+  | NOP
+  | NOT
+  | OR
+  | ORPD
+  | ORPS
+  | OUT
+  | OUTSB
+  | OUTSD
+  | OUTSW
+  | PACKUSDW
+  | PAUSE
+  | PAVGUSB
+  | PBLENDVB
+  | PBLENDW
+  | PCLMULQDQ
+  | PCMPEQQ
+  | PCMPESTRI
+  | PCMPESTRM
+  | PCMPGTQ
+  | PCMPISTRI
+  | PCMPISTRM
+  | PCONFIG
+  | PDEP
+  | PEXT
+  | PEXTRB
+  | PEXTRD
+  | PEXTRQ
+  | PF2ID
+  | PF2IW
+  | PFACC
+  | PFADD
+  | PFCMPEQ
+  | PFCMPGE
+  | PFCMPGT
+  | PFMAX
+  | PFMIN
+  | PFMUL
+  | PFNACC
+  | PFPNACC
+  | PFRCPIT1
+  | PFRCPIT2
+  | PFRCP
+  | PFRSQIT1
+  | PFRSQRT
+  | PFSUBR
+  | PFSUB
+  | PHMINPOSUW
+  | PI2FD
+  | PI2FW
+  | PINSRB
+  | PINSRD
+  | PINSRQ
+  | PMAXSB
+  | PMAXSD
+  | PMAXUD
+  | PMAXUW
+  | PMINSB
+  | PMINSD
+  | PMINUD
+  | PMINUW
+  | PMOVSXBD
+  | PMOVSXBQ
+  | PMOVSXBW
+  | PMOVSXDQ
+  | PMOVSXWD
+  | PMOVSXWQ
+  | PMOVZXBD
+  | PMOVZXBQ
+  | PMOVZXBW
+  | PMOVZXDQ
+  | PMOVZXWD
+  | PMOVZXWQ
+  | PMULDQ
+  | PMULHRW
+  | PMULLD
+  | POP
+  | POPAW
+  | POPAL
+  | POPCNT
+  | POPF
+  | POPFD
+  | POPFQ
+  | PREFETCH
+  | PREFETCHNTA
+  | PREFETCHT0
+  | PREFETCHT1
+  | PREFETCHT2
+  | PREFETCHW
+  | PREFETCHWT1
+  | PSHUFD
+  | PSHUFHW
+  | PSHUFLW
+  | PSLLDQ
+  | PSRLDQ
+  | PSWAPD
+  | PTEST
+  | PTWRITE
+  | PUNPCKHQDQ
+  | PUNPCKLQDQ
+  | PUSH
+  | PUSHAW
+  | PUSHAL
+  | PUSHF
+  | PUSHFD
+  | PUSHFQ
+  | RCL
+  | RCPPS
+  | RCPSS
+  | RCR
+  | RDFSBASE
+  | RDGSBASE
+  | RDMSR
+  | RDPID
+  | RDPKRU
+  | RDPMC
+  | RDRAND
+  | RDSEED
+  | RDSSPD
+  | RDSSPQ
+  | RDTSC
+  | RDTSCP
+  | REPNE
+  | REP
+  | RET
+  | REX64
+  | ROL
+  | ROR
+  | RORX
+  | ROUNDPD
+  | ROUNDPS
+  | ROUNDSD
+  | ROUNDSS
+  | RSM
+  | RSQRTPS
+  | RSQRTSS
+  | RSTORSSP
+  | SAHF
+  | SAL
+  | SALC
+  | SAR
+  | SARX
+  | SAVEPREVSSP
+  | SBB
+  | SCASB
+  | SCASD
+  | SCASQ
+  | SCASW
+  | SETAE
+  | SETA
+  | SETBE
+  | SETB
+  | SETE
+  | SETGE
+  | SETG
+  | SETLE
+  | SETL
+  | SETNE
+  | SETNO
+  | SETNP
+  | SETNS
+  | SETO
+  | SETP
+  | SETSSBSY
+  | SETS
+  | SFENCE
+  | SGDT
+  | SHA1MSG1
+  | SHA1MSG2
+  | SHA1NEXTE
+  | SHA1RNDS4
+  | SHA256MSG1
+  | SHA256MSG2
+  | SHA256RNDS2
+  | SHL
+  | SHLD
+  | SHLX
+  | SHR
+  | SHRD
+  | SHRX
+  | SHUFPD
+  | SHUFPS
+  | SIDT
+  | FSIN
+  | SKINIT
+  | SLDT
+  | SLWPCB
+  | SMSW
+  | SQRTPD
+  | SQRTPS
+  | SQRTSD
+  | SQRTSS
+  | FSQRT
+  | STAC
+  | STC
+  | STD
+  | STGI
+  | STI
+  | STMXCSR
+  | STOSB
+  | STOSD
+  | STOSQ
+  | STOSW
+  | STR
+  | FST
+  | FSTP
+  | SUB
+  | SUBPD
+  | SUBPS
+  | FSUBR
+  | FISUBR
+  | FSUBRP
+  | SUBSD
+  | SUBSS
+  | FSUB
+  | FISUB
+  | FSUBP
+  | SWAPGS
+  | SYSCALL
+  | SYSENTER
+  | SYSEXIT
+  | SYSEXITQ
+  | SYSRET
+  | SYSRETQ
+  | T1MSKC
+  | TEST
+  | TPAUSE
+  | FTST
+  | TZCNT
+  | TZMSK
+  | UCOMISD
+  | UCOMISS
+  | FUCOMPI
+  | FUCOMI
+  | FUCOMPP
+  | FUCOMP
+  | FUCOM
+  | UD0
+  | UD1
+  | UD2
+  | UMONITOR
+  | UMWAIT
+  | UNPCKHPD
+  | UNPCKHPS
+  | UNPCKLPD
+  | UNPCKLPS
+  | V4FMADDPS
+  | V4FMADDSS
+  | V4FNMADDPS
+  | V4FNMADDSS
+  | VADDPD
+  | VADDPS
+  | VADDSD
+  | VADDSS
+  | VADDSUBPD
+  | VADDSUBPS
+  | VAESDECLAST
+  | VAESDEC
+  | VAESENCLAST
+  | VAESENC
+  | VAESIMC
+  | VAESKEYGENASSIST
+  | VALIGND
+  | VALIGNQ
+  | VANDNPD
+  | VANDNPS
+  | VANDPD
+  | VANDPS
+  | VBLENDMPD
+  | VBLENDMPS
+  | VBLENDPD
+  | VBLENDPS
+  | VBLENDVPD
+  | VBLENDVPS
+  | VBROADCASTF128
+  | VBROADCASTF32X2
+  | VBROADCASTF32X4
+  | VBROADCASTF32X8
+  | VBROADCASTF64X2
+  | VBROADCASTF64X4
+  | VBROADCASTI128
+  | VBROADCASTI32X2
+  | VBROADCASTI32X4
+  | VBROADCASTI32X8
+  | VBROADCASTI64X2
+  | VBROADCASTI64X4
+  | VBROADCASTSD
+  | VBROADCASTSS
+  | VCMP
+  | VCMPPD
+  | VCMPPS
+  | VCMPSD
+  | VCMPSS
+  | VCOMISD
+  | VCOMISS
+  | VCOMPRESSPD
+  | VCOMPRESSPS
+  | VCVTDQ2PD
+  | VCVTDQ2PS
+  | VCVTPD2DQ
+  | VCVTPD2PS
+  | VCVTPD2QQ
+  | VCVTPD2UDQ
+  | VCVTPD2UQQ
+  | VCVTPH2PS
+  | VCVTPS2DQ
+  | VCVTPS2PD
+  | VCVTPS2PH
+  | VCVTPS2QQ
+  | VCVTPS2UDQ
+  | VCVTPS2UQQ
+  | VCVTQQ2PD
+  | VCVTQQ2PS
+  | VCVTSD2SI
+  | VCVTSD2SS
+  | VCVTSD2USI
+  | VCVTSI2SD
+  | VCVTSI2SS
+  | VCVTSS2SD
+  | VCVTSS2SI
+  | VCVTSS2USI
+  | VCVTTPD2DQ
+  | VCVTTPD2QQ
+  | VCVTTPD2UDQ
+  | VCVTTPD2UQQ
+  | VCVTTPS2DQ
+  | VCVTTPS2QQ
+  | VCVTTPS2UDQ
+  | VCVTTPS2UQQ
+  | VCVTTSD2SI
+  | VCVTTSD2USI
+  | VCVTTSS2SI
+  | VCVTTSS2USI
+  | VCVTUDQ2PD
+  | VCVTUDQ2PS
+  | VCVTUQQ2PD
+  | VCVTUQQ2PS
+  | VCVTUSI2SD
+  | VCVTUSI2SS
+  | VDBPSADBW
+  | VDIVPD
+  | VDIVPS
+  | VDIVSD
+  | VDIVSS
+  | VDPPD
+  | VDPPS
+  | VERR
+  | VERW
+  | VEXP2PD
+  | VEXP2PS
+  | VEXPANDPD
+  | VEXPANDPS
+  | VEXTRACTF128
+  | VEXTRACTF32X4
+  | VEXTRACTF32X8
+  | VEXTRACTF64X2
+  | VEXTRACTF64X4
+  | VEXTRACTI128
+  | VEXTRACTI32X4
+  | VEXTRACTI32X8
+  | VEXTRACTI64X2
+  | VEXTRACTI64X4
+  | VEXTRACTPS
+  | VFIXUPIMMPD
+  | VFIXUPIMMPS
+  | VFIXUPIMMSD
+  | VFIXUPIMMSS
+  | VFMADD132PD
+  | VFMADD132PS
+  | VFMADD132SD
+  | VFMADD132SS
+  | VFMADD213PD
+  | VFMADD213PS
+  | VFMADD213SD
+  | VFMADD213SS
+  | VFMADD231PD
+  | VFMADD231PS
+  | VFMADD231SD
+  | VFMADD231SS
+  | VFMADDPD
+  | VFMADDPS
+  | VFMADDSD
+  | VFMADDSS
+  | VFMADDSUB132PD
+  | VFMADDSUB132PS
+  | VFMADDSUB213PD
+  | VFMADDSUB213PS
+  | VFMADDSUB231PD
+  | VFMADDSUB231PS
+  | VFMADDSUBPD
+  | VFMADDSUBPS
+  | VFMSUB132PD
+  | VFMSUB132PS
+  | VFMSUB132SD
+  | VFMSUB132SS
+  | VFMSUB213PD
+  | VFMSUB213PS
+  | VFMSUB213SD
+  | VFMSUB213SS
+  | VFMSUB231PD
+  | VFMSUB231PS
+  | VFMSUB231SD
+  | VFMSUB231SS
+  | VFMSUBADD132PD
+  | VFMSUBADD132PS
+  | VFMSUBADD213PD
+  | VFMSUBADD213PS
+  | VFMSUBADD231PD
+  | VFMSUBADD231PS
+  | VFMSUBADDPD
+  | VFMSUBADDPS
+  | VFMSUBPD
+  | VFMSUBPS
+  | VFMSUBSD
+  | VFMSUBSS
+  | VFNMADD132PD
+  | VFNMADD132PS
+  | VFNMADD132SD
+  | VFNMADD132SS
+  | VFNMADD213PD
+  | VFNMADD213PS
+  | VFNMADD213SD
+  | VFNMADD213SS
+  | VFNMADD231PD
+  | VFNMADD231PS
+  | VFNMADD231SD
+  | VFNMADD231SS
+  | VFNMADDPD
+  | VFNMADDPS
+  | VFNMADDSD
+  | VFNMADDSS
+  | VFNMSUB132PD
+  | VFNMSUB132PS
+  | VFNMSUB132SD
+  | VFNMSUB132SS
+  | VFNMSUB213PD
+  | VFNMSUB213PS
+  | VFNMSUB213SD
+  | VFNMSUB213SS
+  | VFNMSUB231PD
+  | VFNMSUB231PS
+  | VFNMSUB231SD
+  | VFNMSUB231SS
+  | VFNMSUBPD
+  | VFNMSUBPS
+  | VFNMSUBSD
+  | VFNMSUBSS
+  | VFPCLASSPD
+  | VFPCLASSPS
+  | VFPCLASSSD
+  | VFPCLASSSS
+  | VFRCZPD
+  | VFRCZPS
+  | VFRCZSD
+  | VFRCZSS
+  | VGATHERDPD
+  | VGATHERDPS
+  | VGATHERPF0DPD
+  | VGATHERPF0DPS
+  | VGATHERPF0QPD
+  | VGATHERPF0QPS
+  | VGATHERPF1DPD
+  | VGATHERPF1DPS
+  | VGATHERPF1QPD
+  | VGATHERPF1QPS
+  | VGATHERQPD
+  | VGATHERQPS
+  | VGETEXPPD
+  | VGETEXPPS
+  | VGETEXPSD
+  | VGETEXPSS
+  | VGETMANTPD
+  | VGETMANTPS
+  | VGETMANTSD
+  | VGETMANTSS
+  | VGF2P8AFFINEINVQB
+  | VGF2P8AFFINEQB
+  | VGF2P8MULB
+  | VHADDPD
+  | VHADDPS
+  | VHSUBPD
+  | VHSUBPS
+  | VINSERTF128
+  | VINSERTF32X4
+  | VINSERTF32X8
+  | VINSERTF64X2
+  | VINSERTF64X4
+  | VINSERTI128
+  | VINSERTI32X4
+  | VINSERTI32X8
+  | VINSERTI64X2
+  | VINSERTI64X4
+  | VINSERTPS
+  | VLDDQU
+  | VLDMXCSR
+  | VMASKMOVDQU
+  | VMASKMOVPD
+  | VMASKMOVPS
+  | VMAXPD
+  | VMAXPS
+  | VMAXSD
+  | VMAXSS
+  | VMCALL
+  | VMCLEAR
+  | VMFUNC
+  | VMINPD
+  | VMINPS
+  | VMINSD
+  | VMINSS
+  | VMLAUNCH
+  | VMLOAD
+  | VMMCALL
+  | VMOVQ
+  | VMOVAPD
+  | VMOVAPS
+  | VMOVDDUP
+  | VMOVD
+  | VMOVDQA32
+  | VMOVDQA64
+  | VMOVDQA
+  | VMOVDQU16
+  | VMOVDQU32
+  | VMOVDQU64
+  | VMOVDQU8
+  | VMOVDQU
+  | VMOVHLPS
+  | VMOVHPD
+  | VMOVHPS
+  | VMOVLHPS
+  | VMOVLPD
+  | VMOVLPS
+  | VMOVMSKPD
+  | VMOVMSKPS
+  | VMOVNTDQA
+  | VMOVNTDQ
+  | VMOVNTPD
+  | VMOVNTPS
+  | VMOVSD
+  | VMOVSHDUP
+  | VMOVSLDUP
+  | VMOVSS
+  | VMOVUPD
+  | VMOVUPS
+  | VMPSADBW
+  | VMPTRLD
+  | VMPTRST
+  | VMREAD
+  | VMRESUME
+  | VMRUN
+  | VMSAVE
+  | VMULPD
+  | VMULPS
+  | VMULSD
+  | VMULSS
+  | VMWRITE
+  | VMXOFF
+  | VMXON
+  | VORPD
+  | VORPS
+  | VP4DPWSSDS
+  | VP4DPWSSD
+  | VPABSB
+  | VPABSD
+  | VPABSQ
+  | VPABSW
+  | VPACKSSDW
+  | VPACKSSWB
+  | VPACKUSDW
+  | VPACKUSWB
+  | VPADDB
+  | VPADDD
+  | VPADDQ
+  | VPADDSB
+  | VPADDSW
+  | VPADDUSB
+  | VPADDUSW
+  | VPADDW
+  | VPALIGNR
+  | VPANDD
+  | VPANDND
+  | VPANDNQ
+  | VPANDN
+  | VPANDQ
+  | VPAND
+  | VPAVGB
+  | VPAVGW
+  | VPBLENDD
+  | VPBLENDMB
+  | VPBLENDMD
+  | VPBLENDMQ
+  | VPBLENDMW
+  | VPBLENDVB
+  | VPBLENDW
+  | VPBROADCASTB
+  | VPBROADCASTD
+  | VPBROADCASTMB2Q
+  | VPBROADCASTMW2D
+  | VPBROADCASTQ
+  | VPBROADCASTW
+  | VPCLMULQDQ
+  | VPCMOV
+  | VPCMP
+  | VPCMPB
+  | VPCMPD
+  | VPCMPEQB
+  | VPCMPEQD
+  | VPCMPEQQ
+  | VPCMPEQW
+  | VPCMPESTRI
+  | VPCMPESTRM
+  | VPCMPGTB
+  | VPCMPGTD
+  | VPCMPGTQ
+  | VPCMPGTW
+  | VPCMPISTRI
+  | VPCMPISTRM
+  | VPCMPQ
+  | VPCMPUB
+  | VPCMPUD
+  | VPCMPUQ
+  | VPCMPUW
+  | VPCMPW
+  | VPCOM
+  | VPCOMB
+  | VPCOMD
+  | VPCOMPRESSB
+  | VPCOMPRESSD
+  | VPCOMPRESSQ
+  | VPCOMPRESSW
+  | VPCOMQ
+  | VPCOMUB
+  | VPCOMUD
+  | VPCOMUQ
+  | VPCOMUW
+  | VPCOMW
+  | VPCONFLICTD
+  | VPCONFLICTQ
+  | VPDPBUSDS
+  | VPDPBUSD
+  | VPDPWSSDS
+  | VPDPWSSD
+  | VPERM2F128
+  | VPERM2I128
+  | VPERMB
+  | VPERMD
+  | VPERMI2B
+  | VPERMI2D
+  | VPERMI2PD
+  | VPERMI2PS
+  | VPERMI2Q
+  | VPERMI2W
+  | VPERMIL2PD
+  | VPERMILPD
+  | VPERMIL2PS
+  | VPERMILPS
+  | VPERMPD
+  | VPERMPS
+  | VPERMQ
+  | VPERMT2B
+  | VPERMT2D
+  | VPERMT2PD
+  | VPERMT2PS
+  | VPERMT2Q
+  | VPERMT2W
+  | VPERMW
+  | VPEXPANDB
+  | VPEXPANDD
+  | VPEXPANDQ
+  | VPEXPANDW
+  | VPEXTRB
+  | VPEXTRD
+  | VPEXTRQ
+  | VPEXTRW
+  | VPGATHERDD
+  | VPGATHERDQ
+  | VPGATHERQD
+  | VPGATHERQQ
+  | VPHADDBD
+  | VPHADDBQ
+  | VPHADDBW
+  | VPHADDDQ
+  | VPHADDD
+  | VPHADDSW
+  | VPHADDUBD
+  | VPHADDUBQ
+  | VPHADDUBW
+  | VPHADDUDQ
+  | VPHADDUWD
+  | VPHADDUWQ
+  | VPHADDWD
+  | VPHADDWQ
+  | VPHADDW
+  | VPHMINPOSUW
+  | VPHSUBBW
+  | VPHSUBDQ
+  | VPHSUBD
+  | VPHSUBSW
+  | VPHSUBWD
+  | VPHSUBW
+  | VPINSRB
+  | VPINSRD
+  | VPINSRQ
+  | VPINSRW
+  | VPLZCNTD
+  | VPLZCNTQ
+  | VPMACSDD
+  | VPMACSDQH
+  | VPMACSDQL
+  | VPMACSSDD
+  | VPMACSSDQH
+  | VPMACSSDQL
+  | VPMACSSWD
+  | VPMACSSWW
+  | VPMACSWD
+  | VPMACSWW
+  | VPMADCSSWD
+  | VPMADCSWD
+  | VPMADD52HUQ
+  | VPMADD52LUQ
+  | VPMADDUBSW
+  | VPMADDWD
+  | VPMASKMOVD
+  | VPMASKMOVQ
+  | VPMAXSB
+  | VPMAXSD
+  | VPMAXSQ
+  | VPMAXSW
+  | VPMAXUB
+  | VPMAXUD
+  | VPMAXUQ
+  | VPMAXUW
+  | VPMINSB
+  | VPMINSD
+  | VPMINSQ
+  | VPMINSW
+  | VPMINUB
+  | VPMINUD
+  | VPMINUQ
+  | VPMINUW
+  | VPMOVB2M
+  | VPMOVD2M
+  | VPMOVDB
+  | VPMOVDW
+  | VPMOVM2B
+  | VPMOVM2D
+  | VPMOVM2Q
+  | VPMOVM2W
+  | VPMOVMSKB
+  | VPMOVQ2M
+  | VPMOVQB
+  | VPMOVQD
+  | VPMOVQW
+  | VPMOVSDB
+  | VPMOVSDW
+  | VPMOVSQB
+  | VPMOVSQD
+  | VPMOVSQW
+  | VPMOVSWB
+  | VPMOVSXBD
+  | VPMOVSXBQ
+  | VPMOVSXBW
+  | VPMOVSXDQ
+  | VPMOVSXWD
+  | VPMOVSXWQ
+  | VPMOVUSDB
+  | VPMOVUSDW
+  | VPMOVUSQB
+  | VPMOVUSQD
+  | VPMOVUSQW
+  | VPMOVUSWB
+  | VPMOVW2M
+  | VPMOVWB
+  | VPMOVZXBD
+  | VPMOVZXBQ
+  | VPMOVZXBW
+  | VPMOVZXDQ
+  | VPMOVZXWD
+  | VPMOVZXWQ
+  | VPMULDQ
+  | VPMULHRSW
+  | VPMULHUW
+  | VPMULHW
+  | VPMULLD
+  | VPMULLQ
+  | VPMULLW
+  | VPMULTISHIFTQB
+  | VPMULUDQ
+  | VPOPCNTB
+  | VPOPCNTD
+  | VPOPCNTQ
+  | VPOPCNTW
+  | VPORD
+  | VPORQ
+  | VPOR
+  | VPPERM
+  | VPROLD
+  | VPROLQ
+  | VPROLVD
+  | VPROLVQ
+  | VPRORD
+  | VPRORQ
+  | VPRORVD
+  | VPRORVQ
+  | VPROTB
+  | VPROTD
+  | VPROTQ
+  | VPROTW
+  | VPSADBW
+  | VPSCATTERDD
+  | VPSCATTERDQ
+  | VPSCATTERQD
+  | VPSCATTERQQ
+  | VPSHAB
+  | VPSHAD
+  | VPSHAQ
+  | VPSHAW
+  | VPSHLB
+  | VPSHLDD
+  | VPSHLDQ
+  | VPSHLDVD
+  | VPSHLDVQ
+  | VPSHLDVW
+  | VPSHLDW
+  | VPSHLD
+  | VPSHLQ
+  | VPSHLW
+  | VPSHRDD
+  | VPSHRDQ
+  | VPSHRDVD
+  | VPSHRDVQ
+  | VPSHRDVW
+  | VPSHRDW
+  | VPSHUFBITQMB
+  | VPSHUFB
+  | VPSHUFD
+  | VPSHUFHW
+  | VPSHUFLW
+  | VPSIGNB
+  | VPSIGND
+  | VPSIGNW
+  | VPSLLDQ
+  | VPSLLD
+  | VPSLLQ
+  | VPSLLVD
+  | VPSLLVQ
+  | VPSLLVW
+  | VPSLLW
+  | VPSRAD
+  | VPSRAQ
+  | VPSRAVD
+  | VPSRAVQ
+  | VPSRAVW
+  | VPSRAW
+  | VPSRLDQ
+  | VPSRLD
+  | VPSRLQ
+  | VPSRLVD
+  | VPSRLVQ
+  | VPSRLVW
+  | VPSRLW
+  | VPSUBB
+  | VPSUBD
+  | VPSUBQ
+  | VPSUBSB
+  | VPSUBSW
+  | VPSUBUSB
+  | VPSUBUSW
+  | VPSUBW
+  | VPTERNLOGD
+  | VPTERNLOGQ
+  | VPTESTMB
+  | VPTESTMD
+  | VPTESTMQ
+  | VPTESTMW
+  | VPTESTNMB
+  | VPTESTNMD
+  | VPTESTNMQ
+  | VPTESTNMW
+  | VPTEST
+  | VPUNPCKHBW
+  | VPUNPCKHDQ
+  | VPUNPCKHQDQ
+  | VPUNPCKHWD
+  | VPUNPCKLBW
+  | VPUNPCKLDQ
+  | VPUNPCKLQDQ
+  | VPUNPCKLWD
+  | VPXORD
+  | VPXORQ
+  | VPXOR
+  | VRANGEPD
+  | VRANGEPS
+  | VRANGESD
+  | VRANGESS
+  | VRCP14PD
+  | VRCP14PS
+  | VRCP14SD
+  | VRCP14SS
+  | VRCP28PD
+  | VRCP28PS
+  | VRCP28SD
+  | VRCP28SS
+  | VRCPPS
+  | VRCPSS
+  | VREDUCEPD
+  | VREDUCEPS
+  | VREDUCESD
+  | VREDUCESS
+  | VRNDSCALEPD
+  | VRNDSCALEPS
+  | VRNDSCALESD
+  | VRNDSCALESS
+  | VROUNDPD
+  | VROUNDPS
+  | VROUNDSD
+  | VROUNDSS
+  | VRSQRT14PD
+  | VRSQRT14PS
+  | VRSQRT14SD
+  | VRSQRT14SS
+  | VRSQRT28PD
+  | VRSQRT28PS
+  | VRSQRT28SD
+  | VRSQRT28SS
+  | VRSQRTPS
+  | VRSQRTSS
+  | VSCALEFPD
+  | VSCALEFPS
+  | VSCALEFSD
+  | VSCALEFSS
+  | VSCATTERDPD
+  | VSCATTERDPS
+  | VSCATTERPF0DPD
+  | VSCATTERPF0DPS
+  | VSCATTERPF0QPD
+  | VSCATTERPF0QPS
+  | VSCATTERPF1DPD
+  | VSCATTERPF1DPS
+  | VSCATTERPF1QPD
+  | VSCATTERPF1QPS
+  | VSCATTERQPD
+  | VSCATTERQPS
+  | VSHUFF32X4
+  | VSHUFF64X2
+  | VSHUFI32X4
+  | VSHUFI64X2
+  | VSHUFPD
+  | VSHUFPS
+  | VSQRTPD
+  | VSQRTPS
+  | VSQRTSD
+  | VSQRTSS
+  | VSTMXCSR
+  | VSUBPD
+  | VSUBPS
+  | VSUBSD
+  | VSUBSS
+  | VTESTPD
+  | VTESTPS
+  | VUCOMISD
+  | VUCOMISS
+  | VUNPCKHPD
+  | VUNPCKHPS
+  | VUNPCKLPD
+  | VUNPCKLPS
+  | VXORPD
+  | VXORPS
+  | VZEROALL
+  | VZEROUPPER
+  | WAIT
+  | WBINVD
+  | WBNOINVD
+  | WRFSBASE
+  | WRGSBASE
+  | WRMSR
+  | WRPKRU
+  | WRSSD
+  | WRSSQ
+  | WRUSSD
+  | WRUSSQ
+  | XABORT
+  | XACQUIRE
+  | XADD
+  | XBEGIN
+  | XCHG
+  | FXCH
+  | XCRYPTCBC
+  | XCRYPTCFB
+  | XCRYPTCTR
+  | XCRYPTECB
+  | XCRYPTOFB
+  | XEND
+  | XGETBV
+  | XLATB
+  | XOR
+  | XORPD
+  | XORPS
+  | XRELEASE
+  | XRSTOR
+  | XRSTOR64
+  | XRSTORS
+  | XRSTORS64
+  | XSAVE
+  | XSAVE64
+  | XSAVEC
+  | XSAVEC64
+  | XSAVEOPT
+  | XSAVEOPT64
+  | XSAVES
+  | XSAVES64
+  | XSETBV
+  | XSHA1
+  | XSHA256
+  | XSTORE
+  | XTEST
+[@@deriving sexp]
 
 let t_of_yojson = function
-        | `Int 0 -> INVALID
-        | `Int 1 -> AAA
-        | `Int 2 -> AAD
-        | `Int 3 -> AAM
-        | `Int 4 -> AAS
-        | `Int 5 -> FABS
-        | `Int 6 -> ADC
-        | `Int 7 -> ADCX
-        | `Int 8 -> ADD
-        | `Int 9 -> ADDPD
-        | `Int 10 -> ADDPS
-        | `Int 11 -> ADDSD
-        | `Int 12 -> ADDSS
-        | `Int 13 -> ADDSUBPD
-        | `Int 14 -> ADDSUBPS
-        | `Int 15 -> FADD
-        | `Int 16 -> FIADD
-        | `Int 17 -> FADDP
-        | `Int 18 -> ADOX
-        | `Int 19 -> AESDECLAST
-        | `Int 20 -> AESDEC
-        | `Int 21 -> AESENCLAST
-        | `Int 22 -> AESENC
-        | `Int 23 -> AESIMC
-        | `Int 24 -> AESKEYGENASSIST
-        | `Int 25 -> AND
-        | `Int 26 -> ANDN
-        | `Int 27 -> ANDNPD
-        | `Int 28 -> ANDNPS
-        | `Int 29 -> ANDPD
-        | `Int 30 -> ANDPS
-        | `Int 31 -> ARPL
-        | `Int 32 -> BEXTR
-        | `Int 33 -> BLCFILL
-        | `Int 34 -> BLCI
-        | `Int 35 -> BLCIC
-        | `Int 36 -> BLCMSK
-        | `Int 37 -> BLCS
-        | `Int 38 -> BLENDPD
-        | `Int 39 -> BLENDPS
-        | `Int 40 -> BLENDVPD
-        | `Int 41 -> BLENDVPS
-        | `Int 42 -> BLSFILL
-        | `Int 43 -> BLSI
-        | `Int 44 -> BLSIC
-        | `Int 45 -> BLSMSK
-        | `Int 46 -> BLSR
-        | `Int 47 -> BOUND
-        | `Int 48 -> BSF
-        | `Int 49 -> BSR
-        | `Int 50 -> BSWAP
-        | `Int 51 -> BT
-        | `Int 52 -> BTC
-        | `Int 53 -> BTR
-        | `Int 54 -> BTS
-        | `Int 55 -> BZHI
-        | `Int 56 -> CALL
-        | `Int 57 -> CBW
-        | `Int 58 -> CDQ
-        | `Int 59 -> CDQE
-        | `Int 60 -> FCHS
-        | `Int 61 -> CLAC
-        | `Int 62 -> CLC
-        | `Int 63 -> CLD
-        | `Int 64 -> CLFLUSH
-        | `Int 65 -> CLFLUSHOPT
-        | `Int 66 -> CLGI
-        | `Int 67 -> CLI
-        | `Int 68 -> CLTS
-        | `Int 69 -> CLWB
-        | `Int 70 -> CMC
-        | `Int 71 -> CMOVA
-        | `Int 72 -> CMOVAE
-        | `Int 73 -> CMOVB
-        | `Int 74 -> CMOVBE
-        | `Int 75 -> FCMOVBE
-        | `Int 76 -> FCMOVB
-        | `Int 77 -> CMOVE
-        | `Int 78 -> FCMOVE
-        | `Int 79 -> CMOVG
-        | `Int 80 -> CMOVGE
-        | `Int 81 -> CMOVL
-        | `Int 82 -> CMOVLE
-        | `Int 83 -> FCMOVNBE
-        | `Int 84 -> FCMOVNB
-        | `Int 85 -> CMOVNE
-        | `Int 86 -> FCMOVNE
-        | `Int 87 -> CMOVNO
-        | `Int 88 -> CMOVNP
-        | `Int 89 -> FCMOVNU
-        | `Int 90 -> CMOVNS
-        | `Int 91 -> CMOVO
-        | `Int 92 -> CMOVP
-        | `Int 93 -> FCMOVU
-        | `Int 94 -> CMOVS
-        | `Int 95 -> CMP
-        | `Int 96 -> CMPSB
-        | `Int 97 -> CMPSQ
-        | `Int 98 -> CMPSW
-        | `Int 99 -> CMPXCHG16B
-        | `Int 100 -> CMPXCHG
-        | `Int 101 -> CMPXCHG8B
-        | `Int 102 -> COMISD
-        | `Int 103 -> COMISS
-        | `Int 104 -> FCOMP
-        | `Int 105 -> FCOMIP
-        | `Int 106 -> FCOMI
-        | `Int 107 -> FCOM
-        | `Int 108 -> FCOS
-        | `Int 109 -> CPUID
-        | `Int 110 -> CQO
-        | `Int 111 -> CRC32
-        | `Int 112 -> CVTDQ2PD
-        | `Int 113 -> CVTDQ2PS
-        | `Int 114 -> CVTPD2DQ
-        | `Int 115 -> CVTPD2PS
-        | `Int 116 -> CVTPS2DQ
-        | `Int 117 -> CVTPS2PD
-        | `Int 118 -> CVTSD2SI
-        | `Int 119 -> CVTSD2SS
-        | `Int 120 -> CVTSI2SD
-        | `Int 121 -> CVTSI2SS
-        | `Int 122 -> CVTSS2SD
-        | `Int 123 -> CVTSS2SI
-        | `Int 124 -> CVTTPD2DQ
-        | `Int 125 -> CVTTPS2DQ
-        | `Int 126 -> CVTTSD2SI
-        | `Int 127 -> CVTTSS2SI
-        | `Int 128 -> CWD
-        | `Int 129 -> CWDE
-        | `Int 130 -> DAA
-        | `Int 131 -> DAS
-        | `Int 132 -> DATA16
-        | `Int 133 -> DEC
-        | `Int 134 -> DIV
-        | `Int 135 -> DIVPD
-        | `Int 136 -> DIVPS
-        | `Int 137 -> FDIVR
-        | `Int 138 -> FIDIVR
-        | `Int 139 -> FDIVRP
-        | `Int 140 -> DIVSD
-        | `Int 141 -> DIVSS
-        | `Int 142 -> FDIV
-        | `Int 143 -> FIDIV
-        | `Int 144 -> FDIVP
-        | `Int 145 -> DPPD
-        | `Int 146 -> DPPS
-        | `Int 147 -> RET
-        | `Int 148 -> ENCLS
-        | `Int 149 -> ENCLU
-        | `Int 150 -> ENTER
-        | `Int 151 -> EXTRACTPS
-        | `Int 152 -> EXTRQ
-        | `Int 153 -> F2XM1
-        | `Int 154 -> LCALL
-        | `Int 155 -> LJMP
-        | `Int 156 -> FBLD
-        | `Int 157 -> FBSTP
-        | `Int 158 -> FCOMPP
-        | `Int 159 -> FDECSTP
-        | `Int 160 -> FEMMS
-        | `Int 161 -> FFREE
-        | `Int 162 -> FICOM
-        | `Int 163 -> FICOMP
-        | `Int 164 -> FINCSTP
-        | `Int 165 -> FLDCW
-        | `Int 166 -> FLDENV
-        | `Int 167 -> FLDL2E
-        | `Int 168 -> FLDL2T
-        | `Int 169 -> FLDLG2
-        | `Int 170 -> FLDLN2
-        | `Int 171 -> FLDPI
-        | `Int 172 -> FNCLEX
-        | `Int 173 -> FNINIT
-        | `Int 174 -> FNOP
-        | `Int 175 -> FNSTCW
-        | `Int 176 -> FNSTSW
-        | `Int 177 -> FPATAN
-        | `Int 178 -> FPREM
-        | `Int 179 -> FPREM1
-        | `Int 180 -> FPTAN
-        | `Int 181 -> FFREEP
-        | `Int 182 -> FRNDINT
-        | `Int 183 -> FRSTOR
-        | `Int 184 -> FNSAVE
-        | `Int 185 -> FSCALE
-        | `Int 186 -> FSETPM
-        | `Int 187 -> FSINCOS
-        | `Int 188 -> FNSTENV
-        | `Int 189 -> FXAM
-        | `Int 190 -> FXRSTOR
-        | `Int 191 -> FXRSTOR64
-        | `Int 192 -> FXSAVE
-        | `Int 193 -> FXSAVE64
-        | `Int 194 -> FXTRACT
-        | `Int 195 -> FYL2X
-        | `Int 196 -> FYL2XP1
-        | `Int 197 -> MOVAPD
-        | `Int 198 -> MOVAPS
-        | `Int 199 -> ORPD
-        | `Int 200 -> ORPS
-        | `Int 201 -> VMOVAPD
-        | `Int 202 -> VMOVAPS
-        | `Int 203 -> XORPD
-        | `Int 204 -> XORPS
-        | `Int 205 -> GETSEC
-        | `Int 206 -> HADDPD
-        | `Int 207 -> HADDPS
-        | `Int 208 -> HLT
-        | `Int 209 -> HSUBPD
-        | `Int 210 -> HSUBPS
-        | `Int 211 -> IDIV
-        | `Int 212 -> FILD
-        | `Int 213 -> IMUL
-        | `Int 214 -> IN
-        | `Int 215 -> INC
-        | `Int 216 -> INSB
-        | `Int 217 -> INSERTPS
-        | `Int 218 -> INSERTQ
-        | `Int 219 -> INSD
-        | `Int 220 -> INSW
-        | `Int 221 -> INT
-        | `Int 222 -> INT1
-        | `Int 223 -> INT3
-        | `Int 224 -> INTO
-        | `Int 225 -> INVD
-        | `Int 226 -> INVEPT
-        | `Int 227 -> INVLPG
-        | `Int 228 -> INVLPGA
-        | `Int 229 -> INVPCID
-        | `Int 230 -> INVVPID
-        | `Int 231 -> IRET
-        | `Int 232 -> IRETD
-        | `Int 233 -> IRETQ
-        | `Int 234 -> FISTTP
-        | `Int 235 -> FIST
-        | `Int 236 -> FISTP
-        | `Int 237 -> UCOMISD
-        | `Int 238 -> UCOMISS
-        | `Int 239 -> VCOMISD
-        | `Int 240 -> VCOMISS
-        | `Int 241 -> VCVTSD2SS
-        | `Int 242 -> VCVTSI2SD
-        | `Int 243 -> VCVTSI2SS
-        | `Int 244 -> VCVTSS2SD
-        | `Int 245 -> VCVTTSD2SI
-        | `Int 246 -> VCVTTSD2USI
-        | `Int 247 -> VCVTTSS2SI
-        | `Int 248 -> VCVTTSS2USI
-        | `Int 249 -> VCVTUSI2SD
-        | `Int 250 -> VCVTUSI2SS
-        | `Int 251 -> VUCOMISD
-        | `Int 252 -> VUCOMISS
-        | `Int 253 -> JAE
-        | `Int 254 -> JA
-        | `Int 255 -> JBE
-        | `Int 256 -> JB
-        | `Int 257 -> JCXZ
-        | `Int 258 -> JECXZ
-        | `Int 259 -> JE
-        | `Int 260 -> JGE
-        | `Int 261 -> JG
-        | `Int 262 -> JLE
-        | `Int 263 -> JL
-        | `Int 264 -> JMP
-        | `Int 265 -> JNE
-        | `Int 266 -> JNO
-        | `Int 267 -> JNP
-        | `Int 268 -> JNS
-        | `Int 269 -> JO
-        | `Int 270 -> JP
-        | `Int 271 -> JRCXZ
-        | `Int 272 -> JS
-        | `Int 273 -> KANDB
-        | `Int 274 -> KANDD
-        | `Int 275 -> KANDNB
-        | `Int 276 -> KANDND
-        | `Int 277 -> KANDNQ
-        | `Int 278 -> KANDNW
-        | `Int 279 -> KANDQ
-        | `Int 280 -> KANDW
-        | `Int 281 -> KMOVB
-        | `Int 282 -> KMOVD
-        | `Int 283 -> KMOVQ
-        | `Int 284 -> KMOVW
-        | `Int 285 -> KNOTB
-        | `Int 286 -> KNOTD
-        | `Int 287 -> KNOTQ
-        | `Int 288 -> KNOTW
-        | `Int 289 -> KORB
-        | `Int 290 -> KORD
-        | `Int 291 -> KORQ
-        | `Int 292 -> KORTESTB
-        | `Int 293 -> KORTESTD
-        | `Int 294 -> KORTESTQ
-        | `Int 295 -> KORTESTW
-        | `Int 296 -> KORW
-        | `Int 297 -> KSHIFTLB
-        | `Int 298 -> KSHIFTLD
-        | `Int 299 -> KSHIFTLQ
-        | `Int 300 -> KSHIFTLW
-        | `Int 301 -> KSHIFTRB
-        | `Int 302 -> KSHIFTRD
-        | `Int 303 -> KSHIFTRQ
-        | `Int 304 -> KSHIFTRW
-        | `Int 305 -> KUNPCKBW
-        | `Int 306 -> KXNORB
-        | `Int 307 -> KXNORD
-        | `Int 308 -> KXNORQ
-        | `Int 309 -> KXNORW
-        | `Int 310 -> KXORB
-        | `Int 311 -> KXORD
-        | `Int 312 -> KXORQ
-        | `Int 313 -> KXORW
-        | `Int 314 -> LAHF
-        | `Int 315 -> LAR
-        | `Int 316 -> LDDQU
-        | `Int 317 -> LDMXCSR
-        | `Int 318 -> LDS
-        | `Int 319 -> FLDZ
-        | `Int 320 -> FLD1
-        | `Int 321 -> FLD
-        | `Int 322 -> LEA
-        | `Int 323 -> LEAVE
-        | `Int 324 -> LES
-        | `Int 325 -> LFENCE
-        | `Int 326 -> LFS
-        | `Int 327 -> LGDT
-        | `Int 328 -> LGS
-        | `Int 329 -> LIDT
-        | `Int 330 -> LLDT
-        | `Int 331 -> LMSW
-        | `Int 332 -> OR
-        | `Int 333 -> SUB
-        | `Int 334 -> XOR
-        | `Int 335 -> LODSB
-        | `Int 336 -> LODSD
-        | `Int 337 -> LODSQ
-        | `Int 338 -> LODSW
-        | `Int 339 -> LOOP
-        | `Int 340 -> LOOPE
-        | `Int 341 -> LOOPNE
-        | `Int 342 -> RETF
-        | `Int 343 -> RETFQ
-        | `Int 344 -> LSL
-        | `Int 345 -> LSS
-        | `Int 346 -> LTR
-        | `Int 347 -> XADD
-        | `Int 348 -> LZCNT
-        | `Int 349 -> MASKMOVDQU
-        | `Int 350 -> MAXPD
-        | `Int 351 -> MAXPS
-        | `Int 352 -> MAXSD
-        | `Int 353 -> MAXSS
-        | `Int 354 -> MFENCE
-        | `Int 355 -> MINPD
-        | `Int 356 -> MINPS
-        | `Int 357 -> MINSD
-        | `Int 358 -> MINSS
-        | `Int 359 -> CVTPD2PI
-        | `Int 360 -> CVTPI2PD
-        | `Int 361 -> CVTPI2PS
-        | `Int 362 -> CVTPS2PI
-        | `Int 363 -> CVTTPD2PI
-        | `Int 364 -> CVTTPS2PI
-        | `Int 365 -> EMMS
-        | `Int 366 -> MASKMOVQ
-        | `Int 367 -> MOVD
-        | `Int 368 -> MOVDQ2Q
-        | `Int 369 -> MOVNTQ
-        | `Int 370 -> MOVQ2DQ
-        | `Int 371 -> MOVQ
-        | `Int 372 -> PABSB
-        | `Int 373 -> PABSD
-        | `Int 374 -> PABSW
-        | `Int 375 -> PACKSSDW
-        | `Int 376 -> PACKSSWB
-        | `Int 377 -> PACKUSWB
-        | `Int 378 -> PADDB
-        | `Int 379 -> PADDD
-        | `Int 380 -> PADDQ
-        | `Int 381 -> PADDSB
-        | `Int 382 -> PADDSW
-        | `Int 383 -> PADDUSB
-        | `Int 384 -> PADDUSW
-        | `Int 385 -> PADDW
-        | `Int 386 -> PALIGNR
-        | `Int 387 -> PANDN
-        | `Int 388 -> PAND
-        | `Int 389 -> PAVGB
-        | `Int 390 -> PAVGW
-        | `Int 391 -> PCMPEQB
-        | `Int 392 -> PCMPEQD
-        | `Int 393 -> PCMPEQW
-        | `Int 394 -> PCMPGTB
-        | `Int 395 -> PCMPGTD
-        | `Int 396 -> PCMPGTW
-        | `Int 397 -> PEXTRW
-        | `Int 398 -> PHADDSW
-        | `Int 399 -> PHADDW
-        | `Int 400 -> PHADDD
-        | `Int 401 -> PHSUBD
-        | `Int 402 -> PHSUBSW
-        | `Int 403 -> PHSUBW
-        | `Int 404 -> PINSRW
-        | `Int 405 -> PMADDUBSW
-        | `Int 406 -> PMADDWD
-        | `Int 407 -> PMAXSW
-        | `Int 408 -> PMAXUB
-        | `Int 409 -> PMINSW
-        | `Int 410 -> PMINUB
-        | `Int 411 -> PMOVMSKB
-        | `Int 412 -> PMULHRSW
-        | `Int 413 -> PMULHUW
-        | `Int 414 -> PMULHW
-        | `Int 415 -> PMULLW
-        | `Int 416 -> PMULUDQ
-        | `Int 417 -> POR
-        | `Int 418 -> PSADBW
-        | `Int 419 -> PSHUFB
-        | `Int 420 -> PSHUFW
-        | `Int 421 -> PSIGNB
-        | `Int 422 -> PSIGND
-        | `Int 423 -> PSIGNW
-        | `Int 424 -> PSLLD
-        | `Int 425 -> PSLLQ
-        | `Int 426 -> PSLLW
-        | `Int 427 -> PSRAD
-        | `Int 428 -> PSRAW
-        | `Int 429 -> PSRLD
-        | `Int 430 -> PSRLQ
-        | `Int 431 -> PSRLW
-        | `Int 432 -> PSUBB
-        | `Int 433 -> PSUBD
-        | `Int 434 -> PSUBQ
-        | `Int 435 -> PSUBSB
-        | `Int 436 -> PSUBSW
-        | `Int 437 -> PSUBUSB
-        | `Int 438 -> PSUBUSW
-        | `Int 439 -> PSUBW
-        | `Int 440 -> PUNPCKHBW
-        | `Int 441 -> PUNPCKHDQ
-        | `Int 442 -> PUNPCKHWD
-        | `Int 443 -> PUNPCKLBW
-        | `Int 444 -> PUNPCKLDQ
-        | `Int 445 -> PUNPCKLWD
-        | `Int 446 -> PXOR
-        | `Int 447 -> MONITOR
-        | `Int 448 -> MONTMUL
-        | `Int 449 -> MOV
-        | `Int 450 -> MOVABS
-        | `Int 451 -> MOVBE
-        | `Int 452 -> MOVDDUP
-        | `Int 453 -> MOVDQA
-        | `Int 454 -> MOVDQU
-        | `Int 455 -> MOVHLPS
-        | `Int 456 -> MOVHPD
-        | `Int 457 -> MOVHPS
-        | `Int 458 -> MOVLHPS
-        | `Int 459 -> MOVLPD
-        | `Int 460 -> MOVLPS
-        | `Int 461 -> MOVMSKPD
-        | `Int 462 -> MOVMSKPS
-        | `Int 463 -> MOVNTDQA
-        | `Int 464 -> MOVNTDQ
-        | `Int 465 -> MOVNTI
-        | `Int 466 -> MOVNTPD
-        | `Int 467 -> MOVNTPS
-        | `Int 468 -> MOVNTSD
-        | `Int 469 -> MOVNTSS
-        | `Int 470 -> MOVSB
-        | `Int 471 -> MOVSD
-        | `Int 472 -> MOVSHDUP
-        | `Int 473 -> MOVSLDUP
-        | `Int 474 -> MOVSQ
-        | `Int 475 -> MOVSS
-        | `Int 476 -> MOVSW
-        | `Int 477 -> MOVSX
-        | `Int 478 -> MOVSXD
-        | `Int 479 -> MOVUPD
-        | `Int 480 -> MOVUPS
-        | `Int 481 -> MOVZX
-        | `Int 482 -> MPSADBW
-        | `Int 483 -> MUL
-        | `Int 484 -> MULPD
-        | `Int 485 -> MULPS
-        | `Int 486 -> MULSD
-        | `Int 487 -> MULSS
-        | `Int 488 -> MULX
-        | `Int 489 -> FMUL
-        | `Int 490 -> FIMUL
-        | `Int 491 -> FMULP
-        | `Int 492 -> MWAIT
-        | `Int 493 -> NEG
-        | `Int 494 -> NOP
-        | `Int 495 -> NOT
-        | `Int 496 -> OUT
-        | `Int 497 -> OUTSB
-        | `Int 498 -> OUTSD
-        | `Int 499 -> OUTSW
-        | `Int 500 -> PACKUSDW
-        | `Int 501 -> PAUSE
-        | `Int 502 -> PAVGUSB
-        | `Int 503 -> PBLENDVB
-        | `Int 504 -> PBLENDW
-        | `Int 505 -> PCLMULQDQ
-        | `Int 506 -> PCMPEQQ
-        | `Int 507 -> PCMPESTRI
-        | `Int 508 -> PCMPESTRM
-        | `Int 509 -> PCMPGTQ
-        | `Int 510 -> PCMPISTRI
-        | `Int 511 -> PCMPISTRM
-        | `Int 512 -> PCOMMIT
-        | `Int 513 -> PDEP
-        | `Int 514 -> PEXT
-        | `Int 515 -> PEXTRB
-        | `Int 516 -> PEXTRD
-        | `Int 517 -> PEXTRQ
-        | `Int 518 -> PF2ID
-        | `Int 519 -> PF2IW
-        | `Int 520 -> PFACC
-        | `Int 521 -> PFADD
-        | `Int 522 -> PFCMPEQ
-        | `Int 523 -> PFCMPGE
-        | `Int 524 -> PFCMPGT
-        | `Int 525 -> PFMAX
-        | `Int 526 -> PFMIN
-        | `Int 527 -> PFMUL
-        | `Int 528 -> PFNACC
-        | `Int 529 -> PFPNACC
-        | `Int 530 -> PFRCPIT1
-        | `Int 531 -> PFRCPIT2
-        | `Int 532 -> PFRCP
-        | `Int 533 -> PFRSQIT1
-        | `Int 534 -> PFRSQRT
-        | `Int 535 -> PFSUBR
-        | `Int 536 -> PFSUB
-        | `Int 537 -> PHMINPOSUW
-        | `Int 538 -> PI2FD
-        | `Int 539 -> PI2FW
-        | `Int 540 -> PINSRB
-        | `Int 541 -> PINSRD
-        | `Int 542 -> PINSRQ
-        | `Int 543 -> PMAXSB
-        | `Int 544 -> PMAXSD
-        | `Int 545 -> PMAXUD
-        | `Int 546 -> PMAXUW
-        | `Int 547 -> PMINSB
-        | `Int 548 -> PMINSD
-        | `Int 549 -> PMINUD
-        | `Int 550 -> PMINUW
-        | `Int 551 -> PMOVSXBD
-        | `Int 552 -> PMOVSXBQ
-        | `Int 553 -> PMOVSXBW
-        | `Int 554 -> PMOVSXDQ
-        | `Int 555 -> PMOVSXWD
-        | `Int 556 -> PMOVSXWQ
-        | `Int 557 -> PMOVZXBD
-        | `Int 558 -> PMOVZXBQ
-        | `Int 559 -> PMOVZXBW
-        | `Int 560 -> PMOVZXDQ
-        | `Int 561 -> PMOVZXWD
-        | `Int 562 -> PMOVZXWQ
-        | `Int 563 -> PMULDQ
-        | `Int 564 -> PMULHRW
-        | `Int 565 -> PMULLD
-        | `Int 566 -> POP
-        | `Int 567 -> POPAW
-        | `Int 568 -> POPAL
-        | `Int 569 -> POPCNT
-        | `Int 570 -> POPF
-        | `Int 571 -> POPFD
-        | `Int 572 -> POPFQ
-        | `Int 573 -> PREFETCH
-        | `Int 574 -> PREFETCHNTA
-        | `Int 575 -> PREFETCHT0
-        | `Int 576 -> PREFETCHT1
-        | `Int 577 -> PREFETCHT2
-        | `Int 578 -> PREFETCHW
-        | `Int 579 -> PSHUFD
-        | `Int 580 -> PSHUFHW
-        | `Int 581 -> PSHUFLW
-        | `Int 582 -> PSLLDQ
-        | `Int 583 -> PSRLDQ
-        | `Int 584 -> PSWAPD
-        | `Int 585 -> PTEST
-        | `Int 586 -> PUNPCKHQDQ
-        | `Int 587 -> PUNPCKLQDQ
-        | `Int 588 -> PUSH
-        | `Int 589 -> PUSHAW
-        | `Int 590 -> PUSHAL
-        | `Int 591 -> PUSHF
-        | `Int 592 -> PUSHFD
-        | `Int 593 -> PUSHFQ
-        | `Int 594 -> RCL
-        | `Int 595 -> RCPPS
-        | `Int 596 -> RCPSS
-        | `Int 597 -> RCR
-        | `Int 598 -> RDFSBASE
-        | `Int 599 -> RDGSBASE
-        | `Int 600 -> RDMSR
-        | `Int 601 -> RDPMC
-        | `Int 602 -> RDRAND
-        | `Int 603 -> RDSEED
-        | `Int 604 -> RDTSC
-        | `Int 605 -> RDTSCP
-        | `Int 606 -> ROL
-        | `Int 607 -> ROR
-        | `Int 608 -> RORX
-        | `Int 609 -> ROUNDPD
-        | `Int 610 -> ROUNDPS
-        | `Int 611 -> ROUNDSD
-        | `Int 612 -> ROUNDSS
-        | `Int 613 -> RSM
-        | `Int 614 -> RSQRTPS
-        | `Int 615 -> RSQRTSS
-        | `Int 616 -> SAHF
-        | `Int 617 -> SAL
-        | `Int 618 -> SALC
-        | `Int 619 -> SAR
-        | `Int 620 -> SARX
-        | `Int 621 -> SBB
-        | `Int 622 -> SCASB
-        | `Int 623 -> SCASD
-        | `Int 624 -> SCASQ
-        | `Int 625 -> SCASW
-        | `Int 626 -> SETAE
-        | `Int 627 -> SETA
-        | `Int 628 -> SETBE
-        | `Int 629 -> SETB
-        | `Int 630 -> SETE
-        | `Int 631 -> SETGE
-        | `Int 632 -> SETG
-        | `Int 633 -> SETLE
-        | `Int 634 -> SETL
-        | `Int 635 -> SETNE
-        | `Int 636 -> SETNO
-        | `Int 637 -> SETNP
-        | `Int 638 -> SETNS
-        | `Int 639 -> SETO
-        | `Int 640 -> SETP
-        | `Int 641 -> SETS
-        | `Int 642 -> SFENCE
-        | `Int 643 -> SGDT
-        | `Int 644 -> SHA1MSG1
-        | `Int 645 -> SHA1MSG2
-        | `Int 646 -> SHA1NEXTE
-        | `Int 647 -> SHA1RNDS4
-        | `Int 648 -> SHA256MSG1
-        | `Int 649 -> SHA256MSG2
-        | `Int 650 -> SHA256RNDS2
-        | `Int 651 -> SHL
-        | `Int 652 -> SHLD
-        | `Int 653 -> SHLX
-        | `Int 654 -> SHR
-        | `Int 655 -> SHRD
-        | `Int 656 -> SHRX
-        | `Int 657 -> SHUFPD
-        | `Int 658 -> SHUFPS
-        | `Int 659 -> SIDT
-        | `Int 660 -> FSIN
-        | `Int 661 -> SKINIT
-        | `Int 662 -> SLDT
-        | `Int 663 -> SMSW
-        | `Int 664 -> SQRTPD
-        | `Int 665 -> SQRTPS
-        | `Int 666 -> SQRTSD
-        | `Int 667 -> SQRTSS
-        | `Int 668 -> FSQRT
-        | `Int 669 -> STAC
-        | `Int 670 -> STC
-        | `Int 671 -> STD
-        | `Int 672 -> STGI
-        | `Int 673 -> STI
-        | `Int 674 -> STMXCSR
-        | `Int 675 -> STOSB
-        | `Int 676 -> STOSD
-        | `Int 677 -> STOSQ
-        | `Int 678 -> STOSW
-        | `Int 679 -> STR
-        | `Int 680 -> FST
-        | `Int 681 -> FSTP
-        | `Int 682 -> FSTPNCE
-        | `Int 683 -> FXCH
-        | `Int 684 -> SUBPD
-        | `Int 685 -> SUBPS
-        | `Int 686 -> FSUBR
-        | `Int 687 -> FISUBR
-        | `Int 688 -> FSUBRP
-        | `Int 689 -> SUBSD
-        | `Int 690 -> SUBSS
-        | `Int 691 -> FSUB
-        | `Int 692 -> FISUB
-        | `Int 693 -> FSUBP
-        | `Int 694 -> SWAPGS
-        | `Int 695 -> SYSCALL
-        | `Int 696 -> SYSENTER
-        | `Int 697 -> SYSEXIT
-        | `Int 698 -> SYSRET
-        | `Int 699 -> T1MSKC
-        | `Int 700 -> TEST
-        | `Int 701 -> UD2
-        | `Int 702 -> FTST
-        | `Int 703 -> TZCNT
-        | `Int 704 -> TZMSK
-        | `Int 705 -> FUCOMIP
-        | `Int 706 -> FUCOMI
-        | `Int 707 -> FUCOMPP
-        | `Int 708 -> FUCOMP
-        | `Int 709 -> FUCOM
-        | `Int 710 -> UD2B
-        | `Int 711 -> UNPCKHPD
-        | `Int 712 -> UNPCKHPS
-        | `Int 713 -> UNPCKLPD
-        | `Int 714 -> UNPCKLPS
-        | `Int 715 -> VADDPD
-        | `Int 716 -> VADDPS
-        | `Int 717 -> VADDSD
-        | `Int 718 -> VADDSS
-        | `Int 719 -> VADDSUBPD
-        | `Int 720 -> VADDSUBPS
-        | `Int 721 -> VAESDECLAST
-        | `Int 722 -> VAESDEC
-        | `Int 723 -> VAESENCLAST
-        | `Int 724 -> VAESENC
-        | `Int 725 -> VAESIMC
-        | `Int 726 -> VAESKEYGENASSIST
-        | `Int 727 -> VALIGND
-        | `Int 728 -> VALIGNQ
-        | `Int 729 -> VANDNPD
-        | `Int 730 -> VANDNPS
-        | `Int 731 -> VANDPD
-        | `Int 732 -> VANDPS
-        | `Int 733 -> VBLENDMPD
-        | `Int 734 -> VBLENDMPS
-        | `Int 735 -> VBLENDPD
-        | `Int 736 -> VBLENDPS
-        | `Int 737 -> VBLENDVPD
-        | `Int 738 -> VBLENDVPS
-        | `Int 739 -> VBROADCASTF128
-        | `Int 740 -> VBROADCASTI32X4
-        | `Int 741 -> VBROADCASTI64X4
-        | `Int 742 -> VBROADCASTSD
-        | `Int 743 -> VBROADCASTSS
-        | `Int 744 -> VCOMPRESSPD
-        | `Int 745 -> VCOMPRESSPS
-        | `Int 746 -> VCVTDQ2PD
-        | `Int 747 -> VCVTDQ2PS
-        | `Int 748 -> VCVTPD2DQX
-        | `Int 749 -> VCVTPD2DQ
-        | `Int 750 -> VCVTPD2PSX
-        | `Int 751 -> VCVTPD2PS
-        | `Int 752 -> VCVTPD2UDQ
-        | `Int 753 -> VCVTPH2PS
-        | `Int 754 -> VCVTPS2DQ
-        | `Int 755 -> VCVTPS2PD
-        | `Int 756 -> VCVTPS2PH
-        | `Int 757 -> VCVTPS2UDQ
-        | `Int 758 -> VCVTSD2SI
-        | `Int 759 -> VCVTSD2USI
-        | `Int 760 -> VCVTSS2SI
-        | `Int 761 -> VCVTSS2USI
-        | `Int 762 -> VCVTTPD2DQX
-        | `Int 763 -> VCVTTPD2DQ
-        | `Int 764 -> VCVTTPD2UDQ
-        | `Int 765 -> VCVTTPS2DQ
-        | `Int 766 -> VCVTTPS2UDQ
-        | `Int 767 -> VCVTUDQ2PD
-        | `Int 768 -> VCVTUDQ2PS
-        | `Int 769 -> VDIVPD
-        | `Int 770 -> VDIVPS
-        | `Int 771 -> VDIVSD
-        | `Int 772 -> VDIVSS
-        | `Int 773 -> VDPPD
-        | `Int 774 -> VDPPS
-        | `Int 775 -> VERR
-        | `Int 776 -> VERW
-        | `Int 777 -> VEXP2PD
-        | `Int 778 -> VEXP2PS
-        | `Int 779 -> VEXPANDPD
-        | `Int 780 -> VEXPANDPS
-        | `Int 781 -> VEXTRACTF128
-        | `Int 782 -> VEXTRACTF32X4
-        | `Int 783 -> VEXTRACTF64X4
-        | `Int 784 -> VEXTRACTI128
-        | `Int 785 -> VEXTRACTI32X4
-        | `Int 786 -> VEXTRACTI64X4
-        | `Int 787 -> VEXTRACTPS
-        | `Int 788 -> VFMADD132PD
-        | `Int 789 -> VFMADD132PS
-        | `Int 790 -> VFMADDPD
-        | `Int 791 -> VFMADD213PD
-        | `Int 792 -> VFMADD231PD
-        | `Int 793 -> VFMADDPS
-        | `Int 794 -> VFMADD213PS
-        | `Int 795 -> VFMADD231PS
-        | `Int 796 -> VFMADDSD
-        | `Int 797 -> VFMADD213SD
-        | `Int 798 -> VFMADD132SD
-        | `Int 799 -> VFMADD231SD
-        | `Int 800 -> VFMADDSS
-        | `Int 801 -> VFMADD213SS
-        | `Int 802 -> VFMADD132SS
-        | `Int 803 -> VFMADD231SS
-        | `Int 804 -> VFMADDSUB132PD
-        | `Int 805 -> VFMADDSUB132PS
-        | `Int 806 -> VFMADDSUBPD
-        | `Int 807 -> VFMADDSUB213PD
-        | `Int 808 -> VFMADDSUB231PD
-        | `Int 809 -> VFMADDSUBPS
-        | `Int 810 -> VFMADDSUB213PS
-        | `Int 811 -> VFMADDSUB231PS
-        | `Int 812 -> VFMSUB132PD
-        | `Int 813 -> VFMSUB132PS
-        | `Int 814 -> VFMSUBADD132PD
-        | `Int 815 -> VFMSUBADD132PS
-        | `Int 816 -> VFMSUBADDPD
-        | `Int 817 -> VFMSUBADD213PD
-        | `Int 818 -> VFMSUBADD231PD
-        | `Int 819 -> VFMSUBADDPS
-        | `Int 820 -> VFMSUBADD213PS
-        | `Int 821 -> VFMSUBADD231PS
-        | `Int 822 -> VFMSUBPD
-        | `Int 823 -> VFMSUB213PD
-        | `Int 824 -> VFMSUB231PD
-        | `Int 825 -> VFMSUBPS
-        | `Int 826 -> VFMSUB213PS
-        | `Int 827 -> VFMSUB231PS
-        | `Int 828 -> VFMSUBSD
-        | `Int 829 -> VFMSUB213SD
-        | `Int 830 -> VFMSUB132SD
-        | `Int 831 -> VFMSUB231SD
-        | `Int 832 -> VFMSUBSS
-        | `Int 833 -> VFMSUB213SS
-        | `Int 834 -> VFMSUB132SS
-        | `Int 835 -> VFMSUB231SS
-        | `Int 836 -> VFNMADD132PD
-        | `Int 837 -> VFNMADD132PS
-        | `Int 838 -> VFNMADDPD
-        | `Int 839 -> VFNMADD213PD
-        | `Int 840 -> VFNMADD231PD
-        | `Int 841 -> VFNMADDPS
-        | `Int 842 -> VFNMADD213PS
-        | `Int 843 -> VFNMADD231PS
-        | `Int 844 -> VFNMADDSD
-        | `Int 845 -> VFNMADD213SD
-        | `Int 846 -> VFNMADD132SD
-        | `Int 847 -> VFNMADD231SD
-        | `Int 848 -> VFNMADDSS
-        | `Int 849 -> VFNMADD213SS
-        | `Int 850 -> VFNMADD132SS
-        | `Int 851 -> VFNMADD231SS
-        | `Int 852 -> VFNMSUB132PD
-        | `Int 853 -> VFNMSUB132PS
-        | `Int 854 -> VFNMSUBPD
-        | `Int 855 -> VFNMSUB213PD
-        | `Int 856 -> VFNMSUB231PD
-        | `Int 857 -> VFNMSUBPS
-        | `Int 858 -> VFNMSUB213PS
-        | `Int 859 -> VFNMSUB231PS
-        | `Int 860 -> VFNMSUBSD
-        | `Int 861 -> VFNMSUB213SD
-        | `Int 862 -> VFNMSUB132SD
-        | `Int 863 -> VFNMSUB231SD
-        | `Int 864 -> VFNMSUBSS
-        | `Int 865 -> VFNMSUB213SS
-        | `Int 866 -> VFNMSUB132SS
-        | `Int 867 -> VFNMSUB231SS
-        | `Int 868 -> VFRCZPD
-        | `Int 869 -> VFRCZPS
-        | `Int 870 -> VFRCZSD
-        | `Int 871 -> VFRCZSS
-        | `Int 872 -> VORPD
-        | `Int 873 -> VORPS
-        | `Int 874 -> VXORPD
-        | `Int 875 -> VXORPS
-        | `Int 876 -> VGATHERDPD
-        | `Int 877 -> VGATHERDPS
-        | `Int 878 -> VGATHERPF0DPD
-        | `Int 879 -> VGATHERPF0DPS
-        | `Int 880 -> VGATHERPF0QPD
-        | `Int 881 -> VGATHERPF0QPS
-        | `Int 882 -> VGATHERPF1DPD
-        | `Int 883 -> VGATHERPF1DPS
-        | `Int 884 -> VGATHERPF1QPD
-        | `Int 885 -> VGATHERPF1QPS
-        | `Int 886 -> VGATHERQPD
-        | `Int 887 -> VGATHERQPS
-        | `Int 888 -> VHADDPD
-        | `Int 889 -> VHADDPS
-        | `Int 890 -> VHSUBPD
-        | `Int 891 -> VHSUBPS
-        | `Int 892 -> VINSERTF128
-        | `Int 893 -> VINSERTF32X4
-        | `Int 894 -> VINSERTF32X8
-        | `Int 895 -> VINSERTF64X2
-        | `Int 896 -> VINSERTF64X4
-        | `Int 897 -> VINSERTI128
-        | `Int 898 -> VINSERTI32X4
-        | `Int 899 -> VINSERTI32X8
-        | `Int 900 -> VINSERTI64X2
-        | `Int 901 -> VINSERTI64X4
-        | `Int 902 -> VINSERTPS
-        | `Int 903 -> VLDDQU
-        | `Int 904 -> VLDMXCSR
-        | `Int 905 -> VMASKMOVDQU
-        | `Int 906 -> VMASKMOVPD
-        | `Int 907 -> VMASKMOVPS
-        | `Int 908 -> VMAXPD
-        | `Int 909 -> VMAXPS
-        | `Int 910 -> VMAXSD
-        | `Int 911 -> VMAXSS
-        | `Int 912 -> VMCALL
-        | `Int 913 -> VMCLEAR
-        | `Int 914 -> VMFUNC
-        | `Int 915 -> VMINPD
-        | `Int 916 -> VMINPS
-        | `Int 917 -> VMINSD
-        | `Int 918 -> VMINSS
-        | `Int 919 -> VMLAUNCH
-        | `Int 920 -> VMLOAD
-        | `Int 921 -> VMMCALL
-        | `Int 922 -> VMOVQ
-        | `Int 923 -> VMOVDDUP
-        | `Int 924 -> VMOVD
-        | `Int 925 -> VMOVDQA32
-        | `Int 926 -> VMOVDQA64
-        | `Int 927 -> VMOVDQA
-        | `Int 928 -> VMOVDQU16
-        | `Int 929 -> VMOVDQU32
-        | `Int 930 -> VMOVDQU64
-        | `Int 931 -> VMOVDQU8
-        | `Int 932 -> VMOVDQU
-        | `Int 933 -> VMOVHLPS
-        | `Int 934 -> VMOVHPD
-        | `Int 935 -> VMOVHPS
-        | `Int 936 -> VMOVLHPS
-        | `Int 937 -> VMOVLPD
-        | `Int 938 -> VMOVLPS
-        | `Int 939 -> VMOVMSKPD
-        | `Int 940 -> VMOVMSKPS
-        | `Int 941 -> VMOVNTDQA
-        | `Int 942 -> VMOVNTDQ
-        | `Int 943 -> VMOVNTPD
-        | `Int 944 -> VMOVNTPS
-        | `Int 945 -> VMOVSD
-        | `Int 946 -> VMOVSHDUP
-        | `Int 947 -> VMOVSLDUP
-        | `Int 948 -> VMOVSS
-        | `Int 949 -> VMOVUPD
-        | `Int 950 -> VMOVUPS
-        | `Int 951 -> VMPSADBW
-        | `Int 952 -> VMPTRLD
-        | `Int 953 -> VMPTRST
-        | `Int 954 -> VMREAD
-        | `Int 955 -> VMRESUME
-        | `Int 956 -> VMRUN
-        | `Int 957 -> VMSAVE
-        | `Int 958 -> VMULPD
-        | `Int 959 -> VMULPS
-        | `Int 960 -> VMULSD
-        | `Int 961 -> VMULSS
-        | `Int 962 -> VMWRITE
-        | `Int 963 -> VMXOFF
-        | `Int 964 -> VMXON
-        | `Int 965 -> VPABSB
-        | `Int 966 -> VPABSD
-        | `Int 967 -> VPABSQ
-        | `Int 968 -> VPABSW
-        | `Int 969 -> VPACKSSDW
-        | `Int 970 -> VPACKSSWB
-        | `Int 971 -> VPACKUSDW
-        | `Int 972 -> VPACKUSWB
-        | `Int 973 -> VPADDB
-        | `Int 974 -> VPADDD
-        | `Int 975 -> VPADDQ
-        | `Int 976 -> VPADDSB
-        | `Int 977 -> VPADDSW
-        | `Int 978 -> VPADDUSB
-        | `Int 979 -> VPADDUSW
-        | `Int 980 -> VPADDW
-        | `Int 981 -> VPALIGNR
-        | `Int 982 -> VPANDD
-        | `Int 983 -> VPANDND
-        | `Int 984 -> VPANDNQ
-        | `Int 985 -> VPANDN
-        | `Int 986 -> VPANDQ
-        | `Int 987 -> VPAND
-        | `Int 988 -> VPAVGB
-        | `Int 989 -> VPAVGW
-        | `Int 990 -> VPBLENDD
-        | `Int 991 -> VPBLENDMB
-        | `Int 992 -> VPBLENDMD
-        | `Int 993 -> VPBLENDMQ
-        | `Int 994 -> VPBLENDMW
-        | `Int 995 -> VPBLENDVB
-        | `Int 996 -> VPBLENDW
-        | `Int 997 -> VPBROADCASTB
-        | `Int 998 -> VPBROADCASTD
-        | `Int 999 -> VPBROADCASTMB2Q
-        | `Int 1000 -> VPBROADCASTMW2D
-        | `Int 1001 -> VPBROADCASTQ
-        | `Int 1002 -> VPBROADCASTW
-        | `Int 1003 -> VPCLMULQDQ
-        | `Int 1004 -> VPCMOV
-        | `Int 1005 -> VPCMPB
-        | `Int 1006 -> VPCMPD
-        | `Int 1007 -> VPCMPEQB
-        | `Int 1008 -> VPCMPEQD
-        | `Int 1009 -> VPCMPEQQ
-        | `Int 1010 -> VPCMPEQW
-        | `Int 1011 -> VPCMPESTRI
-        | `Int 1012 -> VPCMPESTRM
-        | `Int 1013 -> VPCMPGTB
-        | `Int 1014 -> VPCMPGTD
-        | `Int 1015 -> VPCMPGTQ
-        | `Int 1016 -> VPCMPGTW
-        | `Int 1017 -> VPCMPISTRI
-        | `Int 1018 -> VPCMPISTRM
-        | `Int 1019 -> VPCMPQ
-        | `Int 1020 -> VPCMPUB
-        | `Int 1021 -> VPCMPUD
-        | `Int 1022 -> VPCMPUQ
-        | `Int 1023 -> VPCMPUW
-        | `Int 1024 -> VPCMPW
-        | `Int 1025 -> VPCOMB
-        | `Int 1026 -> VPCOMD
-        | `Int 1027 -> VPCOMPRESSD
-        | `Int 1028 -> VPCOMPRESSQ
-        | `Int 1029 -> VPCOMQ
-        | `Int 1030 -> VPCOMUB
-        | `Int 1031 -> VPCOMUD
-        | `Int 1032 -> VPCOMUQ
-        | `Int 1033 -> VPCOMUW
-        | `Int 1034 -> VPCOMW
-        | `Int 1035 -> VPCONFLICTD
-        | `Int 1036 -> VPCONFLICTQ
-        | `Int 1037 -> VPERM2F128
-        | `Int 1038 -> VPERM2I128
-        | `Int 1039 -> VPERMD
-        | `Int 1040 -> VPERMI2D
-        | `Int 1041 -> VPERMI2PD
-        | `Int 1042 -> VPERMI2PS
-        | `Int 1043 -> VPERMI2Q
-        | `Int 1044 -> VPERMIL2PD
-        | `Int 1045 -> VPERMIL2PS
-        | `Int 1046 -> VPERMILPD
-        | `Int 1047 -> VPERMILPS
-        | `Int 1048 -> VPERMPD
-        | `Int 1049 -> VPERMPS
-        | `Int 1050 -> VPERMQ
-        | `Int 1051 -> VPERMT2D
-        | `Int 1052 -> VPERMT2PD
-        | `Int 1053 -> VPERMT2PS
-        | `Int 1054 -> VPERMT2Q
-        | `Int 1055 -> VPEXPANDD
-        | `Int 1056 -> VPEXPANDQ
-        | `Int 1057 -> VPEXTRB
-        | `Int 1058 -> VPEXTRD
-        | `Int 1059 -> VPEXTRQ
-        | `Int 1060 -> VPEXTRW
-        | `Int 1061 -> VPGATHERDD
-        | `Int 1062 -> VPGATHERDQ
-        | `Int 1063 -> VPGATHERQD
-        | `Int 1064 -> VPGATHERQQ
-        | `Int 1065 -> VPHADDBD
-        | `Int 1066 -> VPHADDBQ
-        | `Int 1067 -> VPHADDBW
-        | `Int 1068 -> VPHADDDQ
-        | `Int 1069 -> VPHADDD
-        | `Int 1070 -> VPHADDSW
-        | `Int 1071 -> VPHADDUBD
-        | `Int 1072 -> VPHADDUBQ
-        | `Int 1073 -> VPHADDUBW
-        | `Int 1074 -> VPHADDUDQ
-        | `Int 1075 -> VPHADDUWD
-        | `Int 1076 -> VPHADDUWQ
-        | `Int 1077 -> VPHADDWD
-        | `Int 1078 -> VPHADDWQ
-        | `Int 1079 -> VPHADDW
-        | `Int 1080 -> VPHMINPOSUW
-        | `Int 1081 -> VPHSUBBW
-        | `Int 1082 -> VPHSUBDQ
-        | `Int 1083 -> VPHSUBD
-        | `Int 1084 -> VPHSUBSW
-        | `Int 1085 -> VPHSUBWD
-        | `Int 1086 -> VPHSUBW
-        | `Int 1087 -> VPINSRB
-        | `Int 1088 -> VPINSRD
-        | `Int 1089 -> VPINSRQ
-        | `Int 1090 -> VPINSRW
-        | `Int 1091 -> VPLZCNTD
-        | `Int 1092 -> VPLZCNTQ
-        | `Int 1093 -> VPMACSDD
-        | `Int 1094 -> VPMACSDQH
-        | `Int 1095 -> VPMACSDQL
-        | `Int 1096 -> VPMACSSDD
-        | `Int 1097 -> VPMACSSDQH
-        | `Int 1098 -> VPMACSSDQL
-        | `Int 1099 -> VPMACSSWD
-        | `Int 1100 -> VPMACSSWW
-        | `Int 1101 -> VPMACSWD
-        | `Int 1102 -> VPMACSWW
-        | `Int 1103 -> VPMADCSSWD
-        | `Int 1104 -> VPMADCSWD
-        | `Int 1105 -> VPMADDUBSW
-        | `Int 1106 -> VPMADDWD
-        | `Int 1107 -> VPMASKMOVD
-        | `Int 1108 -> VPMASKMOVQ
-        | `Int 1109 -> VPMAXSB
-        | `Int 1110 -> VPMAXSD
-        | `Int 1111 -> VPMAXSQ
-        | `Int 1112 -> VPMAXSW
-        | `Int 1113 -> VPMAXUB
-        | `Int 1114 -> VPMAXUD
-        | `Int 1115 -> VPMAXUQ
-        | `Int 1116 -> VPMAXUW
-        | `Int 1117 -> VPMINSB
-        | `Int 1118 -> VPMINSD
-        | `Int 1119 -> VPMINSQ
-        | `Int 1120 -> VPMINSW
-        | `Int 1121 -> VPMINUB
-        | `Int 1122 -> VPMINUD
-        | `Int 1123 -> VPMINUQ
-        | `Int 1124 -> VPMINUW
-        | `Int 1125 -> VPMOVDB
-        | `Int 1126 -> VPMOVDW
-        | `Int 1127 -> VPMOVM2B
-        | `Int 1128 -> VPMOVM2D
-        | `Int 1129 -> VPMOVM2Q
-        | `Int 1130 -> VPMOVM2W
-        | `Int 1131 -> VPMOVMSKB
-        | `Int 1132 -> VPMOVQB
-        | `Int 1133 -> VPMOVQD
-        | `Int 1134 -> VPMOVQW
-        | `Int 1135 -> VPMOVSDB
-        | `Int 1136 -> VPMOVSDW
-        | `Int 1137 -> VPMOVSQB
-        | `Int 1138 -> VPMOVSQD
-        | `Int 1139 -> VPMOVSQW
-        | `Int 1140 -> VPMOVSXBD
-        | `Int 1141 -> VPMOVSXBQ
-        | `Int 1142 -> VPMOVSXBW
-        | `Int 1143 -> VPMOVSXDQ
-        | `Int 1144 -> VPMOVSXWD
-        | `Int 1145 -> VPMOVSXWQ
-        | `Int 1146 -> VPMOVUSDB
-        | `Int 1147 -> VPMOVUSDW
-        | `Int 1148 -> VPMOVUSQB
-        | `Int 1149 -> VPMOVUSQD
-        | `Int 1150 -> VPMOVUSQW
-        | `Int 1151 -> VPMOVZXBD
-        | `Int 1152 -> VPMOVZXBQ
-        | `Int 1153 -> VPMOVZXBW
-        | `Int 1154 -> VPMOVZXDQ
-        | `Int 1155 -> VPMOVZXWD
-        | `Int 1156 -> VPMOVZXWQ
-        | `Int 1157 -> VPMULDQ
-        | `Int 1158 -> VPMULHRSW
-        | `Int 1159 -> VPMULHUW
-        | `Int 1160 -> VPMULHW
-        | `Int 1161 -> VPMULLD
-        | `Int 1162 -> VPMULLQ
-        | `Int 1163 -> VPMULLW
-        | `Int 1164 -> VPMULUDQ
-        | `Int 1165 -> VPORD
-        | `Int 1166 -> VPORQ
-        | `Int 1167 -> VPOR
-        | `Int 1168 -> VPPERM
-        | `Int 1169 -> VPROTB
-        | `Int 1170 -> VPROTD
-        | `Int 1171 -> VPROTQ
-        | `Int 1172 -> VPROTW
-        | `Int 1173 -> VPSADBW
-        | `Int 1174 -> VPSCATTERDD
-        | `Int 1175 -> VPSCATTERDQ
-        | `Int 1176 -> VPSCATTERQD
-        | `Int 1177 -> VPSCATTERQQ
-        | `Int 1178 -> VPSHAB
-        | `Int 1179 -> VPSHAD
-        | `Int 1180 -> VPSHAQ
-        | `Int 1181 -> VPSHAW
-        | `Int 1182 -> VPSHLB
-        | `Int 1183 -> VPSHLD
-        | `Int 1184 -> VPSHLQ
-        | `Int 1185 -> VPSHLW
-        | `Int 1186 -> VPSHUFB
-        | `Int 1187 -> VPSHUFD
-        | `Int 1188 -> VPSHUFHW
-        | `Int 1189 -> VPSHUFLW
-        | `Int 1190 -> VPSIGNB
-        | `Int 1191 -> VPSIGND
-        | `Int 1192 -> VPSIGNW
-        | `Int 1193 -> VPSLLDQ
-        | `Int 1194 -> VPSLLD
-        | `Int 1195 -> VPSLLQ
-        | `Int 1196 -> VPSLLVD
-        | `Int 1197 -> VPSLLVQ
-        | `Int 1198 -> VPSLLW
-        | `Int 1199 -> VPSRAD
-        | `Int 1200 -> VPSRAQ
-        | `Int 1201 -> VPSRAVD
-        | `Int 1202 -> VPSRAVQ
-        | `Int 1203 -> VPSRAW
-        | `Int 1204 -> VPSRLDQ
-        | `Int 1205 -> VPSRLD
-        | `Int 1206 -> VPSRLQ
-        | `Int 1207 -> VPSRLVD
-        | `Int 1208 -> VPSRLVQ
-        | `Int 1209 -> VPSRLW
-        | `Int 1210 -> VPSUBB
-        | `Int 1211 -> VPSUBD
-        | `Int 1212 -> VPSUBQ
-        | `Int 1213 -> VPSUBSB
-        | `Int 1214 -> VPSUBSW
-        | `Int 1215 -> VPSUBUSB
-        | `Int 1216 -> VPSUBUSW
-        | `Int 1217 -> VPSUBW
-        | `Int 1218 -> VPTESTMD
-        | `Int 1219 -> VPTESTMQ
-        | `Int 1220 -> VPTESTNMD
-        | `Int 1221 -> VPTESTNMQ
-        | `Int 1222 -> VPTEST
-        | `Int 1223 -> VPUNPCKHBW
-        | `Int 1224 -> VPUNPCKHDQ
-        | `Int 1225 -> VPUNPCKHQDQ
-        | `Int 1226 -> VPUNPCKHWD
-        | `Int 1227 -> VPUNPCKLBW
-        | `Int 1228 -> VPUNPCKLDQ
-        | `Int 1229 -> VPUNPCKLQDQ
-        | `Int 1230 -> VPUNPCKLWD
-        | `Int 1231 -> VPXORD
-        | `Int 1232 -> VPXORQ
-        | `Int 1233 -> VPXOR
-        | `Int 1234 -> VRCP14PD
-        | `Int 1235 -> VRCP14PS
-        | `Int 1236 -> VRCP14SD
-        | `Int 1237 -> VRCP14SS
-        | `Int 1238 -> VRCP28PD
-        | `Int 1239 -> VRCP28PS
-        | `Int 1240 -> VRCP28SD
-        | `Int 1241 -> VRCP28SS
-        | `Int 1242 -> VRCPPS
-        | `Int 1243 -> VRCPSS
-        | `Int 1244 -> VRNDSCALEPD
-        | `Int 1245 -> VRNDSCALEPS
-        | `Int 1246 -> VRNDSCALESD
-        | `Int 1247 -> VRNDSCALESS
-        | `Int 1248 -> VROUNDPD
-        | `Int 1249 -> VROUNDPS
-        | `Int 1250 -> VROUNDSD
-        | `Int 1251 -> VROUNDSS
-        | `Int 1252 -> VRSQRT14PD
-        | `Int 1253 -> VRSQRT14PS
-        | `Int 1254 -> VRSQRT14SD
-        | `Int 1255 -> VRSQRT14SS
-        | `Int 1256 -> VRSQRT28PD
-        | `Int 1257 -> VRSQRT28PS
-        | `Int 1258 -> VRSQRT28SD
-        | `Int 1259 -> VRSQRT28SS
-        | `Int 1260 -> VRSQRTPS
-        | `Int 1261 -> VRSQRTSS
-        | `Int 1262 -> VSCATTERDPD
-        | `Int 1263 -> VSCATTERDPS
-        | `Int 1264 -> VSCATTERPF0DPD
-        | `Int 1265 -> VSCATTERPF0DPS
-        | `Int 1266 -> VSCATTERPF0QPD
-        | `Int 1267 -> VSCATTERPF0QPS
-        | `Int 1268 -> VSCATTERPF1DPD
-        | `Int 1269 -> VSCATTERPF1DPS
-        | `Int 1270 -> VSCATTERPF1QPD
-        | `Int 1271 -> VSCATTERPF1QPS
-        | `Int 1272 -> VSCATTERQPD
-        | `Int 1273 -> VSCATTERQPS
-        | `Int 1274 -> VSHUFPD
-        | `Int 1275 -> VSHUFPS
-        | `Int 1276 -> VSQRTPD
-        | `Int 1277 -> VSQRTPS
-        | `Int 1278 -> VSQRTSD
-        | `Int 1279 -> VSQRTSS
-        | `Int 1280 -> VSTMXCSR
-        | `Int 1281 -> VSUBPD
-        | `Int 1282 -> VSUBPS
-        | `Int 1283 -> VSUBSD
-        | `Int 1284 -> VSUBSS
-        | `Int 1285 -> VTESTPD
-        | `Int 1286 -> VTESTPS
-        | `Int 1287 -> VUNPCKHPD
-        | `Int 1288 -> VUNPCKHPS
-        | `Int 1289 -> VUNPCKLPD
-        | `Int 1290 -> VUNPCKLPS
-        | `Int 1291 -> VZEROALL
-        | `Int 1292 -> VZEROUPPER
-        | `Int 1293 -> WAIT
-        | `Int 1294 -> WBINVD
-        | `Int 1295 -> WRFSBASE
-        | `Int 1296 -> WRGSBASE
-        | `Int 1297 -> WRMSR
-        | `Int 1298 -> XABORT
-        | `Int 1299 -> XACQUIRE
-        | `Int 1300 -> XBEGIN
-        | `Int 1301 -> XCHG
-        | `Int 1302 -> XCRYPTCBC
-        | `Int 1303 -> XCRYPTCFB
-        | `Int 1304 -> XCRYPTCTR
-        | `Int 1305 -> XCRYPTECB
-        | `Int 1306 -> XCRYPTOFB
-        | `Int 1307 -> XEND
-        | `Int 1308 -> XGETBV
-        | `Int 1309 -> XLATB
-        | `Int 1310 -> XRELEASE
-        | `Int 1311 -> XRSTOR
-        | `Int 1312 -> XRSTOR64
-        | `Int 1313 -> XRSTORS
-        | `Int 1314 -> XRSTORS64
-        | `Int 1315 -> XSAVE
-        | `Int 1316 -> XSAVE64
-        | `Int 1317 -> XSAVEC
-        | `Int 1318 -> XSAVEC64
-        | `Int 1319 -> XSAVEOPT
-        | `Int 1320 -> XSAVEOPT64
-        | `Int 1321 -> XSAVES
-        | `Int 1322 -> 	XSAVES64
-        | `Int 1323 -> XSETBV
-        | `Int 1324 -> XSHA1
-        | `Int 1325 -> XSHA256
-        | `Int 1326 -> XSTORE
-        | `Int 1327 -> XTEST
-        | `Int 1328 -> FDISI8087_NOP
-        | `Int 1329 -> FENI8087_NOP
-        | `Int 1330 -> CMPSS
-        | `Int 1331 -> CMPEQSS
-        | `Int 1332 -> CMPLTSS
-        | `Int 1333 -> CMPLESS
-        | `Int 1334 -> CMPUNORDSS
-        | `Int 1335 -> CMPNEQSS
-        | `Int 1336 -> CMPNLTSS
-        | `Int 1337 -> CMPNLESS
-        | `Int 1338 -> CMPORDSS
-        | `Int 1339 -> CMPSD
-        | `Int 1340 -> CMPEQSD
-        | `Int 1341 -> CMPLTSD
-        | `Int 1342 -> CMPLESD
-        | `Int 1343 -> CMPUNORDSD
-        | `Int 1344 -> CMPNEQSD
-        | `Int 1345 -> CMPNLTSD
-        | `Int 1346 -> CMPNLESD
-        | `Int 1347 -> CMPORDSD
-        | `Int 1348 -> CMPPS
-        | `Int 1349 -> CMPEQPS
-        | `Int 1350 -> CMPLTPS
-        | `Int 1351 -> CMPLEPS
-        | `Int 1352 -> CMPUNORDPS
-        | `Int 1353 -> CMPNEQPS
-        | `Int 1354 -> CMPNLTPS
-        | `Int 1355 -> CMPNLEPS
-        | `Int 1356 -> CMPORDPS
-        | `Int 1357 -> CMPPD
-        | `Int 1358 -> CMPEQPD
-        | `Int 1359 -> CMPLTPD
-        | `Int 1360 -> CMPLEPD
-        | `Int 1361 -> CMPUNORDPD
-        | `Int 1362 -> CMPNEQPD
-        | `Int 1363 -> CMPNLTPD
-        | `Int 1364 -> CMPNLEPD
-        | `Int 1365 -> CMPORDPD
-        | `Int 1366 -> VCMPSS
-        | `Int 1367 -> VCMPEQSS
-        | `Int 1368 -> VCMPLTSS
-        | `Int 1369 -> VCMPLESS
-        | `Int 1370 -> VCMPUNORDSS
-        | `Int 1371 -> VCMPNEQSS
-        | `Int 1372 -> VCMPNLTSS
-        | `Int 1373 -> VCMPNLESS
-        | `Int 1374 -> VCMPORDSS
-        | `Int 1375 -> VCMPEQ_UQSS
-        | `Int 1376 -> VCMPNGESS
-        | `Int 1377 -> VCMPNGTSS
-        | `Int 1378 -> VCMPFALSESS
-        | `Int 1379 -> VCMPNEQ_OQSS
-        | `Int 1380 -> VCMPGESS
-        | `Int 1381 -> VCMPGTSS
-        | `Int 1382 -> VCMPTRUESS
-        | `Int 1383 -> VCMPEQ_OSSS
-        | `Int 1384 -> VCMPLT_OQSS
-        | `Int 1385 -> VCMPLE_OQSS
-        | `Int 1386 -> VCMPUNORD_SSS
-        | `Int 1387 -> VCMPNEQ_USSS
-        | `Int 1388 -> VCMPNLT_UQSS
-        | `Int 1389 -> VCMPNLE_UQSS
-        | `Int 1390 -> VCMPORD_SSS
-        | `Int 1391 -> VCMPEQ_USSS
-        | `Int 1392 -> VCMPNGE_UQSS
-        | `Int 1393 -> VCMPNGT_UQSS
-        | `Int 1394 -> VCMPFALSE_OSSS
-        | `Int 1395 -> VCMPNEQ_OSSS
-        | `Int 1396 -> VCMPGE_OQSS
-        | `Int 1397 -> VCMPGT_OQSS
-        | `Int 1398 -> VCMPTRUE_USSS
-        | `Int 1399 -> VCMPSD
-        | `Int 1400 -> VCMPEQSD
-        | `Int 1401 -> VCMPLTSD
-        | `Int 1402 -> VCMPLESD
-        | `Int 1403 -> VCMPUNORDSD
-        | `Int 1404 -> VCMPNEQSD
-        | `Int 1405 -> VCMPNLTSD
-        | `Int 1406 -> VCMPNLESD
-        | `Int 1407 -> VCMPORDSD
-        | `Int 1408 -> VCMPEQ_UQSD
-        | `Int 1409 -> VCMPNGESD
-        | `Int 1410 -> VCMPNGTSD
-        | `Int 1411 -> VCMPFALSESD
-        | `Int 1412 -> VCMPNEQ_OQSD
-        | `Int 1413 -> VCMPGESD
-        | `Int 1414 -> VCMPGTSD
-        | `Int 1415 -> VCMPTRUESD
-        | `Int 1416 -> VCMPEQ_OSSD
-        | `Int 1417 -> VCMPLT_OQSD
-        | `Int 1418 -> VCMPLE_OQSD
-        | `Int 1419 -> VCMPUNORD_SSD
-        | `Int 1420 -> VCMPNEQ_USSD
-        | `Int 1421 -> VCMPNLT_UQSD
-        | `Int 1422 -> VCMPNLE_UQSD
-        | `Int 1423 -> VCMPORD_SSD
-        | `Int 1424 -> VCMPEQ_USSD
-        | `Int 1425 -> VCMPNGE_UQSD
-        | `Int 1426 -> VCMPNGT_UQSD
-        | `Int 1427 -> VCMPFALSE_OSSD
-        | `Int 1428 -> VCMPNEQ_OSSD
-        | `Int 1429 -> VCMPGE_OQSD
-        | `Int 1430 -> VCMPGT_OQSD
-        | `Int 1431 -> VCMPTRUE_USSD
-        | `Int 1432 -> VCMPPS
-        | `Int 1433 -> VCMPEQPS
-        | `Int 1434 -> VCMPLTPS
-        | `Int 1435 -> VCMPLEPS
-        | `Int 1436 -> VCMPUNORDPS
-        | `Int 1437 -> VCMPNEQPS
-        | `Int 1438 -> VCMPNLTPS
-        | `Int 1439 -> VCMPNLEPS
-        | `Int 1440 -> VCMPORDPS
-        | `Int 1441 -> VCMPEQ_UQPS
-        | `Int 1442 -> VCMPNGEPS
-        | `Int 1443 -> VCMPNGTPS
-        | `Int 1444 -> VCMPFALSEPS
-        | `Int 1445 -> VCMPNEQ_OQPS
-        | `Int 1446 -> VCMPGEPS
-        | `Int 1447 -> VCMPGTPS
-        | `Int 1448 -> VCMPTRUEPS
-        | `Int 1449 -> VCMPEQ_OSPS
-        | `Int 1450 -> VCMPLT_OQPS
-        | `Int 1451 -> VCMPLE_OQPS
-        | `Int 1452 -> VCMPUNORD_SPS
-        | `Int 1453 -> VCMPNEQ_USPS
-        | `Int 1454 -> VCMPNLT_UQPS
-        | `Int 1455 -> VCMPNLE_UQPS
-        | `Int 1456 -> VCMPORD_SPS
-        | `Int 1457 -> VCMPEQ_USPS
-        | `Int 1458 -> VCMPNGE_UQPS
-        | `Int 1459 -> VCMPNGT_UQPS
-        | `Int 1460 -> VCMPFALSE_OSPS
-        | `Int 1461 -> VCMPNEQ_OSPS
-        | `Int 1462 -> VCMPGE_OQPS
-        | `Int 1463 -> VCMPGT_OQPS
-        | `Int 1464 -> VCMPTRUE_USPS
-        | `Int 1465 -> VCMPPD
-        | `Int 1466 -> VCMPEQPD
-        | `Int 1467 -> VCMPLTPD
-        | `Int 1468 -> VCMPLEPD
-        | `Int 1469 -> VCMPUNORDPD
-        | `Int 1470 -> VCMPNEQPD
-        | `Int 1471 -> VCMPNLTPD
-        | `Int 1472 -> VCMPNLEPD
-        | `Int 1473 -> VCMPORDPD
-        | `Int 1474 -> VCMPEQ_UQPD
-        | `Int 1475 -> VCMPNGEPD
-        | `Int 1476 -> VCMPNGTPD
-        | `Int 1477 -> VCMPFALSEPD
-        | `Int 1478 -> VCMPNEQ_OQPD
-        | `Int 1479 -> VCMPGEPD
-        | `Int 1480 -> VCMPGTPD
-        | `Int 1481 -> VCMPTRUEPD
-        | `Int 1482 -> VCMPEQ_OSPD
-        | `Int 1483 -> VCMPLT_OQPD
-        | `Int 1484 -> VCMPLE_OQPD
-        | `Int 1485 -> VCMPUNORD_SPD
-        | `Int 1486 -> VCMPNEQ_USPD
-        | `Int 1487 -> VCMPNLT_UQPD
-        | `Int 1488 -> VCMPNLE_UQPD
-        | `Int 1489 -> VCMPORD_SPD
-        | `Int 1490 -> VCMPEQ_USPD
-        | `Int 1491 -> VCMPNGE_UQPD
-        | `Int 1492 -> VCMPNGT_UQPD
-        | `Int 1493 -> VCMPFALSE_OSPD
-        | `Int 1494 -> VCMPNEQ_OSPD
-        | `Int 1495 -> VCMPGE_OQPD
-        | `Int 1496 -> VCMPGT_OQPD
-        | `Int 1497 -> VCMPTRUE_USPD
-        | `Int 1498 -> UD0
-        | `Int 1499 -> ENDBR32
-        | `Int 1500 -> ENDBR64
-        | yojson -> raise @@ Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (Failure "invalid instruction", yojson)
-
-
+  | `Int 0 -> AAA
+  | `Int 1 -> AAD
+  | `Int 2 -> AAM
+  | `Int 3 -> AAS
+  | `Int 4 -> FABS
+  | `Int 5 -> ADC
+  | `Int 6 -> ADCX
+  | `Int 7 -> ADD
+  | `Int 8 -> ADDPD
+  | `Int 9 -> ADDPS
+  | `Int 10 -> ADDSD
+  | `Int 11 -> ADDSS
+  | `Int 12 -> ADDSUBPD
+  | `Int 13 -> ADDSUBPS
+  | `Int 14 -> FADD
+  | `Int 15 -> FIADD
+  | `Int 16 -> ADOX
+  | `Int 17 -> AESDECLAST
+  | `Int 18 -> AESDEC
+  | `Int 19 -> AESENCLAST
+  | `Int 20 -> AESENC
+  | `Int 21 -> AESIMC
+  | `Int 22 -> AESKEYGENASSIST
+  | `Int 23 -> AND
+  | `Int 24 -> ANDN
+  | `Int 25 -> ANDNPD
+  | `Int 26 -> ANDNPS
+  | `Int 27 -> ANDPD
+  | `Int 28 -> ANDPS
+  | `Int 29 -> ARPL
+  | `Int 30 -> BEXTR
+  | `Int 31 -> BLCFILL
+  | `Int 32 -> BLCI
+  | `Int 33 -> BLCIC
+  | `Int 34 -> BLCMSK
+  | `Int 35 -> BLCS
+  | `Int 36 -> BLENDPD
+  | `Int 37 -> BLENDPS
+  | `Int 38 -> BLENDVPD
+  | `Int 39 -> BLENDVPS
+  | `Int 40 -> BLSFILL
+  | `Int 41 -> BLSI
+  | `Int 42 -> BLSIC
+  | `Int 43 -> BLSMSK
+  | `Int 44 -> BLSR
+  | `Int 45 -> BNDCL
+  | `Int 46 -> BNDCN
+  | `Int 47 -> BNDCU
+  | `Int 48 -> BNDLDX
+  | `Int 49 -> BNDMK
+  | `Int 50 -> BNDMOV
+  | `Int 51 -> BNDSTX
+  | `Int 52 -> BOUND
+  | `Int 53 -> BSF
+  | `Int 54 -> BSR
+  | `Int 55 -> BSWAP
+  | `Int 56 -> BT
+  | `Int 57 -> BTC
+  | `Int 58 -> BTR
+  | `Int 59 -> BTS
+  | `Int 60 -> BZHI
+  | `Int 61 -> CALL
+  | `Int 62 -> CBW
+  | `Int 63 -> CDQ
+  | `Int 64 -> CDQE
+  | `Int 65 -> FCHS
+  | `Int 66 -> CLAC
+  | `Int 67 -> CLC
+  | `Int 68 -> CLD
+  | `Int 69 -> CLDEMOTE
+  | `Int 70 -> CLFLUSH
+  | `Int 71 -> CLFLUSHOPT
+  | `Int 72 -> CLGI
+  | `Int 73 -> CLI
+  | `Int 74 -> CLRSSBSY
+  | `Int 75 -> CLTS
+  | `Int 76 -> CLWB
+  | `Int 77 -> CLZERO
+  | `Int 78 -> CMC
+  | `Int 79 -> CMOVA
+  | `Int 80 -> CMOVAE
+  | `Int 81 -> CMOVB
+  | `Int 82 -> CMOVBE
+  | `Int 83 -> FCMOVBE
+  | `Int 84 -> FCMOVB
+  | `Int 85 -> CMOVE
+  | `Int 86 -> FCMOVE
+  | `Int 87 -> CMOVG
+  | `Int 88 -> CMOVGE
+  | `Int 89 -> CMOVL
+  | `Int 90 -> CMOVLE
+  | `Int 91 -> FCMOVNBE
+  | `Int 92 -> FCMOVNB
+  | `Int 93 -> CMOVNE
+  | `Int 94 -> FCMOVNE
+  | `Int 95 -> CMOVNO
+  | `Int 96 -> CMOVNP
+  | `Int 97 -> FCMOVNU
+  | `Int 98 -> FCMOVNP
+  | `Int 99 -> CMOVNS
+  | `Int 100 -> CMOVO
+  | `Int 101 -> CMOVP
+  | `Int 102 -> FCMOVU
+  | `Int 103 -> CMOVS
+  | `Int 104 -> CMP
+  | `Int 105 -> CMPPD
+  | `Int 106 -> CMPPS
+  | `Int 107 -> CMPSB
+  | `Int 108 -> CMPSD
+  | `Int 109 -> CMPSQ
+  | `Int 110 -> CMPSS
+  | `Int 111 -> CMPSW
+  | `Int 112 -> CMPXCHG16B
+  | `Int 113 -> CMPXCHG
+  | `Int 114 -> CMPXCHG8B
+  | `Int 115 -> COMISD
+  | `Int 116 -> COMISS
+  | `Int 117 -> FCOMP
+  | `Int 118 -> FCOMPI
+  | `Int 119 -> FCOMI
+  | `Int 120 -> FCOM
+  | `Int 121 -> FCOS
+  | `Int 122 -> CPUID
+  | `Int 123 -> CQO
+  | `Int 124 -> CRC32
+  | `Int 125 -> CVTDQ2PD
+  | `Int 126 -> CVTDQ2PS
+  | `Int 127 -> CVTPD2DQ
+  | `Int 128 -> CVTPD2PS
+  | `Int 129 -> CVTPS2DQ
+  | `Int 130 -> CVTPS2PD
+  | `Int 131 -> CVTSD2SI
+  | `Int 132 -> CVTSD2SS
+  | `Int 133 -> CVTSI2SD
+  | `Int 134 -> CVTSI2SS
+  | `Int 135 -> CVTSS2SD
+  | `Int 136 -> CVTSS2SI
+  | `Int 137 -> CVTTPD2DQ
+  | `Int 138 -> CVTTPS2DQ
+  | `Int 139 -> CVTTSD2SI
+  | `Int 140 -> CVTTSS2SI
+  | `Int 141 -> CWD
+  | `Int 142 -> CWDE
+  | `Int 143 -> DAA
+  | `Int 144 -> DAS
+  | `Int 145 -> DATA16
+  | `Int 146 -> DEC
+  | `Int 147 -> DIV
+  | `Int 148 -> DIVPD
+  | `Int 149 -> DIVPS
+  | `Int 150 -> FDIVR
+  | `Int 151 -> FIDIVR
+  | `Int 152 -> FDIVRP
+  | `Int 153 -> DIVSD
+  | `Int 154 -> DIVSS
+  | `Int 155 -> FDIV
+  | `Int 156 -> FIDIV
+  | `Int 157 -> FDIVP
+  | `Int 158 -> DPPD
+  | `Int 159 -> DPPS
+  | `Int 160 -> ENCLS
+  | `Int 161 -> ENCLU
+  | `Int 162 -> ENCLV
+  | `Int 163 -> ENDBR32
+  | `Int 164 -> ENDBR64
+  | `Int 165 -> ENTER
+  | `Int 166 -> EXTRACTPS
+  | `Int 167 -> EXTRQ
+  | `Int 168 -> F2XM1
+  | `Int 169 -> LCALL
+  | `Int 170 -> LJMP
+  | `Int 171 -> JMP
+  | `Int 172 -> FBLD
+  | `Int 173 -> FBSTP
+  | `Int 174 -> FCOMPP
+  | `Int 175 -> FDECSTP
+  | `Int 176 -> FDISI8087_NOP
+  | `Int 177 -> FEMMS
+  | `Int 178 -> FENI8087_NOP
+  | `Int 179 -> FFREE
+  | `Int 180 -> FFREEP
+  | `Int 181 -> FICOM
+  | `Int 182 -> FICOMP
+  | `Int 183 -> FINCSTP
+  | `Int 184 -> FLDCW
+  | `Int 185 -> FLDENV
+  | `Int 186 -> FLDL2E
+  | `Int 187 -> FLDL2T
+  | `Int 188 -> FLDLG2
+  | `Int 189 -> FLDLN2
+  | `Int 190 -> FLDPI
+  | `Int 191 -> FNCLEX
+  | `Int 192 -> FNINIT
+  | `Int 193 -> FNOP
+  | `Int 194 -> FNSTCW
+  | `Int 195 -> FNSTSW
+  | `Int 196 -> FPATAN
+  | `Int 197 -> FSTPNCE
+  | `Int 198 -> FPREM
+  | `Int 199 -> FPREM1
+  | `Int 200 -> FPTAN
+  | `Int 201 -> FRNDINT
+  | `Int 202 -> FRSTOR
+  | `Int 203 -> FNSAVE
+  | `Int 204 -> FSCALE
+  | `Int 205 -> FSETPM
+  | `Int 206 -> FSINCOS
+  | `Int 207 -> FNSTENV
+  | `Int 208 -> FXAM
+  | `Int 209 -> FXRSTOR
+  | `Int 210 -> FXRSTOR64
+  | `Int 211 -> FXSAVE
+  | `Int 212 -> FXSAVE64
+  | `Int 213 -> FXTRACT
+  | `Int 214 -> FYL2X
+  | `Int 215 -> FYL2XP1
+  | `Int 216 -> GETSEC
+  | `Int 217 -> GF2P8AFFINEINVQB
+  | `Int 218 -> GF2P8AFFINEQB
+  | `Int 219 -> GF2P8MULB
+  | `Int 220 -> HADDPD
+  | `Int 221 -> HADDPS
+  | `Int 222 -> HLT
+  | `Int 223 -> HSUBPD
+  | `Int 224 -> HSUBPS
+  | `Int 225 -> IDIV
+  | `Int 226 -> FILD
+  | `Int 227 -> IMUL
+  | `Int 228 -> IN
+  | `Int 229 -> INC
+  | `Int 230 -> INCSSPD
+  | `Int 231 -> INCSSPQ
+  | `Int 232 -> INSB
+  | `Int 233 -> INSERTPS
+  | `Int 234 -> INSERTQ
+  | `Int 235 -> INSD
+  | `Int 236 -> INSW
+  | `Int 237 -> INT
+  | `Int 238 -> INT1
+  | `Int 239 -> INT3
+  | `Int 240 -> INTO
+  | `Int 241 -> INVD
+  | `Int 242 -> INVEPT
+  | `Int 243 -> INVLPG
+  | `Int 244 -> INVLPGA
+  | `Int 245 -> INVPCID
+  | `Int 246 -> INVVPID
+  | `Int 247 -> IRET
+  | `Int 248 -> IRETD
+  | `Int 249 -> IRETQ
+  | `Int 250 -> FISTTP
+  | `Int 251 -> FIST
+  | `Int 252 -> FISTP
+  | `Int 253 -> JAE
+  | `Int 254 -> JA
+  | `Int 255 -> JBE
+  | `Int 256 -> JB
+  | `Int 257 -> JCXZ
+  | `Int 258 -> JECXZ
+  | `Int 259 -> JE
+  | `Int 260 -> JGE
+  | `Int 261 -> JG
+  | `Int 262 -> JLE
+  | `Int 263 -> JL
+  | `Int 264 -> JNE
+  | `Int 265 -> JNO
+  | `Int 266 -> JNP
+  | `Int 267 -> JNS
+  | `Int 268 -> JO
+  | `Int 269 -> JP
+  | `Int 270 -> JRCXZ
+  | `Int 271 -> JS
+  | `Int 272 -> KADDB
+  | `Int 273 -> KADDD
+  | `Int 274 -> KADDQ
+  | `Int 275 -> KADDW
+  | `Int 276 -> KANDB
+  | `Int 277 -> KANDD
+  | `Int 278 -> KANDNB
+  | `Int 279 -> KANDND
+  | `Int 280 -> KANDNQ
+  | `Int 281 -> KANDNW
+  | `Int 282 -> KANDQ
+  | `Int 283 -> KANDW
+  | `Int 284 -> KMOVB
+  | `Int 285 -> KMOVD
+  | `Int 286 -> KMOVQ
+  | `Int 287 -> KMOVW
+  | `Int 288 -> KNOTB
+  | `Int 289 -> KNOTD
+  | `Int 290 -> KNOTQ
+  | `Int 291 -> KNOTW
+  | `Int 292 -> KORB
+  | `Int 293 -> KORD
+  | `Int 294 -> KORQ
+  | `Int 295 -> KORTESTB
+  | `Int 296 -> KORTESTD
+  | `Int 297 -> KORTESTQ
+  | `Int 298 -> KORTESTW
+  | `Int 299 -> KORW
+  | `Int 300 -> KSHIFTLB
+  | `Int 301 -> KSHIFTLD
+  | `Int 302 -> KSHIFTLQ
+  | `Int 303 -> KSHIFTLW
+  | `Int 304 -> KSHIFTRB
+  | `Int 305 -> KSHIFTRD
+  | `Int 306 -> KSHIFTRQ
+  | `Int 307 -> KSHIFTRW
+  | `Int 308 -> KTESTB
+  | `Int 309 -> KTESTD
+  | `Int 310 -> KTESTQ
+  | `Int 311 -> KTESTW
+  | `Int 312 -> KUNPCKBW
+  | `Int 313 -> KUNPCKDQ
+  | `Int 314 -> KUNPCKWD
+  | `Int 315 -> KXNORB
+  | `Int 316 -> KXNORD
+  | `Int 317 -> KXNORQ
+  | `Int 318 -> KXNORW
+  | `Int 319 -> KXORB
+  | `Int 320 -> KXORD
+  | `Int 321 -> KXORQ
+  | `Int 322 -> KXORW
+  | `Int 323 -> LAHF
+  | `Int 324 -> LAR
+  | `Int 325 -> LDDQU
+  | `Int 326 -> LDMXCSR
+  | `Int 327 -> LDS
+  | `Int 328 -> FLDZ
+  | `Int 329 -> FLD1
+  | `Int 330 -> FLD
+  | `Int 331 -> LEA
+  | `Int 332 -> LEAVE
+  | `Int 333 -> LES
+  | `Int 334 -> LFENCE
+  | `Int 335 -> LFS
+  | `Int 336 -> LGDT
+  | `Int 337 -> LGS
+  | `Int 338 -> LIDT
+  | `Int 339 -> LLDT
+  | `Int 340 -> LLWPCB
+  | `Int 341 -> LMSW
+  | `Int 342 -> LOCK
+  | `Int 343 -> LODSB
+  | `Int 344 -> LODSD
+  | `Int 345 -> LODSQ
+  | `Int 346 -> LODSW
+  | `Int 347 -> LOOP
+  | `Int 348 -> LOOPE
+  | `Int 349 -> LOOPNE
+  | `Int 350 -> RETF
+  | `Int 351 -> RETFQ
+  | `Int 352 -> LSL
+  | `Int 353 -> LSS
+  | `Int 354 -> LTR
+  | `Int 355 -> LWPINS
+  | `Int 356 -> LWPVAL
+  | `Int 357 -> LZCNT
+  | `Int 358 -> MASKMOVDQU
+  | `Int 359 -> MAXPD
+  | `Int 360 -> MAXPS
+  | `Int 361 -> MAXSD
+  | `Int 362 -> MAXSS
+  | `Int 363 -> MFENCE
+  | `Int 364 -> MINPD
+  | `Int 365 -> MINPS
+  | `Int 366 -> MINSD
+  | `Int 367 -> MINSS
+  | `Int 368 -> CVTPD2PI
+  | `Int 369 -> CVTPI2PD
+  | `Int 370 -> CVTPI2PS
+  | `Int 371 -> CVTPS2PI
+  | `Int 372 -> CVTTPD2PI
+  | `Int 373 -> CVTTPS2PI
+  | `Int 374 -> EMMS
+  | `Int 375 -> MASKMOVQ
+  | `Int 376 -> MOVD
+  | `Int 377 -> MOVQ
+  | `Int 378 -> MOVDQ2Q
+  | `Int 379 -> MOVNTQ
+  | `Int 380 -> MOVQ2DQ
+  | `Int 381 -> PABSB
+  | `Int 382 -> PABSD
+  | `Int 383 -> PABSW
+  | `Int 384 -> PACKSSDW
+  | `Int 385 -> PACKSSWB
+  | `Int 386 -> PACKUSWB
+  | `Int 387 -> PADDB
+  | `Int 388 -> PADDD
+  | `Int 389 -> PADDQ
+  | `Int 390 -> PADDSB
+  | `Int 391 -> PADDSW
+  | `Int 392 -> PADDUSB
+  | `Int 393 -> PADDUSW
+  | `Int 394 -> PADDW
+  | `Int 395 -> PALIGNR
+  | `Int 396 -> PANDN
+  | `Int 397 -> PAND
+  | `Int 398 -> PAVGB
+  | `Int 399 -> PAVGW
+  | `Int 400 -> PCMPEQB
+  | `Int 401 -> PCMPEQD
+  | `Int 402 -> PCMPEQW
+  | `Int 403 -> PCMPGTB
+  | `Int 404 -> PCMPGTD
+  | `Int 405 -> PCMPGTW
+  | `Int 406 -> PEXTRW
+  | `Int 407 -> PHADDD
+  | `Int 408 -> PHADDSW
+  | `Int 409 -> PHADDW
+  | `Int 410 -> PHSUBD
+  | `Int 411 -> PHSUBSW
+  | `Int 412 -> PHSUBW
+  | `Int 413 -> PINSRW
+  | `Int 414 -> PMADDUBSW
+  | `Int 415 -> PMADDWD
+  | `Int 416 -> PMAXSW
+  | `Int 417 -> PMAXUB
+  | `Int 418 -> PMINSW
+  | `Int 419 -> PMINUB
+  | `Int 420 -> PMOVMSKB
+  | `Int 421 -> PMULHRSW
+  | `Int 422 -> PMULHUW
+  | `Int 423 -> PMULHW
+  | `Int 424 -> PMULLW
+  | `Int 425 -> PMULUDQ
+  | `Int 426 -> POR
+  | `Int 427 -> PSADBW
+  | `Int 428 -> PSHUFB
+  | `Int 429 -> PSHUFW
+  | `Int 430 -> PSIGNB
+  | `Int 431 -> PSIGND
+  | `Int 432 -> PSIGNW
+  | `Int 433 -> PSLLD
+  | `Int 434 -> PSLLQ
+  | `Int 435 -> PSLLW
+  | `Int 436 -> PSRAD
+  | `Int 437 -> PSRAW
+  | `Int 438 -> PSRLD
+  | `Int 439 -> PSRLQ
+  | `Int 440 -> PSRLW
+  | `Int 441 -> PSUBB
+  | `Int 442 -> PSUBD
+  | `Int 443 -> PSUBQ
+  | `Int 444 -> PSUBSB
+  | `Int 445 -> PSUBSW
+  | `Int 446 -> PSUBUSB
+  | `Int 447 -> PSUBUSW
+  | `Int 448 -> PSUBW
+  | `Int 449 -> PUNPCKHBW
+  | `Int 450 -> PUNPCKHDQ
+  | `Int 451 -> PUNPCKHWD
+  | `Int 452 -> PUNPCKLBW
+  | `Int 453 -> PUNPCKLDQ
+  | `Int 454 -> PUNPCKLWD
+  | `Int 455 -> PXOR
+  | `Int 456 -> MONITORX
+  | `Int 457 -> MONITOR
+  | `Int 458 -> MONTMUL
+  | `Int 459 -> MOV
+  | `Int 460 -> MOVABS
+  | `Int 461 -> MOVAPD
+  | `Int 462 -> MOVAPS
+  | `Int 463 -> MOVBE
+  | `Int 464 -> MOVDDUP
+  | `Int 465 -> MOVDIR64B
+  | `Int 466 -> MOVDIRI
+  | `Int 467 -> MOVDQA
+  | `Int 468 -> MOVDQU
+  | `Int 469 -> MOVHLPS
+  | `Int 470 -> MOVHPD
+  | `Int 471 -> MOVHPS
+  | `Int 472 -> MOVLHPS
+  | `Int 473 -> MOVLPD
+  | `Int 474 -> MOVLPS
+  | `Int 475 -> MOVMSKPD
+  | `Int 476 -> MOVMSKPS
+  | `Int 477 -> MOVNTDQA
+  | `Int 478 -> MOVNTDQ
+  | `Int 479 -> MOVNTI
+  | `Int 480 -> MOVNTPD
+  | `Int 481 -> MOVNTPS
+  | `Int 482 -> MOVNTSD
+  | `Int 483 -> MOVNTSS
+  | `Int 484 -> MOVSB
+  | `Int 485 -> MOVSD
+  | `Int 486 -> MOVSHDUP
+  | `Int 487 -> MOVSLDUP
+  | `Int 488 -> MOVSQ
+  | `Int 489 -> MOVSS
+  | `Int 490 -> MOVSW
+  | `Int 491 -> MOVSX
+  | `Int 492 -> MOVSXD
+  | `Int 493 -> MOVUPD
+  | `Int 494 -> MOVUPS
+  | `Int 495 -> MOVZX
+  | `Int 496 -> MPSADBW
+  | `Int 497 -> MUL
+  | `Int 498 -> MULPD
+  | `Int 499 -> MULPS
+  | `Int 500 -> MULSD
+  | `Int 501 -> MULSS
+  | `Int 502 -> MULX
+  | `Int 503 -> FMUL
+  | `Int 504 -> FIMUL
+  | `Int 505 -> FMULP
+  | `Int 506 -> MWAITX
+  | `Int 507 -> MWAIT
+  | `Int 508 -> NEG
+  | `Int 509 -> NOP
+  | `Int 510 -> NOT
+  | `Int 511 -> OR
+  | `Int 512 -> ORPD
+  | `Int 513 -> ORPS
+  | `Int 514 -> OUT
+  | `Int 515 -> OUTSB
+  | `Int 516 -> OUTSD
+  | `Int 517 -> OUTSW
+  | `Int 518 -> PACKUSDW
+  | `Int 519 -> PAUSE
+  | `Int 520 -> PAVGUSB
+  | `Int 521 -> PBLENDVB
+  | `Int 522 -> PBLENDW
+  | `Int 523 -> PCLMULQDQ
+  | `Int 524 -> PCMPEQQ
+  | `Int 525 -> PCMPESTRI
+  | `Int 526 -> PCMPESTRM
+  | `Int 527 -> PCMPGTQ
+  | `Int 528 -> PCMPISTRI
+  | `Int 529 -> PCMPISTRM
+  | `Int 530 -> PCONFIG
+  | `Int 531 -> PDEP
+  | `Int 532 -> PEXT
+  | `Int 533 -> PEXTRB
+  | `Int 534 -> PEXTRD
+  | `Int 535 -> PEXTRQ
+  | `Int 536 -> PF2ID
+  | `Int 537 -> PF2IW
+  | `Int 538 -> PFACC
+  | `Int 539 -> PFADD
+  | `Int 540 -> PFCMPEQ
+  | `Int 541 -> PFCMPGE
+  | `Int 542 -> PFCMPGT
+  | `Int 543 -> PFMAX
+  | `Int 544 -> PFMIN
+  | `Int 545 -> PFMUL
+  | `Int 546 -> PFNACC
+  | `Int 547 -> PFPNACC
+  | `Int 548 -> PFRCPIT1
+  | `Int 549 -> PFRCPIT2
+  | `Int 550 -> PFRCP
+  | `Int 551 -> PFRSQIT1
+  | `Int 552 -> PFRSQRT
+  | `Int 553 -> PFSUBR
+  | `Int 554 -> PFSUB
+  | `Int 555 -> PHMINPOSUW
+  | `Int 556 -> PI2FD
+  | `Int 557 -> PI2FW
+  | `Int 558 -> PINSRB
+  | `Int 559 -> PINSRD
+  | `Int 560 -> PINSRQ
+  | `Int 561 -> PMAXSB
+  | `Int 562 -> PMAXSD
+  | `Int 563 -> PMAXUD
+  | `Int 564 -> PMAXUW
+  | `Int 565 -> PMINSB
+  | `Int 566 -> PMINSD
+  | `Int 567 -> PMINUD
+  | `Int 568 -> PMINUW
+  | `Int 569 -> PMOVSXBD
+  | `Int 570 -> PMOVSXBQ
+  | `Int 571 -> PMOVSXBW
+  | `Int 572 -> PMOVSXDQ
+  | `Int 573 -> PMOVSXWD
+  | `Int 574 -> PMOVSXWQ
+  | `Int 575 -> PMOVZXBD
+  | `Int 576 -> PMOVZXBQ
+  | `Int 577 -> PMOVZXBW
+  | `Int 578 -> PMOVZXDQ
+  | `Int 579 -> PMOVZXWD
+  | `Int 580 -> PMOVZXWQ
+  | `Int 581 -> PMULDQ
+  | `Int 582 -> PMULHRW
+  | `Int 583 -> PMULLD
+  | `Int 584 -> POP
+  | `Int 585 -> POPAW
+  | `Int 586 -> POPAL
+  | `Int 587 -> POPCNT
+  | `Int 588 -> POPF
+  | `Int 589 -> POPFD
+  | `Int 590 -> POPFQ
+  | `Int 591 -> PREFETCH
+  | `Int 592 -> PREFETCHNTA
+  | `Int 593 -> PREFETCHT0
+  | `Int 594 -> PREFETCHT1
+  | `Int 595 -> PREFETCHT2
+  | `Int 596 -> PREFETCHW
+  | `Int 597 -> PREFETCHWT1
+  | `Int 598 -> PSHUFD
+  | `Int 599 -> PSHUFHW
+  | `Int 600 -> PSHUFLW
+  | `Int 601 -> PSLLDQ
+  | `Int 602 -> PSRLDQ
+  | `Int 603 -> PSWAPD
+  | `Int 604 -> PTEST
+  | `Int 605 -> PTWRITE
+  | `Int 606 -> PUNPCKHQDQ
+  | `Int 607 -> PUNPCKLQDQ
+  | `Int 608 -> PUSH
+  | `Int 609 -> PUSHAW
+  | `Int 610 -> PUSHAL
+  | `Int 611 -> PUSHF
+  | `Int 612 -> PUSHFD
+  | `Int 613 -> PUSHFQ
+  | `Int 614 -> RCL
+  | `Int 615 -> RCPPS
+  | `Int 616 -> RCPSS
+  | `Int 617 -> RCR
+  | `Int 618 -> RDFSBASE
+  | `Int 619 -> RDGSBASE
+  | `Int 620 -> RDMSR
+  | `Int 621 -> RDPID
+  | `Int 622 -> RDPKRU
+  | `Int 623 -> RDPMC
+  | `Int 624 -> RDRAND
+  | `Int 625 -> RDSEED
+  | `Int 626 -> RDSSPD
+  | `Int 627 -> RDSSPQ
+  | `Int 628 -> RDTSC
+  | `Int 629 -> RDTSCP
+  | `Int 630 -> REPNE
+  | `Int 631 -> REP
+  | `Int 632 -> RET
+  | `Int 633 -> REX64
+  | `Int 634 -> ROL
+  | `Int 635 -> ROR
+  | `Int 636 -> RORX
+  | `Int 637 -> ROUNDPD
+  | `Int 638 -> ROUNDPS
+  | `Int 639 -> ROUNDSD
+  | `Int 640 -> ROUNDSS
+  | `Int 643 -> RSM
+  | `Int 644 -> RSQRTPS
+  | `Int 645 -> RSQRTSS
+  | `Int 646 -> RSTORSSP
+  | `Int 647 -> SAHF
+  | `Int 648 -> SAL
+  | `Int 649 -> SALC
+  | `Int 650 -> SAR
+  | `Int 651 -> SARX
+  | `Int 652 -> SAVEPREVSSP
+  | `Int 653 -> SBB
+  | `Int 654 -> SCASB
+  | `Int 655 -> SCASD
+  | `Int 656 -> SCASQ
+  | `Int 657 -> SCASW
+  | `Int 658 -> SETAE
+  | `Int 659 -> SETA
+  | `Int 660 -> SETBE
+  | `Int 661 -> SETB
+  | `Int 662 -> SETE
+  | `Int 663 -> SETGE
+  | `Int 664 -> SETG
+  | `Int 665 -> SETLE
+  | `Int 666 -> SETL
+  | `Int 667 -> SETNE
+  | `Int 668 -> SETNO
+  | `Int 669 -> SETNP
+  | `Int 670 -> SETNS
+  | `Int 671 -> SETO
+  | `Int 672 -> SETP
+  | `Int 673 -> SETSSBSY
+  | `Int 674 -> SETS
+  | `Int 675 -> SFENCE
+  | `Int 676 -> SGDT
+  | `Int 677 -> SHA1MSG1
+  | `Int 678 -> SHA1MSG2
+  | `Int 679 -> SHA1NEXTE
+  | `Int 680 -> SHA1RNDS4
+  | `Int 681 -> SHA256MSG1
+  | `Int 682 -> SHA256MSG2
+  | `Int 683 -> SHA256RNDS2
+  | `Int 684 -> SHL
+  | `Int 685 -> SHLD
+  | `Int 686 -> SHLX
+  | `Int 687 -> SHR
+  | `Int 688 -> SHRD
+  | `Int 689 -> SHRX
+  | `Int 690 -> SHUFPD
+  | `Int 691 -> SHUFPS
+  | `Int 692 -> SIDT
+  | `Int 693 -> FSIN
+  | `Int 694 -> SKINIT
+  | `Int 695 -> SLDT
+  | `Int 696 -> SLWPCB
+  | `Int 697 -> SMSW
+  | `Int 698 -> SQRTPD
+  | `Int 699 -> SQRTPS
+  | `Int 700 -> SQRTSD
+  | `Int 701 -> SQRTSS
+  | `Int 702 -> FSQRT
+  | `Int 703 -> STAC
+  | `Int 704 -> STC
+  | `Int 705 -> STD
+  | `Int 706 -> STGI
+  | `Int 707 -> STI
+  | `Int 708 -> STMXCSR
+  | `Int 709 -> STOSB
+  | `Int 710 -> STOSD
+  | `Int 711 -> STOSQ
+  | `Int 712 -> STOSW
+  | `Int 713 -> STR
+  | `Int 714 -> FST
+  | `Int 715 -> FSTP
+  | `Int 716 -> SUB
+  | `Int 717 -> SUBPD
+  | `Int 718 -> SUBPS
+  | `Int 719 -> FSUBR
+  | `Int 720 -> FISUBR
+  | `Int 721 -> FSUBRP
+  | `Int 722 -> SUBSD
+  | `Int 723 -> SUBSS
+  | `Int 724 -> FSUB
+  | `Int 725 -> FISUB
+  | `Int 726 -> FSUBP
+  | `Int 727 -> SWAPGS
+  | `Int 728 -> SYSCALL
+  | `Int 729 -> SYSENTER
+  | `Int 730 -> SYSEXIT
+  | `Int 731 -> SYSEXITQ
+  | `Int 732 -> SYSRET
+  | `Int 733 -> SYSRETQ
+  | `Int 734 -> T1MSKC
+  | `Int 735 -> TEST
+  | `Int 736 -> TPAUSE
+  | `Int 737 -> FTST
+  | `Int 738 -> TZCNT
+  | `Int 739 -> TZMSK
+  | `Int 740 -> UCOMISD
+  | `Int 741 -> UCOMISS
+  | `Int 742 -> FUCOMPI
+  | `Int 743 -> FUCOMI
+  | `Int 744 -> FUCOMPP
+  | `Int 745 -> FUCOMP
+  | `Int 746 -> FUCOM
+  | `Int 747 -> UD0
+  | `Int 748 -> UD1
+  | `Int 749 -> UD2
+  | `Int 750 -> UMONITOR
+  | `Int 751 -> UMWAIT
+  | `Int 752 -> UNPCKHPD
+  | `Int 753 -> UNPCKHPS
+  | `Int 754 -> UNPCKLPD
+  | `Int 755 -> UNPCKLPS
+  | `Int 756 -> V4FMADDPS
+  | `Int 757 -> V4FMADDSS
+  | `Int 758 -> V4FNMADDPS
+  | `Int 759 -> V4FNMADDSS
+  | `Int 760 -> VADDPD
+  | `Int 761 -> VADDPS
+  | `Int 762 -> VADDSD
+  | `Int 763 -> VADDSS
+  | `Int 764 -> VADDSUBPD
+  | `Int 765 -> VADDSUBPS
+  | `Int 766 -> VAESDECLAST
+  | `Int 767 -> VAESDEC
+  | `Int 768 -> VAESENCLAST
+  | `Int 769 -> VAESENC
+  | `Int 770 -> VAESIMC
+  | `Int 771 -> VAESKEYGENASSIST
+  | `Int 772 -> VALIGND
+  | `Int 773 -> VALIGNQ
+  | `Int 774 -> VANDNPD
+  | `Int 775 -> VANDNPS
+  | `Int 776 -> VANDPD
+  | `Int 777 -> VANDPS
+  | `Int 778 -> VBLENDMPD
+  | `Int 779 -> VBLENDMPS
+  | `Int 780 -> VBLENDPD
+  | `Int 781 -> VBLENDPS
+  | `Int 782 -> VBLENDVPD
+  | `Int 783 -> VBLENDVPS
+  | `Int 784 -> VBROADCASTF128
+  | `Int 785 -> VBROADCASTF32X2
+  | `Int 786 -> VBROADCASTF32X4
+  | `Int 787 -> VBROADCASTF32X8
+  | `Int 788 -> VBROADCASTF64X2
+  | `Int 789 -> VBROADCASTF64X4
+  | `Int 790 -> VBROADCASTI128
+  | `Int 791 -> VBROADCASTI32X2
+  | `Int 792 -> VBROADCASTI32X4
+  | `Int 793 -> VBROADCASTI32X8
+  | `Int 794 -> VBROADCASTI64X2
+  | `Int 795 -> VBROADCASTI64X4
+  | `Int 796 -> VBROADCASTSD
+  | `Int 797 -> VBROADCASTSS
+  | `Int 798 -> VCMP
+  | `Int 799 -> VCMPPD
+  | `Int 800 -> VCMPPS
+  | `Int 801 -> VCMPSD
+  | `Int 802 -> VCMPSS
+  | `Int 803 -> VCOMISD
+  | `Int 804 -> VCOMISS
+  | `Int 805 -> VCOMPRESSPD
+  | `Int 806 -> VCOMPRESSPS
+  | `Int 807 -> VCVTDQ2PD
+  | `Int 808 -> VCVTDQ2PS
+  | `Int 809 -> VCVTPD2DQ
+  | `Int 810 -> VCVTPD2PS
+  | `Int 811 -> VCVTPD2QQ
+  | `Int 812 -> VCVTPD2UDQ
+  | `Int 813 -> VCVTPD2UQQ
+  | `Int 814 -> VCVTPH2PS
+  | `Int 815 -> VCVTPS2DQ
+  | `Int 816 -> VCVTPS2PD
+  | `Int 817 -> VCVTPS2PH
+  | `Int 818 -> VCVTPS2QQ
+  | `Int 819 -> VCVTPS2UDQ
+  | `Int 820 -> VCVTPS2UQQ
+  | `Int 821 -> VCVTQQ2PD
+  | `Int 822 -> VCVTQQ2PS
+  | `Int 823 -> VCVTSD2SI
+  | `Int 824 -> VCVTSD2SS
+  | `Int 825 -> VCVTSD2USI
+  | `Int 826 -> VCVTSI2SD
+  | `Int 827 -> VCVTSI2SS
+  | `Int 828 -> VCVTSS2SD
+  | `Int 829 -> VCVTSS2SI
+  | `Int 830 -> VCVTSS2USI
+  | `Int 831 -> VCVTTPD2DQ
+  | `Int 832 -> VCVTTPD2QQ
+  | `Int 833 -> VCVTTPD2UDQ
+  | `Int 834 -> VCVTTPD2UQQ
+  | `Int 835 -> VCVTTPS2DQ
+  | `Int 836 -> VCVTTPS2QQ
+  | `Int 837 -> VCVTTPS2UDQ
+  | `Int 838 -> VCVTTPS2UQQ
+  | `Int 839 -> VCVTTSD2SI
+  | `Int 840 -> VCVTTSD2USI
+  | `Int 841 -> VCVTTSS2SI
+  | `Int 842 -> VCVTTSS2USI
+  | `Int 843 -> VCVTUDQ2PD
+  | `Int 844 -> VCVTUDQ2PS
+  | `Int 845 -> VCVTUQQ2PD
+  | `Int 846 -> VCVTUQQ2PS
+  | `Int 847 -> VCVTUSI2SD
+  | `Int 848 -> VCVTUSI2SS
+  | `Int 849 -> VDBPSADBW
+  | `Int 850 -> VDIVPD
+  | `Int 851 -> VDIVPS
+  | `Int 852 -> VDIVSD
+  | `Int 853 -> VDIVSS
+  | `Int 854 -> VDPPD
+  | `Int 855 -> VDPPS
+  | `Int 856 -> VERR
+  | `Int 857 -> VERW
+  | `Int 858 -> VEXP2PD
+  | `Int 859 -> VEXP2PS
+  | `Int 860 -> VEXPANDPD
+  | `Int 861 -> VEXPANDPS
+  | `Int 862 -> VEXTRACTF128
+  | `Int 863 -> VEXTRACTF32X4
+  | `Int 864 -> VEXTRACTF32X8
+  | `Int 865 -> VEXTRACTF64X2
+  | `Int 866 -> VEXTRACTF64X4
+  | `Int 867 -> VEXTRACTI128
+  | `Int 868 -> VEXTRACTI32X4
+  | `Int 869 -> VEXTRACTI32X8
+  | `Int 870 -> VEXTRACTI64X2
+  | `Int 871 -> VEXTRACTI64X4
+  | `Int 872 -> VEXTRACTPS
+  | `Int 873 -> VFIXUPIMMPD
+  | `Int 874 -> VFIXUPIMMPS
+  | `Int 875 -> VFIXUPIMMSD
+  | `Int 876 -> VFIXUPIMMSS
+  | `Int 877 -> VFMADD132PD
+  | `Int 878 -> VFMADD132PS
+  | `Int 879 -> VFMADD132SD
+  | `Int 880 -> VFMADD132SS
+  | `Int 881 -> VFMADD213PD
+  | `Int 882 -> VFMADD213PS
+  | `Int 883 -> VFMADD213SD
+  | `Int 884 -> VFMADD213SS
+  | `Int 885 -> VFMADD231PD
+  | `Int 886 -> VFMADD231PS
+  | `Int 887 -> VFMADD231SD
+  | `Int 888 -> VFMADD231SS
+  | `Int 889 -> VFMADDPD
+  | `Int 890 -> VFMADDPS
+  | `Int 891 -> VFMADDSD
+  | `Int 892 -> VFMADDSS
+  | `Int 893 -> VFMADDSUB132PD
+  | `Int 894 -> VFMADDSUB132PS
+  | `Int 895 -> VFMADDSUB213PD
+  | `Int 896 -> VFMADDSUB213PS
+  | `Int 897 -> VFMADDSUB231PD
+  | `Int 898 -> VFMADDSUB231PS
+  | `Int 899 -> VFMADDSUBPD
+  | `Int 900 -> VFMADDSUBPS
+  | `Int 901 -> VFMSUB132PD
+  | `Int 902 -> VFMSUB132PS
+  | `Int 903 -> VFMSUB132SD
+  | `Int 904 -> VFMSUB132SS
+  | `Int 905 -> VFMSUB213PD
+  | `Int 906 -> VFMSUB213PS
+  | `Int 907 -> VFMSUB213SD
+  | `Int 908 -> VFMSUB213SS
+  | `Int 909 -> VFMSUB231PD
+  | `Int 910 -> VFMSUB231PS
+  | `Int 911 -> VFMSUB231SD
+  | `Int 912 -> VFMSUB231SS
+  | `Int 913 -> VFMSUBADD132PD
+  | `Int 914 -> VFMSUBADD132PS
+  | `Int 915 -> VFMSUBADD213PD
+  | `Int 916 -> VFMSUBADD213PS
+  | `Int 917 -> VFMSUBADD231PD
+  | `Int 918 -> VFMSUBADD231PS
+  | `Int 919 -> VFMSUBADDPD
+  | `Int 920 -> VFMSUBADDPS
+  | `Int 921 -> VFMSUBPD
+  | `Int 922 -> VFMSUBPS
+  | `Int 923 -> VFMSUBSD
+  | `Int 924 -> VFMSUBSS
+  | `Int 925 -> VFNMADD132PD
+  | `Int 926 -> VFNMADD132PS
+  | `Int 927 -> VFNMADD132SD
+  | `Int 928 -> VFNMADD132SS
+  | `Int 929 -> VFNMADD213PD
+  | `Int 930 -> VFNMADD213PS
+  | `Int 931 -> VFNMADD213SD
+  | `Int 932 -> VFNMADD213SS
+  | `Int 933 -> VFNMADD231PD
+  | `Int 934 -> VFNMADD231PS
+  | `Int 935 -> VFNMADD231SD
+  | `Int 936 -> VFNMADD231SS
+  | `Int 937 -> VFNMADDPD
+  | `Int 938 -> VFNMADDPS
+  | `Int 939 -> VFNMADDSD
+  | `Int 940 -> VFNMADDSS
+  | `Int 941 -> VFNMSUB132PD
+  | `Int 942 -> VFNMSUB132PS
+  | `Int 943 -> VFNMSUB132SD
+  | `Int 944 -> VFNMSUB132SS
+  | `Int 945 -> VFNMSUB213PD
+  | `Int 946 -> VFNMSUB213PS
+  | `Int 947 -> VFNMSUB213SD
+  | `Int 948 -> VFNMSUB213SS
+  | `Int 949 -> VFNMSUB231PD
+  | `Int 950 -> VFNMSUB231PS
+  | `Int 951 -> VFNMSUB231SD
+  | `Int 952 -> VFNMSUB231SS
+  | `Int 953 -> VFNMSUBPD
+  | `Int 954 -> VFNMSUBPS
+  | `Int 955 -> VFNMSUBSD
+  | `Int 956 -> VFNMSUBSS
+  | `Int 957 -> VFPCLASSPD
+  | `Int 958 -> VFPCLASSPS
+  | `Int 959 -> VFPCLASSSD
+  | `Int 960 -> VFPCLASSSS
+  | `Int 961 -> VFRCZPD
+  | `Int 962 -> VFRCZPS
+  | `Int 963 -> VFRCZSD
+  | `Int 964 -> VFRCZSS
+  | `Int 965 -> VGATHERDPD
+  | `Int 966 -> VGATHERDPS
+  | `Int 967 -> VGATHERPF0DPD
+  | `Int 968 -> VGATHERPF0DPS
+  | `Int 969 -> VGATHERPF0QPD
+  | `Int 970 -> VGATHERPF0QPS
+  | `Int 971 -> VGATHERPF1DPD
+  | `Int 972 -> VGATHERPF1DPS
+  | `Int 973 -> VGATHERPF1QPD
+  | `Int 974 -> VGATHERPF1QPS
+  | `Int 975 -> VGATHERQPD
+  | `Int 976 -> VGATHERQPS
+  | `Int 977 -> VGETEXPPD
+  | `Int 978 -> VGETEXPPS
+  | `Int 979 -> VGETEXPSD
+  | `Int 980 -> VGETEXPSS
+  | `Int 981 -> VGETMANTPD
+  | `Int 982 -> VGETMANTPS
+  | `Int 983 -> VGETMANTSD
+  | `Int 984 -> VGETMANTSS
+  | `Int 985 -> VGF2P8AFFINEINVQB
+  | `Int 986 -> VGF2P8AFFINEQB
+  | `Int 987 -> VGF2P8MULB
+  | `Int 988 -> VHADDPD
+  | `Int 989 -> VHADDPS
+  | `Int 990 -> VHSUBPD
+  | `Int 991 -> VHSUBPS
+  | `Int 992 -> VINSERTF128
+  | `Int 993 -> VINSERTF32X4
+  | `Int 994 -> VINSERTF32X8
+  | `Int 995 -> VINSERTF64X2
+  | `Int 996 -> VINSERTF64X4
+  | `Int 997 -> VINSERTI128
+  | `Int 998 -> VINSERTI32X4
+  | `Int 999 -> VINSERTI32X8
+  | `Int 1000 -> VINSERTI64X2
+  | `Int 1001 -> VINSERTI64X4
+  | `Int 1002 -> VINSERTPS
+  | `Int 1003 -> VLDDQU
+  | `Int 1004 -> VLDMXCSR
+  | `Int 1005 -> VMASKMOVDQU
+  | `Int 1006 -> VMASKMOVPD
+  | `Int 1007 -> VMASKMOVPS
+  | `Int 1008 -> VMAXPD
+  | `Int 1009 -> VMAXPS
+  | `Int 1010 -> VMAXSD
+  | `Int 1011 -> VMAXSS
+  | `Int 1012 -> VMCALL
+  | `Int 1013 -> VMCLEAR
+  | `Int 1014 -> VMFUNC
+  | `Int 1015 -> VMINPD
+  | `Int 1016 -> VMINPS
+  | `Int 1017 -> VMINSD
+  | `Int 1018 -> VMINSS
+  | `Int 1019 -> VMLAUNCH
+  | `Int 1020 -> VMLOAD
+  | `Int 1021 -> VMMCALL
+  | `Int 1022 -> VMOVQ
+  | `Int 1023 -> VMOVAPD
+  | `Int 1024 -> VMOVAPS
+  | `Int 1025 -> VMOVDDUP
+  | `Int 1026 -> VMOVD
+  | `Int 1027 -> VMOVDQA32
+  | `Int 1028 -> VMOVDQA64
+  | `Int 1029 -> VMOVDQA
+  | `Int 1030 -> VMOVDQU16
+  | `Int 1031 -> VMOVDQU32
+  | `Int 1032 -> VMOVDQU64
+  | `Int 1033 -> VMOVDQU8
+  | `Int 1034 -> VMOVDQU
+  | `Int 1035 -> VMOVHLPS
+  | `Int 1036 -> VMOVHPD
+  | `Int 1037 -> VMOVHPS
+  | `Int 1038 -> VMOVLHPS
+  | `Int 1039 -> VMOVLPD
+  | `Int 1040 -> VMOVLPS
+  | `Int 1041 -> VMOVMSKPD
+  | `Int 1042 -> VMOVMSKPS
+  | `Int 1043 -> VMOVNTDQA
+  | `Int 1044 -> VMOVNTDQ
+  | `Int 1045 -> VMOVNTPD
+  | `Int 1046 -> VMOVNTPS
+  | `Int 1047 -> VMOVSD
+  | `Int 1048 -> VMOVSHDUP
+  | `Int 1049 -> VMOVSLDUP
+  | `Int 1050 -> VMOVSS
+  | `Int 1051 -> VMOVUPD
+  | `Int 1052 -> VMOVUPS
+  | `Int 1053 -> VMPSADBW
+  | `Int 1054 -> VMPTRLD
+  | `Int 1055 -> VMPTRST
+  | `Int 1056 -> VMREAD
+  | `Int 1057 -> VMRESUME
+  | `Int 1058 -> VMRUN
+  | `Int 1059 -> VMSAVE
+  | `Int 1060 -> VMULPD
+  | `Int 1061 -> VMULPS
+  | `Int 1062 -> VMULSD
+  | `Int 1063 -> VMULSS
+  | `Int 1064 -> VMWRITE
+  | `Int 1065 -> VMXOFF
+  | `Int 1066 -> VMXON
+  | `Int 1067 -> VORPD
+  | `Int 1068 -> VORPS
+  | `Int 1069 -> VP4DPWSSDS
+  | `Int 1070 -> VP4DPWSSD
+  | `Int 1071 -> VPABSB
+  | `Int 1072 -> VPABSD
+  | `Int 1073 -> VPABSQ
+  | `Int 1074 -> VPABSW
+  | `Int 1075 -> VPACKSSDW
+  | `Int 1076 -> VPACKSSWB
+  | `Int 1077 -> VPACKUSDW
+  | `Int 1078 -> VPACKUSWB
+  | `Int 1079 -> VPADDB
+  | `Int 1080 -> VPADDD
+  | `Int 1081 -> VPADDQ
+  | `Int 1082 -> VPADDSB
+  | `Int 1083 -> VPADDSW
+  | `Int 1084 -> VPADDUSB
+  | `Int 1085 -> VPADDUSW
+  | `Int 1086 -> VPADDW
+  | `Int 1087 -> VPALIGNR
+  | `Int 1088 -> VPANDD
+  | `Int 1089 -> VPANDND
+  | `Int 1090 -> VPANDNQ
+  | `Int 1091 -> VPANDN
+  | `Int 1092 -> VPANDQ
+  | `Int 1093 -> VPAND
+  | `Int 1094 -> VPAVGB
+  | `Int 1095 -> VPAVGW
+  | `Int 1096 -> VPBLENDD
+  | `Int 1097 -> VPBLENDMB
+  | `Int 1098 -> VPBLENDMD
+  | `Int 1099 -> VPBLENDMQ
+  | `Int 1100 -> VPBLENDMW
+  | `Int 1101 -> VPBLENDVB
+  | `Int 1102 -> VPBLENDW
+  | `Int 1103 -> VPBROADCASTB
+  | `Int 1104 -> VPBROADCASTD
+  | `Int 1105 -> VPBROADCASTMB2Q
+  | `Int 1106 -> VPBROADCASTMW2D
+  | `Int 1107 -> VPBROADCASTQ
+  | `Int 1108 -> VPBROADCASTW
+  | `Int 1109 -> VPCLMULQDQ
+  | `Int 1110 -> VPCMOV
+  | `Int 1111 -> VPCMP
+  | `Int 1112 -> VPCMPB
+  | `Int 1113 -> VPCMPD
+  | `Int 1114 -> VPCMPEQB
+  | `Int 1115 -> VPCMPEQD
+  | `Int 1116 -> VPCMPEQQ
+  | `Int 1117 -> VPCMPEQW
+  | `Int 1118 -> VPCMPESTRI
+  | `Int 1119 -> VPCMPESTRM
+  | `Int 1120 -> VPCMPGTB
+  | `Int 1121 -> VPCMPGTD
+  | `Int 1122 -> VPCMPGTQ
+  | `Int 1123 -> VPCMPGTW
+  | `Int 1124 -> VPCMPISTRI
+  | `Int 1125 -> VPCMPISTRM
+  | `Int 1126 -> VPCMPQ
+  | `Int 1127 -> VPCMPUB
+  | `Int 1128 -> VPCMPUD
+  | `Int 1129 -> VPCMPUQ
+  | `Int 1130 -> VPCMPUW
+  | `Int 1131 -> VPCMPW
+  | `Int 1132 -> VPCOM
+  | `Int 1133 -> VPCOMB
+  | `Int 1134 -> VPCOMD
+  | `Int 1135 -> VPCOMPRESSB
+  | `Int 1136 -> VPCOMPRESSD
+  | `Int 1137 -> VPCOMPRESSQ
+  | `Int 1138 -> VPCOMPRESSW
+  | `Int 1139 -> VPCOMQ
+  | `Int 1140 -> VPCOMUB
+  | `Int 1141 -> VPCOMUD
+  | `Int 1142 -> VPCOMUQ
+  | `Int 1143 -> VPCOMUW
+  | `Int 1144 -> VPCOMW
+  | `Int 1145 -> VPCONFLICTD
+  | `Int 1146 -> VPCONFLICTQ
+  | `Int 1147 -> VPDPBUSDS
+  | `Int 1148 -> VPDPBUSD
+  | `Int 1149 -> VPDPWSSDS
+  | `Int 1150 -> VPDPWSSD
+  | `Int 1151 -> VPERM2F128
+  | `Int 1152 -> VPERM2I128
+  | `Int 1153 -> VPERMB
+  | `Int 1154 -> VPERMD
+  | `Int 1155 -> VPERMI2B
+  | `Int 1156 -> VPERMI2D
+  | `Int 1157 -> VPERMI2PD
+  | `Int 1158 -> VPERMI2PS
+  | `Int 1159 -> VPERMI2Q
+  | `Int 1160 -> VPERMI2W
+  | `Int 1161 -> VPERMIL2PD
+  | `Int 1162 -> VPERMILPD
+  | `Int 1163 -> VPERMIL2PS
+  | `Int 1164 -> VPERMILPS
+  | `Int 1165 -> VPERMPD
+  | `Int 1166 -> VPERMPS
+  | `Int 1167 -> VPERMQ
+  | `Int 1168 -> VPERMT2B
+  | `Int 1169 -> VPERMT2D
+  | `Int 1170 -> VPERMT2PD
+  | `Int 1171 -> VPERMT2PS
+  | `Int 1172 -> VPERMT2Q
+  | `Int 1173 -> VPERMT2W
+  | `Int 1174 -> VPERMW
+  | `Int 1175 -> VPEXPANDB
+  | `Int 1176 -> VPEXPANDD
+  | `Int 1177 -> VPEXPANDQ
+  | `Int 1178 -> VPEXPANDW
+  | `Int 1179 -> VPEXTRB
+  | `Int 1180 -> VPEXTRD
+  | `Int 1181 -> VPEXTRQ
+  | `Int 1182 -> VPEXTRW
+  | `Int 1183 -> VPGATHERDD
+  | `Int 1184 -> VPGATHERDQ
+  | `Int 1185 -> VPGATHERQD
+  | `Int 1186 -> VPGATHERQQ
+  | `Int 1187 -> VPHADDBD
+  | `Int 1188 -> VPHADDBQ
+  | `Int 1189 -> VPHADDBW
+  | `Int 1190 -> VPHADDDQ
+  | `Int 1191 -> VPHADDD
+  | `Int 1192 -> VPHADDSW
+  | `Int 1193 -> VPHADDUBD
+  | `Int 1194 -> VPHADDUBQ
+  | `Int 1195 -> VPHADDUBW
+  | `Int 1196 -> VPHADDUDQ
+  | `Int 1197 -> VPHADDUWD
+  | `Int 1198 -> VPHADDUWQ
+  | `Int 1199 -> VPHADDWD
+  | `Int 1200 -> VPHADDWQ
+  | `Int 1201 -> VPHADDW
+  | `Int 1202 -> VPHMINPOSUW
+  | `Int 1203 -> VPHSUBBW
+  | `Int 1204 -> VPHSUBDQ
+  | `Int 1205 -> VPHSUBD
+  | `Int 1206 -> VPHSUBSW
+  | `Int 1207 -> VPHSUBWD
+  | `Int 1208 -> VPHSUBW
+  | `Int 1209 -> VPINSRB
+  | `Int 1210 -> VPINSRD
+  | `Int 1211 -> VPINSRQ
+  | `Int 1212 -> VPINSRW
+  | `Int 1213 -> VPLZCNTD
+  | `Int 1214 -> VPLZCNTQ
+  | `Int 1215 -> VPMACSDD
+  | `Int 1216 -> VPMACSDQH
+  | `Int 1217 -> VPMACSDQL
+  | `Int 1218 -> VPMACSSDD
+  | `Int 1219 -> VPMACSSDQH
+  | `Int 1220 -> VPMACSSDQL
+  | `Int 1221 -> VPMACSSWD
+  | `Int 1222 -> VPMACSSWW
+  | `Int 1223 -> VPMACSWD
+  | `Int 1224 -> VPMACSWW
+  | `Int 1225 -> VPMADCSSWD
+  | `Int 1226 -> VPMADCSWD
+  | `Int 1227 -> VPMADD52HUQ
+  | `Int 1228 -> VPMADD52LUQ
+  | `Int 1229 -> VPMADDUBSW
+  | `Int 1230 -> VPMADDWD
+  | `Int 1231 -> VPMASKMOVD
+  | `Int 1232 -> VPMASKMOVQ
+  | `Int 1233 -> VPMAXSB
+  | `Int 1234 -> VPMAXSD
+  | `Int 1235 -> VPMAXSQ
+  | `Int 1236 -> VPMAXSW
+  | `Int 1237 -> VPMAXUB
+  | `Int 1238 -> VPMAXUD
+  | `Int 1239 -> VPMAXUQ
+  | `Int 1240 -> VPMAXUW
+  | `Int 1241 -> VPMINSB
+  | `Int 1242 -> VPMINSD
+  | `Int 1243 -> VPMINSQ
+  | `Int 1244 -> VPMINSW
+  | `Int 1245 -> VPMINUB
+  | `Int 1246 -> VPMINUD
+  | `Int 1247 -> VPMINUQ
+  | `Int 1248 -> VPMINUW
+  | `Int 1249 -> VPMOVB2M
+  | `Int 1250 -> VPMOVD2M
+  | `Int 1251 -> VPMOVDB
+  | `Int 1252 -> VPMOVDW
+  | `Int 1253 -> VPMOVM2B
+  | `Int 1254 -> VPMOVM2D
+  | `Int 1255 -> VPMOVM2Q
+  | `Int 1256 -> VPMOVM2W
+  | `Int 1257 -> VPMOVMSKB
+  | `Int 1258 -> VPMOVQ2M
+  | `Int 1259 -> VPMOVQB
+  | `Int 1260 -> VPMOVQD
+  | `Int 1261 -> VPMOVQW
+  | `Int 1262 -> VPMOVSDB
+  | `Int 1263 -> VPMOVSDW
+  | `Int 1264 -> VPMOVSQB
+  | `Int 1265 -> VPMOVSQD
+  | `Int 1266 -> VPMOVSQW
+  | `Int 1267 -> VPMOVSWB
+  | `Int 1268 -> VPMOVSXBD
+  | `Int 1269 -> VPMOVSXBQ
+  | `Int 1270 -> VPMOVSXBW
+  | `Int 1271 -> VPMOVSXDQ
+  | `Int 1272 -> VPMOVSXWD
+  | `Int 1273 -> VPMOVSXWQ
+  | `Int 1274 -> VPMOVUSDB
+  | `Int 1275 -> VPMOVUSDW
+  | `Int 1276 -> VPMOVUSQB
+  | `Int 1277 -> VPMOVUSQD
+  | `Int 1278 -> VPMOVUSQW
+  | `Int 1279 -> VPMOVUSWB
+  | `Int 1280 -> VPMOVW2M
+  | `Int 1281 -> VPMOVWB
+  | `Int 1282 -> VPMOVZXBD
+  | `Int 1283 -> VPMOVZXBQ
+  | `Int 1284 -> VPMOVZXBW
+  | `Int 1285 -> VPMOVZXDQ
+  | `Int 1286 -> VPMOVZXWD
+  | `Int 1287 -> VPMOVZXWQ
+  | `Int 1288 -> VPMULDQ
+  | `Int 1289 -> VPMULHRSW
+  | `Int 1290 -> VPMULHUW
+  | `Int 1291 -> VPMULHW
+  | `Int 1292 -> VPMULLD
+  | `Int 1293 -> VPMULLQ
+  | `Int 1294 -> VPMULLW
+  | `Int 1295 -> VPMULTISHIFTQB
+  | `Int 1296 -> VPMULUDQ
+  | `Int 1297 -> VPOPCNTB
+  | `Int 1298 -> VPOPCNTD
+  | `Int 1299 -> VPOPCNTQ
+  | `Int 1300 -> VPOPCNTW
+  | `Int 1301 -> VPORD
+  | `Int 1302 -> VPORQ
+  | `Int 1303 -> VPOR
+  | `Int 1304 -> VPPERM
+  | `Int 1305 -> VPROLD
+  | `Int 1306 -> VPROLQ
+  | `Int 1307 -> VPROLVD
+  | `Int 1308 -> VPROLVQ
+  | `Int 1309 -> VPRORD
+  | `Int 1310 -> VPRORQ
+  | `Int 1311 -> VPRORVD
+  | `Int 1312 -> VPRORVQ
+  | `Int 1313 -> VPROTB
+  | `Int 1314 -> VPROTD
+  | `Int 1315 -> VPROTQ
+  | `Int 1316 -> VPROTW
+  | `Int 1317 -> VPSADBW
+  | `Int 1318 -> VPSCATTERDD
+  | `Int 1319 -> VPSCATTERDQ
+  | `Int 1320 -> VPSCATTERQD
+  | `Int 1321 -> VPSCATTERQQ
+  | `Int 1322 -> VPSHAB
+  | `Int 1323 -> VPSHAD
+  | `Int 1324 -> VPSHAQ
+  | `Int 1325 -> VPSHAW
+  | `Int 1326 -> VPSHLB
+  | `Int 1327 -> VPSHLDD
+  | `Int 1328 -> VPSHLDQ
+  | `Int 1329 -> VPSHLDVD
+  | `Int 1330 -> VPSHLDVQ
+  | `Int 1331 -> VPSHLDVW
+  | `Int 1332 -> VPSHLDW
+  | `Int 1333 -> VPSHLD
+  | `Int 1334 -> VPSHLQ
+  | `Int 1335 -> VPSHLW
+  | `Int 1336 -> VPSHRDD
+  | `Int 1337 -> VPSHRDQ
+  | `Int 1338 -> VPSHRDVD
+  | `Int 1339 -> VPSHRDVQ
+  | `Int 1340 -> VPSHRDVW
+  | `Int 1341 -> VPSHRDW
+  | `Int 1342 -> VPSHUFBITQMB
+  | `Int 1343 -> VPSHUFB
+  | `Int 1344 -> VPSHUFD
+  | `Int 1345 -> VPSHUFHW
+  | `Int 1346 -> VPSHUFLW
+  | `Int 1347 -> VPSIGNB
+  | `Int 1348 -> VPSIGND
+  | `Int 1349 -> VPSIGNW
+  | `Int 1350 -> VPSLLDQ
+  | `Int 1351 -> VPSLLD
+  | `Int 1352 -> VPSLLQ
+  | `Int 1353 -> VPSLLVD
+  | `Int 1354 -> VPSLLVQ
+  | `Int 1355 -> VPSLLVW
+  | `Int 1356 -> VPSLLW
+  | `Int 1357 -> VPSRAD
+  | `Int 1358 -> VPSRAQ
+  | `Int 1359 -> VPSRAVD
+  | `Int 1360 -> VPSRAVQ
+  | `Int 1361 -> VPSRAVW
+  | `Int 1362 -> VPSRAW
+  | `Int 1363 -> VPSRLDQ
+  | `Int 1364 -> VPSRLD
+  | `Int 1365 -> VPSRLQ
+  | `Int 1366 -> VPSRLVD
+  | `Int 1367 -> VPSRLVQ
+  | `Int 1368 -> VPSRLVW
+  | `Int 1369 -> VPSRLW
+  | `Int 1370 -> VPSUBB
+  | `Int 1371 -> VPSUBD
+  | `Int 1372 -> VPSUBQ
+  | `Int 1373 -> VPSUBSB
+  | `Int 1374 -> VPSUBSW
+  | `Int 1375 -> VPSUBUSB
+  | `Int 1376 -> VPSUBUSW
+  | `Int 1377 -> VPSUBW
+  | `Int 1378 -> VPTERNLOGD
+  | `Int 1379 -> VPTERNLOGQ
+  | `Int 1380 -> VPTESTMB
+  | `Int 1381 -> VPTESTMD
+  | `Int 1382 -> VPTESTMQ
+  | `Int 1383 -> VPTESTMW
+  | `Int 1384 -> VPTESTNMB
+  | `Int 1385 -> VPTESTNMD
+  | `Int 1386 -> VPTESTNMQ
+  | `Int 1387 -> VPTESTNMW
+  | `Int 1388 -> VPTEST
+  | `Int 1389 -> VPUNPCKHBW
+  | `Int 1390 -> VPUNPCKHDQ
+  | `Int 1391 -> VPUNPCKHQDQ
+  | `Int 1392 -> VPUNPCKHWD
+  | `Int 1393 -> VPUNPCKLBW
+  | `Int 1394 -> VPUNPCKLDQ
+  | `Int 1395 -> VPUNPCKLQDQ
+  | `Int 1396 -> VPUNPCKLWD
+  | `Int 1397 -> VPXORD
+  | `Int 1398 -> VPXORQ
+  | `Int 1399 -> VPXOR
+  | `Int 1400 -> VRANGEPD
+  | `Int 1401 -> VRANGEPS
+  | `Int 1402 -> VRANGESD
+  | `Int 1403 -> VRANGESS
+  | `Int 1404 -> VRCP14PD
+  | `Int 1405 -> VRCP14PS
+  | `Int 1406 -> VRCP14SD
+  | `Int 1407 -> VRCP14SS
+  | `Int 1408 -> VRCP28PD
+  | `Int 1409 -> VRCP28PS
+  | `Int 1410 -> VRCP28SD
+  | `Int 1411 -> VRCP28SS
+  | `Int 1412 -> VRCPPS
+  | `Int 1413 -> VRCPSS
+  | `Int 1414 -> VREDUCEPD
+  | `Int 1415 -> VREDUCEPS
+  | `Int 1416 -> VREDUCESD
+  | `Int 1417 -> VREDUCESS
+  | `Int 1418 -> VRNDSCALEPD
+  | `Int 1419 -> VRNDSCALEPS
+  | `Int 1420 -> VRNDSCALESD
+  | `Int 1421 -> VRNDSCALESS
+  | `Int 1422 -> VROUNDPD
+  | `Int 1423 -> VROUNDPS
+  | `Int 1424 -> VROUNDSD
+  | `Int 1425 -> VROUNDSS
+  | `Int 1426 -> VRSQRT14PD
+  | `Int 1427 -> VRSQRT14PS
+  | `Int 1428 -> VRSQRT14SD
+  | `Int 1429 -> VRSQRT14SS
+  | `Int 1430 -> VRSQRT28PD
+  | `Int 1431 -> VRSQRT28PS
+  | `Int 1432 -> VRSQRT28SD
+  | `Int 1433 -> VRSQRT28SS
+  | `Int 1434 -> VRSQRTPS
+  | `Int 1435 -> VRSQRTSS
+  | `Int 1436 -> VSCALEFPD
+  | `Int 1437 -> VSCALEFPS
+  | `Int 1438 -> VSCALEFSD
+  | `Int 1439 -> VSCALEFSS
+  | `Int 1440 -> VSCATTERDPD
+  | `Int 1441 -> VSCATTERDPS
+  | `Int 1442 -> VSCATTERPF0DPD
+  | `Int 1443 -> VSCATTERPF0DPS
+  | `Int 1444 -> VSCATTERPF0QPD
+  | `Int 1445 -> VSCATTERPF0QPS
+  | `Int 1446 -> VSCATTERPF1DPD
+  | `Int 1447 -> VSCATTERPF1DPS
+  | `Int 1448 -> VSCATTERPF1QPD
+  | `Int 1449 -> VSCATTERPF1QPS
+  | `Int 1450 -> VSCATTERQPD
+  | `Int 1451 -> VSCATTERQPS
+  | `Int 1452 -> VSHUFF32X4
+  | `Int 1453 -> VSHUFF64X2
+  | `Int 1454 -> VSHUFI32X4
+  | `Int 1455 -> VSHUFI64X2
+  | `Int 1456 -> VSHUFPD
+  | `Int 1457 -> VSHUFPS
+  | `Int 1458 -> VSQRTPD
+  | `Int 1459 -> VSQRTPS
+  | `Int 1460 -> VSQRTSD
+  | `Int 1461 -> VSQRTSS
+  | `Int 1462 -> VSTMXCSR
+  | `Int 1463 -> VSUBPD
+  | `Int 1464 -> VSUBPS
+  | `Int 1465 -> VSUBSD
+  | `Int 1466 -> VSUBSS
+  | `Int 1467 -> VTESTPD
+  | `Int 1468 -> VTESTPS
+  | `Int 1469 -> VUCOMISD
+  | `Int 1470 -> VUCOMISS
+  | `Int 1471 -> VUNPCKHPD
+  | `Int 1472 -> VUNPCKHPS
+  | `Int 1473 -> VUNPCKLPD
+  | `Int 1474 -> VUNPCKLPS
+  | `Int 1475 -> VXORPD
+  | `Int 1476 -> VXORPS
+  | `Int 1477 -> VZEROALL
+  | `Int 1478 -> VZEROUPPER
+  | `Int 1479 -> WAIT
+  | `Int 1480 -> WBINVD
+  | `Int 1481 -> WBNOINVD
+  | `Int 1482 -> WRFSBASE
+  | `Int 1483 -> WRGSBASE
+  | `Int 1484 -> WRMSR
+  | `Int 1485 -> WRPKRU
+  | `Int 1486 -> WRSSD
+  | `Int 1487 -> WRSSQ
+  | `Int 1488 -> WRUSSD
+  | `Int 1489 -> WRUSSQ
+  | `Int 1490 -> XABORT
+  | `Int 1491 -> XACQUIRE
+  | `Int 1492 -> XADD
+  | `Int 1493 -> XBEGIN
+  | `Int 1494 -> XCHG
+  | `Int 1495 -> FXCH
+  | `Int 1496 -> XCRYPTCBC
+  | `Int 1497 -> XCRYPTCFB
+  | `Int 1498 -> XCRYPTCTR
+  | `Int 1499 -> XCRYPTECB
+  | `Int 1500 -> XCRYPTOFB
+  | `Int 1501 -> XEND
+  | `Int 1502 -> XGETBV
+  | `Int 1503 -> XLATB
+  | `Int 1504 -> XOR
+  | `Int 1505 -> XORPD
+  | `Int 1506 -> XORPS
+  | `Int 1507 -> XRELEASE
+  | `Int 1508 -> XRSTOR
+  | `Int 1509 -> XRSTOR64
+  | `Int 1510 -> XRSTORS
+  | `Int 1511 -> XRSTORS64
+  | `Int 1512 -> XSAVE
+  | `Int 1513 -> XSAVE64
+  | `Int 1514 -> XSAVEC
+  | `Int 1515 -> XSAVEC64
+  | `Int 1516 -> XSAVEOPT
+  | `Int 1517 -> XSAVEOPT64
+  | `Int 1518 -> XSAVES
+  | `Int 1519 -> XSAVES64
+  | `Int 1520 -> XSETBV
+  | `Int 1521 -> XSHA1
+  | `Int 1522 -> XSHA256
+  | `Int 1523 -> XSTORE
+  | `Int 1524 -> XTEST
+  | yojson ->
+      raise
+      @@ Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error
+           (Failure "invalid instruction", yojson)

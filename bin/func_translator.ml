@@ -1,3 +1,7 @@
-type intrinsic = { addr: int; name: string; mir_name: string }
+open Radatnet.Types
 
-let translate c addr = (c,addr) |> ignore; failwith "not implemented"
+type intrinsic = { addr : int; name : string; mir_name : string }
+
+let translate c addr =
+  (c, addr) |> ignore;
+  failwith "not implemented"

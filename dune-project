@@ -5,6 +5,8 @@
 
 (generate_opam_files)
 
+(map_workspace_root false)
+
 (package
  (name towhowcaml)
  (depends ocaml dune utop ppx_yojson_conv ppx_sexp_conv sexplib))
