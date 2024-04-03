@@ -9,6 +9,7 @@ val unsafe_get : 'a t -> int -> 'a
 val set : 'a t -> int -> 'a -> unit
 val add : 'a t -> 'a -> unit
 val copy : 'a t -> 'a t
+val to_perm_array : 'a t -> ('a, [< 'b perms ]) Array.Permissioned.t
 
 include
   Indexed_container.Generic with type ('a, _) t := 'a t and type 'a elt := 'a

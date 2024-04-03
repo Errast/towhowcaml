@@ -1,20 +1,17 @@
 open! Core
 
 type intrinsic = { addr : int; name : string; mir_name : string }
-
-type block_terminator =
-  | Goto of int
-  | Branch of { succeed : int; fail : int }
-  | Switch of Radatnet.Types.jump_table_case list
+[@@deriving sexp]
 
 type block = {
   offset : int;
-  terminator : block_terminator;
-  ops : (Radatnet.Types.opcode, [ `Immutable ]) Array.Permissioned.t;
+  terminator : Mir.Block.terminator;
+  ops : (Radatnet.Types.opcode, immutable) Array.Permissioned.t;
 }
+[@@deriving sexp]
 
 val translate :
   intrinsics:(int, intrinsic) Hashtbl.t ->
   name:string ->
   blocks:block list ->
-  'a
+  Mir.Func.t

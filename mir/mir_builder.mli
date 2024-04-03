@@ -13,7 +13,7 @@ val create : local_type String.Map.t -> t
 
 val deconstruct :
   t ->
-  Instr.t array
+  (Instr.t, [< 'a perms ]) Array.Permissioned.t
   * (ident, Local_info.t) Hashtbl.t
   * local_type Map.M(String).t
   * Set.M(Instr.Ref).t

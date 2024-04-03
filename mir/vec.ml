@@ -80,6 +80,12 @@ let to_array vec =
       ((* Option_array.unsafe_get_some_assuming_some *)
        Option_array.get_some_exn vec.array)
 
+let to_perm_array vec =
+  Array.Permissioned.init vec.length
+    ~f:
+      ((* Option_array.unsafe_get_some_assuming_some *)
+       Option_array.get_some_exn vec.array)
+
 include
   Sexpable.Of_sexpable1
     (Array)

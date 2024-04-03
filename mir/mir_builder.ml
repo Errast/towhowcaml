@@ -10,7 +10,7 @@ type t = {
 }
 
 let deconstruct { instrs; currentVar; locals; roots; _ } =
-  (Vec.to_array instrs, Hashtbl.copy currentVar, locals, roots)
+  (Vec.to_perm_array instrs, Hashtbl.copy currentVar, locals, roots)
 
 let set_check_var_is_latest t b = t.check_var_is_latest <- b
 let float_temp : ident = "__fl"
