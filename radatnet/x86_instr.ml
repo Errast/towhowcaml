@@ -1522,7 +1522,7 @@ type t =
   | XSHA256
   | XSTORE
   | XTEST
-[@@deriving sexp]
+[@@deriving sexp, hash]
 
 let t_of_yojson = function
   | `Int 0 -> AAA

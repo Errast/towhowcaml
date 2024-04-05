@@ -8,6 +8,7 @@ type t = {
   mutable roots : Set.M(Instr.Ref).t;
   mutable check_var_is_latest : bool;
 }
+[@@deriving sexp_of]
 
 let deconstruct { instrs; currentVar; locals; roots; _ } =
   (Vec.to_perm_array instrs, Hashtbl.copy currentVar, locals, roots)
@@ -56,34 +57,57 @@ let type_temp = function
   | Vec -> vec_temp
   | Long -> long_temp
 
+let new_info t ~add_ctx varName =
+  match Map.find t.locals varName with
+  | Some typ ->
+      if add_ctx then
+        let index =
+          add_instr t
+          @@ Instr.OutsideContext
+               { typ; var = Variable.{ name = varName; subscript = 0 } }
+        in
+        Local_info.{ subscript = 0; index; typ }
+      else Local_info.{ subscript = 0; index = Instr.Ref.invalid; typ }
+  | _ ->
+      raise
+      @@ Not_found_s [%message "No local found" ~varName:(varName : string)]
+
 let new_var t varName typ =
-  let varName : ident =
-    Option.value_or_thunk varName ~default:(fun () -> type_temp typ)
+  let varName, subscript =
+    match varName with
+    (* Use a temp local; skip type check *)
+    | None ->
+        let varName = type_temp typ in
+        let subscript =
+          Hashtbl.find t.currentVar varName
+          |> Option.value_map ~f:(fun c -> c.subscript) ~default:1
+        in
+        (varName, subscript)
+    | Some varName ->
+        let info =
+          Hashtbl.find t.currentVar varName
+          |> Option.value_or_thunk ~default:(fun () ->
+                 new_info t varName ~add_ctx:false)
+        in
+        if Poly.(info.typ <> typ) then
+          raise
+          @@ Not_found_s
+               [%message
+                 "Wrong type for local"
+                   ~given:(typ : local_type)
+                   (info : Local_info.t)];
+        (varName, info.subscript + 1)
   in
-  let currentVar =
-    Hashtbl.update_and_return t.currentVar varName
-      ~f:
-        (Option.value_or_thunk ~default:(fun () ->
-             match Map.find t.locals varName with
-             | Some typ ->
-                 Local_info.{ subscript = 0; index = Instr.Ref.invalid; typ }
-             | _ ->
-                 raise
-                 @@ Not_found_s
-                      [%message "No local found" ~varName:(varName : string)]))
-  in
-  if Poly.(currentVar.typ <> typ) then
-    raise
-    @@ Not_found_s
-         [%message
-           "Wrong type for local"
-             ~local_name:(varName : string)
-             ~given:(typ : local_type)
-             ~found:(currentVar.typ : local_type)];
-  let subscript = currentVar.subscript + 1 in
   Hashtbl.set t.currentVar ~key:varName
-    ~data:{ typ; subscript; index = Instr.Ref.Ref (Vec.length t.instrs) };
+    ~data:{ typ; subscript; index = Instr.ref (Vec.length t.instrs) };
   Variable.{ name = varName; subscript }
+
+let newest_var t varName =
+  let info =
+    Hashtbl.find_or_add t.currentVar varName ~default:(fun () ->
+        new_info t varName ~add_ctx:true)
+  in
+  info.index
 
 let get_var t (Instr.Ref.Ref var as instr_ref) =
   Vec.get t.instrs var |> Instr.assignment_var
@@ -239,11 +263,11 @@ let store_op typ op ?(offset = 0) t ~value ~addr =
 
 let equals_zero = uni_op Int Instr.EqualsZero Int
 let long_equals_zero = uni_op Long Instr.LongEqualsZero Int
-let zero_extend_low_8 = uni_op Int Instr.ZeroExtendLow8 Int
-let zero_extend_high_8 = uni_op Int Instr.ZeroExtendHigh8 Int
+let zero_extend_low8 = uni_op Int Instr.ZeroExtendLow8 Int
+let zero_extend_high8 = uni_op Int Instr.ZeroExtendHigh8 Int
 let zero_extend_16 = uni_op Int Instr.ZeroExtend16 Int
-let sign_extend_low_8 = uni_op Int Instr.SignExtendLow8 Int
-let sign_extend_high_8 = uni_op Int Instr.SignExtendHigh8 Int
+let sign_extend_low8 = uni_op Int Instr.SignExtendLow8 Int
+let sign_extend_high8 = uni_op Int Instr.SignExtendHigh8 Int
 let sign_extend_16 = uni_op Int Instr.SignExtend16 Int
 let float_to_int32 = uni_op Float Instr.FloatToInt32 Int
 let long_to_int32 = uni_op Long Instr.LongToInt32 Int

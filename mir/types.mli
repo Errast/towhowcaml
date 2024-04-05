@@ -1,4 +1,4 @@
-open Core
+open! Core
 
 type ident = string [@@deriving sexp]
 type opt_ident = string option [@@deriving sexp]

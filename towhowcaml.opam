@@ -5,8 +5,7 @@ depends: [
   "dune" {>= "3.13"}
   "utop"
   "ppx_yojson_conv"
-  "ppx_sexp_conv"
-  "sexplib"
+  "core"
   "odoc" {with-doc}
 ]
 build: [

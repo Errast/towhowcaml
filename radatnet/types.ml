@@ -31,18 +31,24 @@ let x86_segment_reg_of_yojson = function
   | `String "gs" -> Gs
   | yojson -> of_yojson_error "invalid segment register" yojson
 
+type mem_operand = {
+  size : int;
+  base : X86reg.t option;
+  index : X86reg.t option;
+  scale : int;
+  displacement : int;
+  segment : x86_segment_reg option;
+}
+[@@deriving sexp]
+
 type operand =
   | Immediate of { size : int; value : int }
   | Register of { size : int; reg : X86reg.t }
-  | Memory of {
-      size : int;
-      base : X86reg.t option;
-      index : X86reg.t option;
-      scale : int;
-      displacement : int;
-      segment : x86_segment_reg option;
-    }
+  | Memory of mem_operand
 [@@deriving sexp]
+
+let operand_size = function
+  | Immediate { size; _ } | Register { size; _ } | Memory { size; _ } -> size
 
 let operand_of_yojson json =
   match json with
@@ -96,6 +102,10 @@ type opcode = {
   prefix : int; [@default 0] (* not doing this type now *)
 }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
+
+let opcode_prefix_none = 0
+let opcode_prefix_rep = 1
+let opcode_prefix_repne = 1 lsr 1
 
 type jump_table_case = { value : int; jump : int } [@@deriving of_yojson, sexp]
 

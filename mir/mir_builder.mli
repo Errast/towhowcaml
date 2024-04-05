@@ -7,7 +7,7 @@ val vec_temp : ident
 val int_temp : ident
 val is_temp : ident -> bool
 
-type t
+type t [@@deriving sexp_of]
 
 val create : local_type String.Map.t -> t
 
@@ -19,6 +19,7 @@ val deconstruct :
   * Set.M(Instr.Ref).t
 
 val set_check_var_is_latest : t -> bool -> unit
+val newest_var : t -> ident -> Instr.ref
 val const : ?varName:ident -> t -> int -> Instr.ref
 val float_const : ?varName:ident -> t -> float -> Instr.ref
 val long_const : ?varName:ident -> t -> int64 -> Instr.ref
@@ -68,11 +69,11 @@ type store_op_add =
 
 val equals_zero : uni_op_add
 val long_equals_zero : uni_op_add
-val zero_extend_low_8 : uni_op_add
-val zero_extend_high_8 : uni_op_add
+val zero_extend_low8 : uni_op_add
+val zero_extend_high8 : uni_op_add
 val zero_extend_16 : uni_op_add
-val sign_extend_low_8 : uni_op_add
-val sign_extend_high_8 : uni_op_add
+val sign_extend_low8 : uni_op_add
+val sign_extend_high8 : uni_op_add
 val sign_extend_16 : uni_op_add
 val float_to_int32 : uni_op_add
 val long_to_int32 : uni_op_add

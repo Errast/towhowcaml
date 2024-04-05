@@ -2,4 +2,6 @@
  (public_name towhowcaml)
  (name main)
  (modes byte exe)
+ (preprocess
+  (pps ppx_jane))
  (libraries mir radatnet))

@@ -11,6 +11,8 @@ end
 
 type ref = Ref.t
 
+val ref : int -> ref
+
 type uni_op =
   (* Int-valued *)
   | EqualsZero

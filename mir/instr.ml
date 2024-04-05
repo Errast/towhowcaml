@@ -14,6 +14,8 @@ end
 
 type ref = Ref.t
 
+let ref i = Ref.Ref i
+
 type uni_op =
   (* Int-valued *)
   | EqualsZero
