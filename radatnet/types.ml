@@ -1,3 +1,4 @@
+open! Core
 open Ppx_yojson_conv_lib.Yojson_conv
 open Sexplib.Std
 
@@ -20,7 +21,7 @@ type function_dissassembly = {
 }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
-type x86_segment_reg = Cs | Ds | Ss | Es | Fs | Gs [@@deriving sexp]
+type x86_segment_reg = Cs | Ds | Ss | Es | Fs | Gs [@@deriving sexp, equal]
 
 let x86_segment_reg_of_yojson = function
   | `String "cs" -> Cs
@@ -39,13 +40,13 @@ type mem_operand = {
   displacement : int;
   segment : x86_segment_reg option;
 }
-[@@deriving sexp]
+[@@deriving sexp, equal]
 
 type operand =
   | Immediate of { size : int; value : int }
   | Register of { size : int; reg : X86reg.t }
   | Memory of mem_operand
-[@@deriving sexp]
+[@@deriving sexp, equal]
 
 let operand_size = function
   | Immediate { size; _ } | Register { size; _ } | Memory { size; _ } -> size
@@ -87,7 +88,8 @@ let operand_of_yojson json =
             | ("disp", `Int disp) :: rest -> (disp, rest)
             | _ -> (0, rest)
           in
-          if rest <> [] then of_yojson_error "bad mem fields" yojson;
+          if not @@ List.is_empty rest then
+            of_yojson_error "bad mem fields" yojson;
           Memory { size; scale; displacement = disp; base; index; segment }
       | _, _ -> of_yojson_error "invalid operand type" yojson)
   | yojson -> of_yojson_error "invalid operand" yojson

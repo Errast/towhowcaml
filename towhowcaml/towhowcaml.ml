@@ -1,3 +1,5 @@
+module Status_flags = Status_flags
+
 let ignroe_funcs =
   Core.Hash_set.of_list
     (module Core.Int)
@@ -53,7 +55,7 @@ let main () =
   let start = Sys.time () in
   List.iter
     (fun f ->
-      if not @@ Core.Hash_set.mem ignroe_funcs f then (
+      if not @@ Core.Hash_set.mem ignroe_funcs f then
         let f =
           Cmd.seek c f;
           Cmd.disassemble_function c
@@ -61,7 +63,7 @@ let main () =
         f.ops
         |> List.iter (fun o ->
                Cmd.seek c (o : Radatnet.Types.instr_info).offset;
-               Cmd.analyze_opcode c |> ignore)))
+               Cmd.analyze_opcode c |> ignore))
     funcs;
   let stop = Sys.time () in
   Printf.printf "Elapsed: %f" (stop -. start)

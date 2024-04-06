@@ -1,6 +1,6 @@
 (library
  (name radatnet)
- (libraries yojson ppx_jane)
+ (libraries yojson ppx_jane core)
  (preprocess
   (pps ppx_yojson_conv ppx_jane))
  ; (flags (:standard -w -9-27))

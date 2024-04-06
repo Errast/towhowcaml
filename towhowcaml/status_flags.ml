@@ -1,6 +1,6 @@
 open! Core
 
-type t = int [@@deriving sexp, compare]
+type t = int [@@immediate] [@@deriving sexp, compare, hash, equal]
 
 let none = 0
 let sign = 1
@@ -9,4 +9,5 @@ let carry = 4
 let zero = 8
 let parity = 16
 let ( %| ) l r = l lor r
+let ( .&[] ) set value = set land value = 0
 let all = sign %| overflow %| carry %| zero %| parity

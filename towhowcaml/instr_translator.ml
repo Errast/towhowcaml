@@ -7,14 +7,34 @@ module B = Builder
 type state = {
   mutable compare_args : (Instr.Ref.t * X86reg.gpr_type) list;
   mutable compare_instr : X86_instr.t;
+  mutable input_condition_instr : X86_instr.t;
+  mutable output_condition_instr : X86_instr.t;
   mutable changed_flags : Status_flags.t;
+  mutable fpu_status_word_args : Instr.Ref.t list;
+  mutable fpu_status_word_instr : X86_instr.t;
+  mutable float_compare_args : Instr.Ref.t list;
+  mutable float_compare_instr : X86_instr.t;
+  mutable backward_direction : bool;
+  mutable fpu_stack_pointer : Instr.Ref.t;
 }
 [@@deriving sexp_of]
 
-let initial_state =
+(* why not *)
+let invalid_instr = X86_instr.VAESKEYGENASSIST
+
+let initial_state () =
   {
     compare_args = [];
-    (* why not *) compare_instr = X86_instr.VAESKEYGENASSIST;
+    compare_instr = invalid_instr;
+    input_condition_instr = invalid_instr;
+    output_condition_instr = invalid_instr;
+    changed_flags = Status_flags.none;
+    fpu_status_word_args = [];
+    fpu_status_word_instr = invalid_instr;
+    float_compare_args = [];
+    float_compare_instr = invalid_instr;
+    backward_direction = false;
+    fpu_stack_pointer = Instr.Ref.invalid;
   }
 
 type context = {
@@ -23,6 +43,41 @@ type context = {
   builder : Mir.Builder.t;
 }
 [@@deriving sexp_of]
+
+let flags_used =
+  Hashtbl.of_alist_exn
+    (module X86_instr)
+    Status_flags.
+      [
+        (X86_instr.JG, zero %| sign %| overflow);
+        (X86_instr.SETG, zero %| sign %| overflow);
+        (X86_instr.JGE, sign %| overflow);
+        (X86_instr.SETGE, sign %| overflow);
+        (X86_instr.JL, sign %| overflow);
+        (X86_instr.SETL, sign %| overflow);
+        (X86_instr.JLE, zero %| sign %| overflow);
+        (X86_instr.SETLE, zero %| sign %| overflow);
+        (X86_instr.JE, zero);
+        (X86_instr.SETE, zero);
+        (X86_instr.JNE, zero);
+        (X86_instr.SETNE, zero);
+        (X86_instr.JA, carry %| overflow);
+        (X86_instr.SETA, carry %| overflow);
+        (X86_instr.JAE, zero %| carry %| overflow);
+        (X86_instr.SETAE, zero %| carry %| overflow);
+        (X86_instr.JB, carry);
+        (X86_instr.SETB, carry);
+        (X86_instr.JBE, zero %| carry);
+        (X86_instr.SETBE, zero %| carry);
+        (X86_instr.JP, parity);
+        (X86_instr.JNP, parity);
+        (X86_instr.SETNP, parity);
+        (X86_instr.JNS, sign);
+        (X86_instr.JS, sign);
+        (X86_instr.SBB, carry);
+        (X86_instr.ADC, carry);
+        (X86_instr.JECXZ, none);
+      ]
 
 let raise_c context msg = raise_s [%message msg (context : context)]
 
@@ -39,6 +94,14 @@ let raise_ops c = raise_c c "Invalid operands"
 let assert_c c ?(msg = "Assert failed") b = if not b then raise_c c msg
 let operands c = c.opcode.opex.operands
 let newest_var c reg = X86reg.to_ident reg |> B.newest_var c.builder
+
+let reg_type_of_size = function
+  | 4 -> `Reg32Bit
+  | 2 -> `Reg16Bit
+  | 1 -> `RegLow8Bit
+  | _ -> failwith "invalid size"
+
+let loaded_reg_type operand = operand_size operand |> reg_type_of_size
 
 let load_partial_address c mem_operand =
   let addr_var =
@@ -139,9 +202,10 @@ let load_operand_u c src = load_operand_typed c src |> extend_unsigned c
 (* signed should be the default because it's one little WASM instruction *)
 let load_operand = load_operand_s
 
-let add_compare_op c args =
+let add_comparison c args =
   c.state.compare_instr <- c.opcode.id;
-  c.state.compare_args <- args
+  c.state.compare_args <- args;
+  c.state.changed_flags <- Status_flags.all
 
 let translate_mov c =
   match operands c with
@@ -196,6 +260,91 @@ let translate_pop c =
       store_operand c popped ~dest
   | _ -> raise_ops c
 
+(* Fine to use as long as, for each bit, the op is determined at most by the bits to the left of it *)
+let translate_bi_op c (op : B.bi_op_add) cond =
+  match operands c with
+  | [ dest; src ] when operand_size src = operand_size dest -> (
+      (* originally these were load_typed. why? *)
+      let lhs = load_operand c dest in
+      let rhs = load_operand c src in
+      let res = op c.builder ~lhs ~rhs in
+      store_operand c res ~dest;
+      let loaded_type = loaded_reg_type dest in
+      match cond with
+      | `All ->
+          add_comparison c
+            [ (lhs, loaded_type); (rhs, loaded_type); (res, loaded_type) ]
+      | `Result -> add_comparison c [ (res, loaded_type) ]
+      | `Args -> add_comparison c [ (lhs, loaded_type); (rhs, loaded_type) ]
+      | `None -> add_comparison c [])
+  | _ -> raise_ops c
+
+let translate_xor c =
+  match operands c with
+  | [ dest; src ] when equal_operand dest src ->
+      let value = B.const c.builder 0 in
+      store_operand c value ~dest;
+      add_comparison c []
+  | _ -> translate_bi_op c B.xor `Result
+
+let translate_shift_right c ~signed =
+  match operands c with
+  | [ dest; src ] ->
+      let lhs =
+        if signed then load_operand_s c dest else load_operand_u c dest
+      in
+      let rhs = if signed then load_operand_s c src else load_operand_u c src in
+      let res = B.shift_right ~signed c.builder ~lhs ~rhs in
+      store_operand c res ~dest;
+      add_comparison c [ (res, loaded_reg_type dest) ]
+  | _ -> raise_ops c
+
+let translate_test_cmp c =
+  match operands c with
+  | [ lhs; rhs ] ->
+      let lhs = load_operand_typed c lhs and rhs = load_operand_typed c rhs in
+      add_comparison c [ lhs; rhs ]
+  | _ -> raise_ops c
+
+let translate_inc c =
+  match operands c with
+  | [ arg ] ->
+      let lhs = load_operand c arg in
+      let res = B.add c.builder ~lhs ~rhs:(B.const c.builder 1) in
+      store_operand c res ~dest:arg;
+      add_comparison c [ (res, loaded_reg_type arg) ]
+  | _ -> raise_ops c
+
+let translate_condition c =
+  assert_c c
+    (Status_flags.equal c.state.changed_flags
+    @@ Hashtbl.find_exn flags_used c.opcode.id)
+    ~msg:"Flag has been modified";
+  B.set_check_var_is_latest c.builder false;
+  let condition =
+    match c.state.compare_instr with
+    | _ -> raise_c c "invalid comparison instruction"
+  in
+  B.set_check_var_is_latest c.builder true;
+  condition
+
+let translate_set_cond c =
+  match operands c with
+  | [ dest ] -> store_operand c (translate_condition c) ~dest
+  | _ -> raise_ops c
+
+let translate_lea c =
+  match operands c with
+  | [ dest; Memory mem ] ->
+      let addr, offset = load_partial_address c mem in
+      let res =
+        if offset = 0 then
+          B.add c.builder ~lhs:addr ~rhs:(B.const c.builder offset)
+        else addr
+      in
+      store_operand c res ~dest
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   let open X86_instr in
@@ -205,20 +354,26 @@ let translate_no_prefix c =
   | MOVSX -> translate_mov_sign_extend c
   | PUSH -> translate_push c
   | POP -> translate_pop c
-  | TEST | CMP -> (
-      match operands c with
-      | [ lhs; rhs ] ->
-          let lhs = load_operand_typed c lhs
-          and rhs = load_operand_typed c rhs in
-          add_compare_op c [ lhs; rhs ]
-      | _ -> raise_ops c)
+  | TEST | CMP -> translate_test_cmp c
+  | AND -> translate_bi_op c B.int_and `Result
+  | OR -> translate_bi_op c B.int_or `Result
+  | XOR -> translate_xor c
+  | ADD -> translate_bi_op c B.add `All
+  | SUB -> translate_bi_op c B.sub `All
+  | SHL -> translate_bi_op c B.shift_left `Result
+  | SAR -> translate_shift_right c ~signed:false
+  | SHR -> translate_shift_right c ~signed:true
+  | INC -> translate_inc c
+  | SETG | SETGE | SETL | SETLE | SETE | SETNE | SETA | SETAE | SETB | SETBE ->
+      translate_set_cond c
+  | LEA -> translate_lea c
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c = raise_c c "rep prefix"
 let translate_repne_prefix c = raise_c c "repne prefix"
 
-let translate builder opcode =
-  let c = { builder; opcode; state = initial_state } in
+let translate builder state opcode =
+  let c = { builder; opcode; state } in
   match opcode.prefix with
   | p when p = opcode_prefix_none -> translate_no_prefix c
   | p when p = opcode_prefix_rep -> translate_rep_prefix c
