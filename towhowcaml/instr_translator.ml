@@ -7,6 +7,7 @@ module B = Builder
 type state = {
   mutable compare_args : (Instr.Ref.t * X86reg.gpr_type) list;
   mutable compare_instr : X86_instr.t;
+  mutable changed_flags : Status_flags.t;
 }
 [@@deriving sexp_of]
 

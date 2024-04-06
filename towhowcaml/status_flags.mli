@@ -1,8 +1,6 @@
 open! Core
 
-type t [@@immediate]
-
-include Comparable.S with type t := t
+type t [@@deriving sexp, compare, hash]
 
 val none : t
 val sign : t
