@@ -223,3 +223,11 @@ let reg_type : t -> reg_type = function
   | #x87_float -> `X87Float
   | #mmx -> `Mmx
   | #sse -> `Sse
+
+let x87_float_reg_index : x87_float -> int = function
+  | `st0 -> 0
+  | `st1 -> 1
+  | `st2 -> 2
+  | `st3 -> 3
+  | `st4 -> 4
+  | `st5 -> 5

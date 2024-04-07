@@ -3,7 +3,7 @@ open Types
 
 module Ref = struct
   module T = struct
-    type t = Ref of int [@@unboxed] [@@deriving sexp, compare]
+    type t = Ref of int [@@unboxed] [@@deriving sexp, compare, equal]
   end
 
   include T

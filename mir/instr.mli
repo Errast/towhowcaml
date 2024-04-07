@@ -2,7 +2,7 @@ open Core
 open Types
 
 module Ref : sig
-  type t = Ref of int [@@unboxed] [@@deriving sexp, compare]
+  type t = Ref of int [@@unboxed] [@@deriving sexp, compare, equal]
 
   include Comparable.S with type t := t
 

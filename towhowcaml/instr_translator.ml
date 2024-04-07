@@ -4,6 +4,8 @@ open Radatnet
 open Mir
 module B = Builder
 
+let fpu_stack_pointer_global = "__fpuStack__"
+
 type state = {
   mutable compare_args : (Instr.Ref.t * X86reg.gpr_type) list;
   mutable compare_instr : X86_instr.t;
@@ -16,6 +18,8 @@ type state = {
   mutable float_compare_instr : X86_instr.t;
   mutable backward_direction : bool;
   mutable fpu_stack_pointer : Instr.Ref.t;
+  mutable fpu_stack_pointer_offset : int;
+  mutable fpu_status_word : Instr.Ref.t;
 }
 [@@deriving sexp_of]
 
@@ -35,6 +39,8 @@ let initial_state () =
     float_compare_instr = invalid_instr;
     backward_direction = false;
     fpu_stack_pointer = Instr.Ref.invalid;
+    fpu_stack_pointer_offset = 0;
+    fpu_status_word = Instr.Ref.invalid;
   }
 
 type context = {
@@ -207,6 +213,68 @@ let add_comparison c args =
   c.state.compare_args <- args;
   c.state.changed_flags <- Status_flags.all
 
+let add_float_comparison c args =
+  c.state.float_compare_instr <- c.opcode.id;
+  c.state.float_compare_args <- args
+
+let get_fpu_stack_pointer c =
+  (* only should be invalid if never previously used, so fpu_stack_pointer_offset should already be 0 *)
+  if Instr.Ref.equal Instr.Ref.invalid c.state.fpu_stack_pointer then
+    c.state.fpu_stack_pointer <-
+      B.get_global c.builder fpu_stack_pointer_global Int;
+  c.state.fpu_stack_pointer
+
+let set_fpu_stack c value index =
+  let addr = get_fpu_stack_pointer c in
+  let offset = (c.state.fpu_stack_pointer_offset - index) * float_size in
+  match float_size with
+  | 4 -> B.float_store32 c.builder ~addr ~value ~offset
+  | 8 -> B.float_store64 c.builder ~addr ~value ~offset
+  | _ -> failwith "invalid float size"
+
+let get_fpu_stack c index =
+  let addr = get_fpu_stack_pointer c in
+  let offset = (c.state.fpu_stack_pointer_offset - index) * float_size in
+  match float_size with
+  | 4 -> B.float_load32 c.builder addr ~offset
+  | 8 -> B.float_load64 c.builder addr ~offset
+  | _ -> failwith "invalid float size"
+
+let fpu_push c value =
+  c.state.fpu_stack_pointer_offset <- c.state.fpu_stack_pointer_offset + 1;
+  set_fpu_stack c value 0
+
+let fpu_pop c =
+  let value = get_fpu_stack c 0 in
+  c.state.fpu_stack_pointer_offset <- c.state.fpu_stack_pointer_offset - 1;
+  value
+
+let load_operand_f c src =
+  match src with
+  | Immediate { value; size = 4 } ->
+      B.float_const c.builder @@ Mir.Util.int32_to_float value
+  | Register { reg = #X86reg.x87_float as reg; _ } ->
+      get_fpu_stack c @@ X86reg.x87_float_reg_index reg
+  | Memory ({ segment = None | Some Es; _ } as mem) -> (
+      let addr, offset = load_partial_address c mem in
+      match mem.size with
+      | 4 -> B.float_load32 c.builder addr ~offset
+      | 8 -> B.float_load64 c.builder addr ~offset
+      | _ -> raise_c c "invalid size")
+  | _ -> raise_c c "invalid operand"
+
+let store_operand_f c value ~dest =
+  match dest with
+  | Register { reg = #X86reg.x87_float as reg; _ } ->
+      set_fpu_stack c value @@ X86reg.x87_float_reg_index reg
+  | Memory ({ segment = None | Some Es; size = 4 | 8; _ } as mem) -> (
+      let addr, offset = load_partial_address c mem in
+      match mem.size with
+      | 4 -> B.float_store32 c.builder ~value ~addr ~offset
+      | 8 -> B.float_store64 c.builder ~value ~addr ~offset
+      | _ -> raise_c c "invalid operand")
+  | _ -> raise_c c "invalid operand"
+
 let translate_mov c =
   match operands c with
   | [ dest; src ] when operand_size dest = operand_size src ->
@@ -345,6 +413,51 @@ let translate_lea c =
       store_operand c res ~dest
   | _ -> raise_ops c
 
+let translate_float_load c =
+  match operands c with
+  | [ (Memory _ as mem) ] ->
+      add_float_comparison c [];
+      load_operand_f c mem |> fpu_push c
+  | _ -> raise_ops c
+
+let translate_float_comparison c ~after_pop =
+  let rhs =
+    match operands c with
+    | [ operand ] -> load_operand_f c operand
+    | [] -> get_fpu_stack c 1
+    | _ -> raise_ops c
+  in
+  let lhs = get_fpu_stack c 0 in
+  add_float_comparison c [ lhs; rhs ];
+  match after_pop with
+  | `None -> ()
+  | `Once -> fpu_pop c |> ignore
+  | `Twice ->
+      fpu_pop c |> ignore;
+      fpu_pop |> ignore
+
+let translate_float_store c ~after_pop =
+  match operands c with
+  | [ dest ] ->
+      (* assuming get_fpu_stack has nothing to do with float comparisons, order doesn't matter *)
+      add_float_comparison c [];
+      let value = get_fpu_stack c 0 in
+      store_operand_f c value ~dest;
+      if after_pop then fpu_pop c |> ignore
+  | _ -> raise_ops c
+
+let translate_float_store_status_word c =
+  match operands c with
+  | [ Register { reg = `ax; _ } ] ->
+      assert_c c
+        (not @@ Instr.Ref.equal c.state.fpu_status_word Instr.Ref.invalid)
+        ~msg:"only store fpu status word once";
+      let value = B.landmine c.builder Int ~varName:(X86reg.to_ident `eax) in
+      c.state.fpu_status_word <- value;
+      c.state.fpu_status_word_instr <- c.state.float_compare_instr;
+      c.state.fpu_status_word_args <- c.state.float_compare_args
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   let open X86_instr in
@@ -367,6 +480,13 @@ let translate_no_prefix c =
   | SETG | SETGE | SETL | SETLE | SETE | SETNE | SETA | SETAE | SETB | SETBE ->
       translate_set_cond c
   | LEA -> translate_lea c
+  | FLD -> translate_float_load c
+  | FCOM -> translate_float_comparison c ~after_pop:`None
+  | FCOMP -> translate_float_comparison c ~after_pop:`Once
+  | FCOMPP -> translate_float_comparison c ~after_pop:`Twice
+  | FST -> translate_float_store c ~after_pop:false
+  | FSTP -> translate_float_store c ~after_pop:true
+  | FNSTSW -> translate_float_store_status_word c
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c = raise_c c "rep prefix"
