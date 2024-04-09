@@ -1,10 +1,9 @@
 open! Core
+module T_Util = Util
 open Radatnet.Types
 open Radatnet
 open Mir
 module B = Builder
-
-let fpu_stack_pointer_global = "__fpuStack__"
 
 type state = {
   mutable compare_args : (Instr.Ref.t * X86reg.gpr_type) list;
@@ -221,7 +220,7 @@ let get_fpu_stack_pointer c =
   (* only should be invalid if never previously used, so fpu_stack_pointer_offset should already be 0 *)
   if Instr.Ref.equal Instr.Ref.invalid c.state.fpu_stack_pointer then
     c.state.fpu_stack_pointer <-
-      B.get_global c.builder fpu_stack_pointer_global Int;
+      B.get_global c.builder T_Util.fpu_stack_pointer_global Int;
   c.state.fpu_stack_pointer
 
 let set_fpu_stack c value index =

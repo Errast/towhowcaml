@@ -1,0 +1,47 @@
+open! Core
+open Mir
+open Radatnet
+
+let fpu_stack_pointer_global : ident = "__fpuStack__"
+let input_compare_arg : ident = "__input_compare_arg__"
+
+let std_call =
+  { args = []; return = { name = X86reg.to_ident `eax; typ = Int } }
+
+let fast_call =
+  X86reg.
+    {
+      args =
+        [
+          { name = to_ident `ecx; typ = Int };
+          { name = to_ident `edx; typ = Int };
+        ];
+      return = { name = X86reg.to_ident `eax; typ = Int };
+    }
+
+let used_locals =
+  Map.of_alist_exn (module String)
+  @@ [ (input_compare_arg, Int) ]
+  @ List.map
+      ~f:(fun r -> (X86reg.to_ident r, Int))
+      [ `eax; `ebx; `ecx; `edx; `esi; `edi; `ebp; `esp ]
+  @ List.map
+      ~f:(fun r -> (X86reg.to_ident r, Vec))
+      [
+        `mm0;
+        `mm1;
+        `mm2;
+        `mm3;
+        `mm4;
+        `mm5;
+        `mm6;
+        `mm7;
+        `xmm0;
+        `xmm1;
+        `xmm2;
+        `xmm3;
+        `xmm4;
+        `xmm5;
+        `xmm6;
+        `xmm7;
+      ]
