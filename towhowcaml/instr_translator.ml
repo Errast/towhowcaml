@@ -9,7 +9,6 @@ type state = {
   mutable compare_args : (Instr.Ref.t * X86reg.gpr_type) list;
   mutable compare_instr : X86_instr.t;
   mutable input_condition_instr : X86_instr.t;
-  mutable output_condition_instr : X86_instr.t;
   mutable changed_flags : Status_flags.t;
   mutable fpu_status_word_args : Instr.Ref.t list;
   mutable fpu_status_word_instr : X86_instr.t;
@@ -22,20 +21,16 @@ type state = {
 }
 [@@deriving sexp_of]
 
-(* why not *)
-let invalid_instr = X86_instr.VAESKEYGENASSIST
-
 let initial_state () =
   {
     compare_args = [];
-    compare_instr = invalid_instr;
-    input_condition_instr = invalid_instr;
-    output_condition_instr = invalid_instr;
+    compare_instr = INVALID;
+    input_condition_instr = INVALID;
     changed_flags = Status_flags.none;
     fpu_status_word_args = [];
-    fpu_status_word_instr = invalid_instr;
+    fpu_status_word_instr = INVALID;
     float_compare_args = [];
-    float_compare_instr = invalid_instr;
+    float_compare_instr = INVALID;
     backward_direction = false;
     fpu_stack_pointer = Instr.Ref.invalid;
     fpu_stack_pointer_offset = 0;
@@ -49,7 +44,7 @@ type context = {
 }
 [@@deriving sexp_of]
 
-let flags_used =
+let flags_used_tbl =
   Hashtbl.of_alist_exn
     (module X86_instr)
     Status_flags.
@@ -84,6 +79,7 @@ let flags_used =
         (X86_instr.JECXZ, none);
       ]
 
+let flags_used_exn instr = Hashtbl.find_exn flags_used_tbl instr
 let raise_c context msg = raise_s [%message msg (context : context)]
 
 let raise_m c msg =
@@ -251,7 +247,7 @@ let fpu_pop c =
 let load_operand_f c src =
   match src with
   | Immediate { value; size = 4 } ->
-      B.float_const c.builder @@ Mir.Util.int32_to_float value
+      B.float_const c.builder @@ Util.int32_to_float value
   | Register { reg = #X86reg.x87_float as reg; _ } ->
       get_fpu_stack c @@ X86reg.x87_float_reg_index reg
   | Memory ({ segment = None | Some Es; _ } as mem) -> (
@@ -384,8 +380,7 @@ let translate_inc c =
 
 let translate_condition c =
   assert_c c
-    (Status_flags.equal c.state.changed_flags
-    @@ Hashtbl.find_exn flags_used c.opcode.id)
+    (Status_flags.equal c.state.changed_flags @@ flags_used_exn c.opcode.id)
     ~msg:"Flag has been modified";
   B.set_check_var_is_latest c.builder false;
   let condition =
@@ -498,3 +493,11 @@ let translate builder state opcode =
   | p when p = opcode_prefix_rep -> translate_rep_prefix c
   | p when p = opcode_prefix_repne -> translate_repne_prefix c
   | _ -> raise_c c "Invalid opcode prefix"
+
+type term_trans_result =
+  | Nothing
+  | Unconditional of { target : int }
+  | Conditional of { target : int; condition : Mir.Instr.ref }
+
+let translate_terminator builder state opcode = failwith "todo"
+let translate_output_condition builder state condition_instr = failwith "todo"

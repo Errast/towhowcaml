@@ -11,7 +11,7 @@ type t = {
 [@@deriving sexp_of]
 
 let deconstruct { instrs; currentVar; locals; roots; _ } =
-  (Vec.to_perm_array instrs, Hashtbl.copy currentVar, locals, roots)
+  (Vec.to_perm_array instrs, currentVar, locals, roots)
 
 let set_check_var_is_latest t b = t.check_var_is_latest <- b
 let float_temp : ident = "__fl"
@@ -108,6 +108,9 @@ let newest_var t varName =
         new_info t varName ~add_ctx:true)
   in
   info.index
+
+let newest_var_opt t varName =
+  Hashtbl.find t.currentVar varName |> Option.map ~f:(fun i -> i.index)
 
 let get_var t (Instr.Ref.Ref var as instr_ref) =
   Vec.get t.instrs var |> Instr.assignment_var

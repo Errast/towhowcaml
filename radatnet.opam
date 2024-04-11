@@ -4,6 +4,7 @@ depends: [
   "ocaml"
   "dune" {>= "3.13"}
   "utop"
+  "ppx_yojson_conv"
   "core"
   "odoc" {with-doc}
 ]

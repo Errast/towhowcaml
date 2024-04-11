@@ -1,6 +1,8 @@
-(executable
+(library
  (public_name towhowcaml)
- (modes byte exe)
  (preprocess
   (pps ppx_jane))
- (libraries mir radatnet))
+ (foreign_stubs
+  (language c)
+  (names bits))
+ (libraries core mir radatnet))

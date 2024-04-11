@@ -1,4 +1,5 @@
 type t =
+  | INVALID
   | AAA
   | AAD
   | AAM

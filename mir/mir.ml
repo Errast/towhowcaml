@@ -6,6 +6,5 @@ module Block = Block
 module Variable = Variable
 module Vec = Vec
 module Func = Func
-module Util = Util
 
 let float_size = 8

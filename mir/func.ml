@@ -4,7 +4,7 @@ open Types
 type t = {
   name : ident;
   signature : func_sig;
-  blocks : (Block.t, immutable) Array.Permissioned.t;
+  blocks : Block.t array;
   locals : local Map.M(String).t;
 }
 [@@deriving sexp]

@@ -2,6 +2,11 @@ open! Core
 open Mir
 open Radatnet
 
+external int32_to_float : int -> (float[@unboxed])
+  = "towhowcaml_int32_to_double_byte" "towhowcaml_int32_to_double"
+[@@noalloc]
+
+let stack_pointer_global : ident = "__stack__"
 let fpu_stack_pointer_global : ident = "__fpuStack__"
 let input_compare_arg : ident = "__input_compare_arg__"
 
