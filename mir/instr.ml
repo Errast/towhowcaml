@@ -207,13 +207,18 @@ type t =
       control_lower_bits : Int64.t;
       control_upper_bits : Int64.t;
     }
-  | LoadOp of { var : Variable.t; op : load_op; addr : Ref.t; offset : int }
+  | LoadOp of {
+      var : Variable.t;
+      op : load_op;
+      addr : Ref.t;
+      offset : int; [@default 0] [@sexp_drop_default.equal]
+    }
   | SignedLoadOp of {
       var : Variable.t;
       op : signed_load_op;
       addr : Ref.t;
       signed : bool;
-      offset : int;
+      offset : int; [@default 0] [@sexp_drop_default.equal]
     }
   | VecLoadLaneOp of {
       var : Variable.t;
@@ -221,7 +226,7 @@ type t =
       addr : Ref.t;
       shape : vec_lane_shape;
       lane : int;
-      offset : int;
+      offset : int; [@default 0] [@sexp_drop_default.equal]
     }
   | CallOp of {
       var : Variable.t;
@@ -242,13 +247,18 @@ type t =
     }
   | OutsideContext of { var : Variable.t; typ : local_type }
   | Landmine of { var : Variable.t; typ : local_type }
-  | StoreOp of { op : store_op; addr : Ref.t; value : Ref.t; offset : int }
+  | StoreOp of {
+      op : store_op;
+      addr : Ref.t;
+      value : Ref.t;
+      offset : int; [@default 0] [@sexp_drop_default.equal]
+    }
   | VecStoreLaneOp of {
       value : Ref.t;
       addr : Ref.t;
       shape : vec_lane_shape;
       lane : int;
-      offset : int;
+      offset : int; [@default 0] [@sexp_drop_default.equal]
     }
   | SetGlobalOp of {
       global_name : ident;
