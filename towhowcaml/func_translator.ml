@@ -24,6 +24,7 @@ type block = {
 
 type block_data = {
   id : int;
+  offset : int;
   builder : Mir.Builder.t;
   state : Instr_translator.state;
   terminator : Block.terminator;
@@ -83,12 +84,20 @@ let translate_block c id block =
       let term_found =
         Instr_translator.translate_terminator c.intrinsics builder state term_op
       in
-      match (term_found, block.terminator) with
+      let block_term = block.terminator in
+      match (term_found, block_term) with
       | Nothing, Goto next_addr ->
           let next_block = id + 1 in
-          assert (
-            next_block < AP.length c.raw_blocks
-            && (AP.get c.raw_blocks next_block).offset = next_addr);
+          if
+            not
+              (next_block < AP.length c.raw_blocks
+              && (AP.get c.raw_blocks next_block).offset = next_addr)
+          then
+            raise_s
+              [%message
+                "terminator falls through, but doesn't match block info"
+                  (term_op : opcode)
+                  (block_term : terminator)];
           Goto (Block next_block)
       | Unconditional { target }, Goto next_addr when next_addr = target ->
           let next_block = offset_to_block_id c target in
@@ -97,7 +106,13 @@ let translate_block c id block =
         when target = succeed ->
           let succeed_block = offset_to_block_id c succeed in
           let fail_block = offset_to_block_id c fail in
-          assert (fail_block = id + 1);
+          if fail_block <> id + 1 then
+            raise_s
+              [%message
+                "terminator conditionally falls through, but doesn't match \
+                 block info"
+                  (term_op : opcode)
+                  (block_term : terminator)];
           Branch
             {
               succeed = Block succeed_block;
@@ -110,7 +125,13 @@ let translate_block c id block =
           let cases =
             List.mapi
               ~f:(fun i case ->
-                assert (i = case.num);
+                if i <> case.num then
+                  raise_s
+                    [%message
+                      "jump cases not sequential from 0"
+                        (i : int)
+                        (term_op : opcode)
+                        (block_term : terminator)];
                 Block (offset_to_block_id c case.target))
               cases
           in
@@ -121,33 +142,61 @@ let translate_block c id block =
               "Invalid terminator"
                 (term_op : opcode)
                 (term_found : Instr_translator.term_trans_result)
-                ~term_op:(block.terminator : terminator)]
+                ~block_term:(block.terminator : terminator)]
   in
-  assert (not state.backward_direction);
-  { id; builder; state; terminator; output_condition_op = INVALID }
+  if not state.backward_direction then
+    raise_s [%message "ended in backward direction" ~block:(block.offset : int)];
+  {
+    id;
+    builder;
+    state;
+    terminator;
+    offset = block.offset;
+    output_condition_op = INVALID;
+  }
 
 let add_input_blocks inverted_cfg block_data b =
   let parents = inverted_cfg.(b.id) in
-  assert (not @@ List.is_empty parents);
+  if List.is_empty parents then
+    raise_s
+      [%message
+        "block has input condition but no parents" ~block:(b.offset : int)];
   let condition_instr = b.state.input_condition_instr in
   List.fold
     ~f:(fun () p ->
       let parent = block_data.(p) in
       if Poly.(parent.output_condition_op <> condition_instr) then (
-        assert (Poly.(parent.output_condition_op = INVALID));
-        assert (Poly.(parent.state.compare_instr <> INVALID));
+        if Poly.(parent.output_condition_op <> INVALID) then
+          raise_s
+            [%message
+              "parent block has different output condition"
+                ~block:(b.offset : int)
+                ~parent:(parent.offset : int)];
+        if Poly.(parent.state.compare_instr = INVALID) then
+          raise_s
+            [%message
+              "parent block has no output condition"
+                ~block:(b.offset : int)
+                ~parent:(parent.offset : int)];
         Instr_translator.translate_output_condition parent.builder parent.state
           condition_instr;
         parent.output_condition_op <- condition_instr))
     ~init:() parents
 
 let add_used_local used_locals ident typ =
-  assert (
-    Poly.(
-      (Hashtbl.find_or_add
-         ~default:(fun () -> { name = ident; typ })
-         used_locals ident)
-        .typ = typ))
+  let found_typ =
+    (Hashtbl.find_or_add
+       ~default:(fun () -> { name = ident; typ })
+       used_locals ident)
+      .typ
+  in
+  if Poly.(found_typ <> typ) then
+    raise_s
+      [%message
+        "multiple types for local"
+          (ident : ident)
+          ~typ1:(found_typ : local_type)
+          ~typ2:(typ : local_type)]
 
 let to_mir_block used_locals b =
   let instrs, current_vars, _, roots = Mir.Builder.deconstruct b.builder in
@@ -184,10 +233,12 @@ let translate ~intrinsics ~name ~(blocks : block array) =
   in
   let num_blocks = AP.length blocks in
   let inverted_cfg = AP.create ~len:num_blocks [] in
-  assert (
-    AP.is_sorted_strictly
-      ~compare:(fun l r -> compare_int l.offset r.offset)
-      blocks);
+  if
+    not
+    @@ AP.is_sorted_strictly
+         ~compare:(fun l r -> compare_int l.offset r.offset)
+         blocks
+  then raise_s [%message "blocks not sorted" (name : ident)];
 
   let c = { inverted_cfg; intrinsics; trap_block; raw_blocks = blocks } in
   AP.foldi ~f:(fun i () b -> add_block_branches c i b) ~init:() blocks;
