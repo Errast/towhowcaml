@@ -58,7 +58,7 @@ let make_intrinsics c =
                {
                  name = import.lib_name ^ "_" ^ import.name;
                  addr = import.table_address;
-                 signature = Util.fast_call;
+                 signature = Util.std_call;
                });
   intrinsics
 

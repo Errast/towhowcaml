@@ -378,7 +378,7 @@ let translate_shift_left c =
   match operands c with
   | [ dest; src ] when operand_size src = 1 ->
       let lhs = load_operand c dest in
-      let rhs = load_operand c src in
+      let rhs = load_operand_u c src in
       let res = B.shift_left c.builder ~lhs ~rhs in
       store_operand c res ~dest;
       add_comparison c [ (res, loaded_reg_type dest) ]

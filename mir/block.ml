@@ -18,8 +18,8 @@ type terminator =
 
 type t = {
   id : int;
-  terminator : terminator;
   instrs : Instr_list.t;
+  terminator : terminator;
   roots : Set.M(Instr.Ref).t;
 }
 [@@deriving sexp]
