@@ -72,8 +72,7 @@ let new_info t ~add_ctx varName =
       if add_ctx then
         let index =
           add_instr t
-          @@ Instr.OutsideContext
-               { typ; var = Variable.{ name = varName; subscript = 0 } }
+          @@ Instr.OutsideContext { typ; var = Variable.{ name = varName } }
         in
         Local_info.{ subscript = 0; index; typ }
       else Local_info.{ subscript = 0; index = Instr.Ref.invalid; typ }
@@ -109,7 +108,7 @@ let new_var t varName typ =
   in
   Hashtbl.set t.currentVar ~key:varName
     ~data:{ typ; subscript; index = Instr.ref (Vec.length t.instrs) };
-  Variable.{ name = varName; subscript }
+  Variable.{ name = varName }
 
 let newest_var t varName =
   let info =
@@ -144,7 +143,7 @@ let verify_var (Instr.Ref.Ref var as instr_ref) typ ?(check_type = true) t =
     && (not (is_temp declared.name))
     && Hashtbl.find t.currentVar declared.name
        |> Option.value_map ~default:false ~f:(fun i ->
-              declared.subscript <> i.subscript)
+              not @@ Instr.Ref.equal instr_ref i.index)
   then raise_s [%message "Outdated local" ~found:(declared : Variable.t)]
   else ()
 

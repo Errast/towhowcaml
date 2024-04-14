@@ -1,1 +1,1 @@
-type t = { name : Types.ident; subscript : int } [@@deriving sexp]
+type t = { name : Types.ident } [@@unboxed] [@@deriving sexp]
