@@ -5,9 +5,6 @@ open Mir
 module AP = Array
 module Vec = Mir.Vec
 
-type intrinsic = { addr : int; name : string; mir_name : string }
-[@@deriving sexp]
-
 type jump_case = { num : int; target : int } [@@deriving sexp]
 
 type terminator =
@@ -34,7 +31,7 @@ type block_data = {
 }
 
 type context = {
-  intrinsics : (int, intrinsic) Hashtbl.t;
+  intrinsics : (int, Util.intrinsic) Hashtbl.t;
   inverted_cfg : int list array;
   raw_blocks : block array;
   trap_block : branch_target option;
@@ -74,7 +71,7 @@ let translate_block c id block =
   AP.foldi
     ~f:(fun i () op ->
       if i <> AP.length block.ops - 1 then
-        Instr_translator.translate builder state op)
+        Instr_translator.translate c.intrinsics builder state op)
     ~init:() block.ops;
 
   let terminator =
@@ -83,32 +80,32 @@ let translate_block c id block =
       Block.Goto Return)
     else
       let term_op = AP.last block.ops in
-      match (block.terminator, term_op) with
-      | ( Switch { offset; cases },
-          {
-            id = JMP;
-            prefix = 0;
-            address = op_offset;
-            opex =
-              {
-                operands =
-                  [
-                    Memory
-                      {
-                        index = Some (#X86reg.reg_32bit as switch_reg);
-                        base = None;
-                        segment = None;
-                        scale = 4;
-                        displacement;
-                        size = 4;
-                      };
-                  ];
-              };
-          } )
-        when op_offset = offset && displacement > 0 ->
-          let switch_on =
-            X86reg.to_ident switch_reg |> Builder.newest_var builder
-          in
+      let term_found =
+        Instr_translator.translate_terminator c.intrinsics builder state term_op
+      in
+      match (term_found, block.terminator) with
+      | Nothing, Goto next_addr ->
+          let next_block = id + 1 in
+          assert (
+            next_block < AP.length c.raw_blocks
+            && (AP.get c.raw_blocks next_block).offset = next_addr);
+          Goto (Block next_block)
+      | Unconditional { target }, Goto next_addr when next_addr = target ->
+          let next_block = offset_to_block_id c target in
+          Goto (Block next_block)
+      | Conditional { target; condition }, Branch { succeed; fail }
+        when target = succeed ->
+          let succeed_block = offset_to_block_id c succeed in
+          let fail_block = offset_to_block_id c fail in
+          assert (fail_block = id + 1);
+          Branch
+            {
+              succeed = Block succeed_block;
+              fail = Block fail_block;
+              condition;
+            }
+      | Switch { switch_on; table_addr }, Switch { offset; cases }
+        when table_addr > 0 && term_op.address = offset ->
           let default_case = Option.value_exn c.trap_block in
           let cases =
             List.mapi
@@ -117,34 +114,14 @@ let translate_block c id block =
                 Block (offset_to_block_id c case.target))
               cases
           in
-          Block.Switch { cases; default = default_case; switch_on }
-      | Switch _, _ -> assert false
-      | _ -> (
-          let term_found =
-            Instr_translator.translate_terminator builder state term_op
-          in
-          match (term_found, block.terminator) with
-          | Nothing, Goto next_addr ->
-              let next_block = id + 1 in
-              assert (
-                next_block < AP.length c.raw_blocks
-                && (AP.get c.raw_blocks next_block).offset = next_addr);
-              Goto (Block next_block)
-          | Unconditional { target }, Goto next_addr when next_addr = target ->
-              let next_block = offset_to_block_id c target in
-              Goto (Block next_block)
-          | Conditional { target; condition }, Branch { succeed; fail }
-            when target = succeed ->
-              let succeed_block = offset_to_block_id c succeed in
-              let fail_block = offset_to_block_id c fail in
-              assert (fail_block = id + 1);
-              Branch
-                {
-                  succeed = Block succeed_block;
-                  fail = Block fail_block;
-                  condition;
-                }
-          | _ -> assert false)
+          Switch { cases; default = default_case; switch_on }
+      | _ ->
+          raise_s
+            [%message
+              "Invalid terminator"
+                (term_op : opcode)
+                (term_found : Instr_translator.term_trans_result)
+                ~term_op:(block.terminator : terminator)]
   in
   assert (not state.backward_direction);
   { id; builder; state; terminator; output_condition_op = INVALID }

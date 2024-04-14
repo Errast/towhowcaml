@@ -1,2 +1,5 @@
 (test
- (name test_towhowcaml))
+ (name test_towhowcaml)
+ (libraries radatnet mir towhowcaml core)
+ (preprocess (pps ppx_inline_test)))
+

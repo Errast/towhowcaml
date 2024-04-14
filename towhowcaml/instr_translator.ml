@@ -1,6 +1,5 @@
 open! Core
 module T_Util = Util
-open Radatnet.Types
 open Radatnet
 open Mir
 module B = Builder
@@ -41,6 +40,7 @@ type context = {
   opcode : Radatnet.Types.opcode;
   state : state;
   builder : Mir.Builder.t;
+  intrinsics : (int, Util.intrinsic) Hashtbl.t;
 }
 [@@deriving sexp_of]
 
@@ -124,6 +124,11 @@ let load_partial_address c mem_operand =
   match addr_var with
   | Some addr -> (addr, mem_operand.displacement)
   | None -> (B.const c.builder mem_operand.displacement, 0)
+
+let load_complete_address c mem_operand =
+  let addr, offset = load_partial_address c mem_operand in
+  if offset = 0 then B.add c.builder ~lhs:addr ~rhs:(B.const c.builder offset)
+  else addr
 
 let store_operand c src ~dest =
   match dest with
@@ -397,14 +402,7 @@ let translate_set_cond c =
 
 let translate_lea c =
   match operands c with
-  | [ dest; Memory mem ] ->
-      let addr, offset = load_partial_address c mem in
-      let res =
-        if offset = 0 then
-          B.add c.builder ~lhs:addr ~rhs:(B.const c.builder offset)
-        else addr
-      in
-      store_operand c res ~dest
+  | [ dest; Memory mem ] -> store_operand c ~dest @@ load_complete_address c mem
   | _ -> raise_ops c
 
 let translate_float_load c =
@@ -452,9 +450,76 @@ let translate_float_store_status_word c =
       c.state.fpu_status_word_args <- c.state.float_compare_args
   | _ -> raise_ops c
 
+let translate_call_start c =
+  add_comparison c [];
+  add_float_comparison c [];
+  (* push address onto the stack *)
+  let esp =
+    B.sub c.builder ~rhs:(B.const c.builder 4) ~lhs:(newest_var c `esp)
+      ~varName:(X86reg.to_ident `esp)
+  in
+  B.store32 c.builder ~addr:esp ~value:(B.const c.builder c.opcode.address)
+
+let translate_call_end c =
+  (* assert address is correct *)
+  let esp = newest_var c `esp in
+  B.mir_assert c.builder
+  @@ B.equal c.builder ~lhs:(B.load32 c.builder esp)
+       ~rhs:(B.const c.builder c.opcode.address);
+  B.add c.builder ~rhs:(B.const c.builder 4) ~lhs:esp
+    ~varName:(X86reg.to_ident `esp)
+  |> ignore
+
+let translate_direct_call c func_name func_sig =
+  let args =
+    List.map ~f:(fun a -> B.newest_var c.builder a.name) func_sig.args
+  in
+  translate_call_start c;
+  B.call c.builder func_name args func_sig.return.typ
+    ~varName:func_sig.return.name
+  |> ignore;
+  translate_call_end c
+
+let translate_indirect_call c ~addr func_sig =
+  let args =
+    (* maybe check the types line up? *)
+    List.map ~f:(fun a -> B.newest_var c.builder a.name) func_sig.args
+  in
+  translate_call_start c;
+  B.call_indirect c.builder addr args ~varName:func_sig.return.name
+    func_sig.return.typ
+  |> ignore;
+  translate_call_end c
+
+let translate_call c =
+  match operands c with
+  (* intrinsics! *)
+  | [
+   ( Immediate { value = addr; _ }
+   | Memory
+       {
+         size = 4;
+         base = None;
+         index = None;
+         scale = 1;
+         segment = None;
+         displacement = addr;
+       } );
+  ]
+    when Hashtbl.mem c.intrinsics addr ->
+      let intrinisc = Hashtbl.find_exn c.intrinsics addr in
+      translate_direct_call c intrinisc.mir_name intrinisc.signature
+  | [ Immediate { value; _ } ] ->
+      translate_direct_call c (Util.addr_to_func_name value) Util.fast_call
+  | [ Memory ({ size = 4; _ } as mem) ] ->
+      translate_indirect_call c Util.fast_call
+        ~addr:(load_complete_address c mem)
+  | [ Register { size = 4; reg } ] ->
+      translate_indirect_call c Util.fast_call ~addr:(newest_var c reg)
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
-  let open X86_instr in
   match c.opcode.id with
   | MOV -> translate_mov c
   | MOVZX -> translate_mov_zero_extend c
@@ -481,13 +546,14 @@ let translate_no_prefix c =
   | FST -> translate_float_store c ~after_pop:false
   | FSTP -> translate_float_store c ~after_pop:true
   | FNSTSW -> translate_float_store_status_word c
+  | CALL -> translate_call c
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c = raise_c c "rep prefix"
 let translate_repne_prefix c = raise_c c "repne prefix"
 
-let translate builder state opcode =
-  let c = { builder; opcode; state } in
+let translate intrinsics builder state opcode =
+  let c = { builder; opcode; state; intrinsics } in
   match opcode.prefix with
   | p when p = opcode_prefix_none -> translate_no_prefix c
   | p when p = opcode_prefix_rep -> translate_rep_prefix c
@@ -497,7 +563,64 @@ let translate builder state opcode =
 type term_trans_result =
   | Nothing
   | Unconditional of { target : int }
-  | Conditional of { target : int; condition : Mir.Instr.ref }
+  | Conditional of { target : int; condition : Mir.Instr.Ref.t }
+  | Switch of { switch_on : Mir.Instr.Ref.t; table_addr : int }
+  | Return
+[@@deriving sexp_of]
 
-let translate_terminator builder state opcode = failwith "todo"
-let translate_output_condition builder state condition_instr = failwith "todo"
+let translate_terminator intrinsics builder state opcode =
+  match opcode with
+  | {
+   id = JMP;
+   prefix = 0;
+   opex =
+     {
+       operands =
+         [
+           Memory
+             {
+               index = Some (#X86reg.reg_32bit as switch_reg);
+               base = None;
+               segment = None;
+               scale = 4;
+               displacement;
+               size = 4;
+             };
+         ];
+     };
+   _;
+  } ->
+      Switch
+        {
+          table_addr = displacement;
+          switch_on = B.newest_var builder (X86reg.to_ident switch_reg);
+        }
+  | {
+   id = JMP;
+   prefix = 0;
+   opex = { operands = [ Immediate { size = 4; value } ] };
+   _;
+  } ->
+      Unconditional { target = value }
+  | { id = RET; prefix = 0; opex = { operands = [] }; _ } ->
+      B.set_global builder Util.stack_pointer_global Int
+      @@ B.newest_var builder @@ X86reg.to_ident `esp;
+      Return
+  | {
+   id = RET;
+   prefix = 0;
+   opex = { operands = [ Immediate { value; _ } ] };
+   _;
+  } ->
+      let esp = X86reg.to_ident `esp in
+      let esp =
+        B.add builder ~lhs:(B.newest_var builder esp)
+          ~rhs:(B.const builder value) ~varName:esp
+      in
+      B.set_global builder Util.stack_pointer_global Int esp;
+      Return
+  | _ ->
+      translate intrinsics builder state opcode;
+      Nothing
+
+let translate_output_condition builder state condition_instr = ()

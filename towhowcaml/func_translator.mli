@@ -1,8 +1,5 @@
 open! Core
 
-type intrinsic = { addr : int; name : string; mir_name : string }
-[@@deriving sexp]
-
 type jump_case = { num : int; target : int } [@@deriving sexp]
 
 type terminator =
@@ -21,7 +18,7 @@ type block = {
 [@@deriving sexp]
 
 val translate :
-  intrinsics:(int, intrinsic) Hashtbl.t ->
+  intrinsics:(int, Util.intrinsic) Hashtbl.t ->
   name:string ->
   blocks:block array ->
   Mir.Func.t

@@ -18,13 +18,27 @@ type state = private {
 }
 
 val initial_state : unit -> state
-val translate : Mir.Builder.t -> state -> Radatnet.Types.opcode -> unit
+
+val translate :
+  (int, Util.intrinsic) Hashtbl.t ->
+  Mir.Builder.t ->
+  state ->
+  Radatnet.Types.opcode ->
+  unit
+
 val translate_output_condition : Mir.Builder.t -> state -> X86_instr.t -> unit
 
 type term_trans_result =
   | Nothing
   | Unconditional of { target : int }
   | Conditional of { target : int; condition : Mir.Instr.ref }
+  | Switch of { switch_on : Mir.Instr.ref; table_addr : int }
+  | Return
+[@@deriving sexp_of]
 
 val translate_terminator :
-  Mir.Builder.t -> state -> Radatnet.Types.opcode -> term_trans_result
+  (int, Util.intrinsic) Hashtbl.t ->
+  Mir.Builder.t ->
+  state ->
+  Radatnet.Types.opcode ->
+  term_trans_result

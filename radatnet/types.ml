@@ -95,7 +95,7 @@ let operand_of_yojson json =
   | yojson -> of_yojson_error "invalid operand" yojson
 
 type opex = { operands : operand list }
-[@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
+[@@unboxed] [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
 type opcode = {
   opex : opex;
