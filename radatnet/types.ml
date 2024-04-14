@@ -10,8 +10,8 @@ let operand_type_of_yojson = function
   | `Int 3 -> Memory
   | yojson -> of_yojson_error "invalid operand type" yojson
 
-type instr_info = { offset : int; size : int }
-[@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
+type instr_info = { offset : int }
+[@@unboxed] [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
 type function_dissassembly = {
   name : string;
@@ -121,7 +121,7 @@ type func_block = {
   size : int;
   jump_to : int option; [@key "jump"] [@yojson.option]
   fail_to : int option; [@key "fail"] [@yojson.option]
-  ops : instr_info list;
+  ops : instr_info array;
   switch_to : jump_table option; [@key "switchop"] [@yojson.option]
 }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
@@ -129,6 +129,13 @@ type func_block = {
 type func_blocks = {
   name : string option; [@yojson.option]
   offset : int;
-  blocks : func_block list;
+  blocks : func_block array;
+}
+[@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
+
+type bin_import = {
+  name : string;
+  lib_name : string; [@key "libname"]
+  table_address : int; [@key "plt"]
 }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]

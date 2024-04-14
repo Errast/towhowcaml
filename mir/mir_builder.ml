@@ -1,10 +1,19 @@
 open! Core
 open Types
 
+type instr_list = Instr.t Vec.t
+
+let sexp_of_instr_list vec =
+  Sexp.List
+    (Vec.to_array vec
+    |> Array.mapi ~f:(fun i instr ->
+           Sexp.List [ sexp_of_int i; Instr.sexp_of_t instr ])
+    |> List.of_array)
+
 type t = {
-  instrs : Instr.t Vec.t;
+  instrs : instr_list;
   currentVar : (ident, Local_info.t) Hashtbl.t;
-  locals : local_type Map.M(String).t;
+  locals : (local_type Map.M(String).t[@sexp.opaque]);
   mutable roots : Set.M(Instr.Ref).t;
   mutable check_var_is_latest : bool;
 }

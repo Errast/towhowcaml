@@ -6,5 +6,6 @@ module Block = Block
 module Variable = Variable
 module Vec = Vec
 module Func = Func
+module Instr_list = Instr_list
 
 let float_size = 8

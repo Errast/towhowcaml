@@ -4,6 +4,14 @@ open Radatnet
 open Mir
 module B = Builder
 
+type term_trans_result =
+  | Nothing
+  | Unconditional of { target : int }
+  | Conditional of { target : int; condition : Mir.Instr.Ref.t }
+  | Switch of { switch_on : Mir.Instr.Ref.t; table_addr : int }
+  | Return
+[@@deriving sexp_of]
+
 type state = {
   mutable compare_args : (Instr.Ref.t * X86reg.gpr_type) list;
   mutable compare_instr : X86_instr.t;
@@ -40,7 +48,7 @@ type context = {
   opcode : Radatnet.Types.opcode;
   state : state;
   builder : Mir.Builder.t;
-  intrinsics : (int, Util.intrinsic) Hashtbl.t;
+  intrinsics : ((int, Util.intrinsic) Hashtbl.t[@sexp.opaque]);
 }
 [@@deriving sexp_of]
 
@@ -92,6 +100,7 @@ let raise_m c msg =
   raise_s msg
 
 let raise_ops c = raise_c c "Invalid operands"
+let raise_comp_ops c = raise_c c "Invalid comparison arguments"
 let assert_c c ?(msg = "Assert failed") b = if not b then raise_c c msg
 let operands c = c.opcode.opex.operands
 let newest_var c reg = X86reg.to_ident reg |> B.newest_var c.builder
@@ -101,6 +110,10 @@ let reg_type_of_size = function
   | 2 -> `Reg16Bit
   | 1 -> `RegLow8Bit
   | _ -> failwith "invalid size"
+
+let typed_ref_equal :
+    Instr.ref * X86reg.gpr_type -> Instr.ref * X86reg.gpr_type -> bool =
+ fun (ref1, t1) (ref2, t2) -> Instr.Ref.equal ref1 ref2 && Poly.(t1 = t2)
 
 let loaded_reg_type operand = operand_size operand |> reg_type_of_size
 
@@ -168,9 +181,14 @@ let store_operand c src ~dest =
 let load_operand_typed c src : Instr.ref * X86reg.gpr_type =
   match src with
   | Immediate { value; size } ->
-      assert_c c (match size with 1 | 2 | 4 -> true | _ -> false);
-      (* Assembly only allows constants of the proper size *)
-      (B.const c.builder value, `Reg32Bit)
+      let r_typ =
+        match size with
+        | 1 -> `RegLow8Bit
+        | 2 -> `Reg16Bit
+        | 4 -> `Reg32Bit
+        | _ -> raise_c c "const size"
+      in
+      (B.const c.builder value, r_typ)
   | Register { reg; _ } ->
       let r_type =
         match X86reg.reg_type reg with
@@ -206,6 +224,7 @@ let load_operand_s c src = load_operand_typed c src |> extend_signed c
 let load_operand_u c src = load_operand_typed c src |> extend_unsigned c
 
 (* signed should be the default because it's one little WASM instruction *)
+let extend_either = extend_signed
 let load_operand = load_operand_s
 
 let add_comparison c args =
@@ -355,6 +374,16 @@ let translate_xor c =
       add_comparison c []
   | _ -> translate_bi_op c B.xor `Result
 
+let translate_shift_left c =
+  match operands c with
+  | [ dest; src ] when operand_size src = 1 ->
+      let lhs = load_operand c dest in
+      let rhs = load_operand c src in
+      let res = B.shift_left c.builder ~lhs ~rhs in
+      store_operand c res ~dest;
+      add_comparison c [ (res, loaded_reg_type dest) ]
+  | _ -> raise_ops c
+
 let translate_shift_right c ~signed =
   match operands c with
   | [ dest; src ] ->
@@ -383,7 +412,7 @@ let translate_inc c =
       add_comparison c [ (res, loaded_reg_type arg) ]
   | _ -> raise_ops c
 
-let translate_condition c =
+let translate_comparison c =
   assert_c c
     (Status_flags.equal c.state.changed_flags @@ flags_used_exn c.opcode.id)
     ~msg:"Flag has been modified";
@@ -394,11 +423,6 @@ let translate_condition c =
   in
   B.set_check_var_is_latest c.builder true;
   condition
-
-let translate_set_cond c =
-  match operands c with
-  | [ dest ] -> store_operand c (translate_condition c) ~dest
-  | _ -> raise_ops c
 
 let translate_lea c =
   match operands c with
@@ -508,7 +532,7 @@ let translate_call c =
   ]
     when Hashtbl.mem c.intrinsics addr ->
       let intrinisc = Hashtbl.find_exn c.intrinsics addr in
-      translate_direct_call c intrinisc.mir_name intrinisc.signature
+      translate_direct_call c intrinisc.name intrinisc.signature
   | [ Immediate { value; _ } ] ->
       translate_direct_call c (Util.addr_to_func_name value) Util.fast_call
   | [ Memory ({ size = 4; _ } as mem) ] ->
@@ -516,6 +540,98 @@ let translate_call c =
         ~addr:(load_complete_address c mem)
   | [ Register { size = 4; reg } ] ->
       translate_indirect_call c Util.fast_call ~addr:(newest_var c reg)
+  | _ -> raise_ops c
+
+let translate_input_cond c =
+  if
+    Poly.(
+      c.state.input_condition_instr <> INVALID
+      && c.state.input_condition_instr <> c.opcode.id)
+  then raise_c c "multiple input conditions";
+  c.state.input_condition_instr <- c.opcode.id;
+  B.newest_var c.builder Util.input_compare_arg
+
+let cond_normalize c cond =
+  B.equals_zero c.builder ~operand:(B.equals_zero c.builder ~operand:cond)
+
+let translate_je c =
+  match (c.state.compare_instr, c.state.compare_args) with
+  | CMP, [ lhs; rhs ] ->
+      let lhs = extend_either c lhs in
+      let rhs = extend_either c rhs in
+      B.equal c.builder ~lhs ~rhs
+  | TEST, [ arg; arg2 ] when typed_ref_equal arg arg2 ->
+      let lhs = extend_either c arg in
+      B.equal c.builder ~lhs ~rhs:(B.const c.builder 0)
+  | TEST, [ lhs; rhs ] ->
+      let lhs = extend_unsigned c lhs in
+      let rhs = extend_unsigned c rhs in
+      let anded = B.int_and c.builder ~lhs ~rhs in
+      B.equals_zero c.builder ~operand:anded
+  | INVALID, _ -> translate_input_cond c
+  | _ -> raise_comp_ops c
+
+let translate_jne c =
+  match (c.state.compare_instr, c.state.compare_args) with
+  | CMP, [ lhs; rhs ] ->
+      let lhs = extend_either c lhs in
+      let rhs = extend_either c rhs in
+      B.not_equal c.builder ~lhs ~rhs
+  (* arg != 0 *)
+  | TEST, [ arg; arg2 ] when typed_ref_equal arg arg2 -> extend_unsigned c arg
+  | TEST, [ lhs; rhs ] ->
+      let lhs = extend_unsigned c lhs in
+      let rhs = extend_unsigned c rhs in
+      B.int_and c.builder ~lhs ~rhs
+  | INVALID, _ -> translate_input_cond c
+  | _ -> raise_comp_ops c
+
+let translate_jbe c =
+  match (c.state.compare_instr, c.state.compare_args) with
+  | CMP, [ lhs; rhs ] ->
+      let lhs = extend_unsigned c lhs in
+      let rhs = extend_unsigned c rhs in
+      B.less_than_equal c.builder ~lhs ~rhs ~signed:false
+  | INVALID, _ -> translate_input_cond c
+  | _ -> raise_comp_ops c
+
+let translate_jge c =
+  match (c.state.compare_instr, c.state.compare_args) with
+  | CMP, [ lhs; rhs ] ->
+      let lhs = extend_signed c lhs in
+      let rhs = extend_signed c rhs in
+      B.greater_than_equal c.builder ~lhs ~rhs ~signed:true
+  (* SF = OF, OF is cleared -> SF = 0 -> arg >= 0 *)
+  | TEST, [ arg; arg2 ] when typed_ref_equal arg arg2 ->
+      let lhs = extend_signed c arg in
+      B.greater_than_equal c.builder ~lhs ~rhs:(B.const c.builder 0)
+        ~signed:true
+  | _ -> raise_comp_ops c
+
+let translate_cond_branch c cond_func =
+  match operands c with
+  | [ Immediate { value; _ } ] ->
+      Some (Conditional { target = value; condition = cond_func c })
+  | _ -> raise_ops c
+
+let translate_setne c =
+  match c.state.compare_instr with
+  | TEST -> cond_normalize c @@ translate_jne c
+  | _ -> translate_jne c
+
+let translate_set_cond c =
+  match operands c with
+  | [ dest ] ->
+      let cond =
+        (* make sure these only give 1 or 0 *)
+        match c.opcode.id with
+        | SETE -> translate_je c
+        | SETNE -> translate_setne c
+        | SETBE -> translate_jbe c
+        | SETGE -> translate_jge c
+        | _ -> raise_c c "Invalid instruction"
+      in
+      store_operand c cond ~dest
   | _ -> raise_ops c
 
 let translate_no_prefix c =
@@ -532,7 +648,7 @@ let translate_no_prefix c =
   | XOR -> translate_xor c
   | ADD -> translate_bi_op c B.add `All
   | SUB -> translate_bi_op c B.sub `All
-  | SHL -> translate_bi_op c B.shift_left `Result
+  | SHL -> translate_shift_left c
   | SAR -> translate_shift_right c ~signed:false
   | SHR -> translate_shift_right c ~signed:true
   | INC -> translate_inc c
@@ -560,13 +676,15 @@ let translate intrinsics builder state opcode =
   | p when p = opcode_prefix_repne -> translate_repne_prefix c
   | _ -> raise_c c "Invalid opcode prefix"
 
-type term_trans_result =
-  | Nothing
-  | Unconditional of { target : int }
-  | Conditional of { target : int; condition : Mir.Instr.Ref.t }
-  | Switch of { switch_on : Mir.Instr.Ref.t; table_addr : int }
-  | Return
-[@@deriving sexp_of]
+let translate_condition intrinsics builder state opcode =
+  let c = { builder; opcode; state; intrinsics } in
+  assert_c c Poly.(c.opcode.prefix = opcode_prefix_none);
+  match opcode.id with
+  | JE -> translate_cond_branch c translate_je
+  | JNE -> translate_cond_branch c translate_jne
+  | JBE -> translate_cond_branch c translate_jbe
+  | JGE -> translate_cond_branch c translate_jge
+  | _ -> None
 
 let translate_terminator intrinsics builder state opcode =
   match opcode with
@@ -620,7 +738,10 @@ let translate_terminator intrinsics builder state opcode =
       B.set_global builder Util.stack_pointer_global Int esp;
       Return
   | _ ->
-      translate intrinsics builder state opcode;
-      Nothing
+      Option.value_or_thunk
+        (translate_condition intrinsics builder state opcode)
+        ~default:(fun () ->
+          translate intrinsics builder state opcode;
+          Nothing)
 
 let translate_output_condition builder state condition_instr = ()

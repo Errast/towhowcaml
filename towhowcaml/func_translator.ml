@@ -5,12 +5,10 @@ open Mir
 module AP = Array
 module Vec = Mir.Vec
 
-type jump_case = { num : int; target : int } [@@deriving sexp]
-
 type terminator =
   | Goto of int
   | Branch of { succeed : int; fail : int }
-  | Switch of { offset : int; cases : jump_case list }
+  | Switch of { offset : int; cases : jump_table_case list }
   | Return
   | Trap
 [@@deriving sexp]
@@ -58,7 +56,7 @@ let add_block_branches c id (block : block) =
   | Switch { cases; _ } ->
       let[@warning "-8"] (Some (Block trap_block)) = c.trap_block in
       add_branch trap_block;
-      List.fold ~f:(fun () { target; _ } -> add_branch target) ~init:() cases
+      List.fold ~f:(fun () { jump; _ } -> add_branch jump) ~init:() cases
   | Return | Trap -> ()
 
 let translate_block c id block =
@@ -78,7 +76,7 @@ let translate_block c id block =
   let terminator =
     if Poly.(block.terminator = Trap) then (
       Builder.unreachable builder ();
-      Block.Goto Return)
+      Block.Return)
     else
       let term_op = AP.last block.ops in
       let term_found =
@@ -125,17 +123,18 @@ let translate_block c id block =
           let cases =
             List.mapi
               ~f:(fun i case ->
-                if i <> case.num then
+                if i <> case.value then
                   raise_s
                     [%message
                       "jump cases not sequential from 0"
                         (i : int)
                         (term_op : opcode)
                         (block_term : terminator)];
-                Block (offset_to_block_id c case.target))
+                Block (offset_to_block_id c case.jump))
               cases
           in
           Switch { cases; default = default_case; switch_on }
+      | Return, Return -> Return
       | _ ->
           raise_s
             [%message
@@ -144,7 +143,7 @@ let translate_block c id block =
                 (term_found : Instr_translator.term_trans_result)
                 ~block_term:(block.terminator : terminator)]
   in
-  if not state.backward_direction then
+  if state.backward_direction then
     raise_s [%message "ended in backward direction" ~block:(block.offset : int)];
   {
     id;

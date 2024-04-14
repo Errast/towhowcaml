@@ -1,5 +1,6 @@
 [@@@warning "-8"]
 
+open! Core
 open Basic
 open Types
 open Yojson.Basic
@@ -20,7 +21,7 @@ let analyze_all t = function
 
 let list_functions t =
   run t "aflqj" |> Yojson.Basic.from_string |> Util.to_list
-  |> List.map Util.to_int
+  |> List.map ~f:Util.to_int
 
 let disassemble_function t =
   run t "pdfj" |> Yojson.Safe.from_string |> function_dissassembly_of_yojson
@@ -33,8 +34,12 @@ let analyze_opcodes t n =
   if n <= 0 then invalid_arg "n must be > 0";
   run t ("aoj " ^ string_of_int n)
   |> Yojson.Safe.from_string |> Yojson.Safe.Util.to_list
-  |> List.map Types.opcode_of_yojson
+  |> List.map ~f:Types.opcode_of_yojson
 
 let get_func_blocks t =
   let (`List [ blocks ]) = run t "agfj" |> Yojson.Safe.from_string in
   Types.func_blocks_of_yojson blocks
+
+let get_imports t =
+  run t "iij" |> Yojson.Safe.from_string |> Yojson.Safe.Util.to_list
+  |> List.map ~f:Types.bin_import_of_yojson

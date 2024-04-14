@@ -1,4 +1,6 @@
 module Status_flags = Status_flags
+module Func_translator = Func_translator
+module Instr_translator = Instr_translator
 
 let ignroe_funcs =
   Core.Hash_set.of_list
@@ -45,6 +47,57 @@ let ignroe_funcs =
       0x00483ae7;
     ]
 
+let make_intrinsics c =
+  let open Core in
+  let intrinsics = Hashtbl.create (module Int) in
+  Radatnet.Commands.get_imports c
+  |> List.fold ~init:() ~f:(fun () import ->
+         Hashtbl.add_exn intrinsics ~key:import.table_address
+           ~data:
+             Util.
+               {
+                 name = import.lib_name ^ "_" ^ import.name;
+                 addr = import.table_address;
+                 signature = Util.fast_call;
+               });
+  intrinsics
+
+let make_block c block =
+  let open Radatnet.Types in
+  let open Func_translator in
+  let open Radatnet.Commands in
+  let terminator =
+    match block with
+    | { jump_to = Some next; fail_to = None; switch_to = None; _ } -> Goto next
+    | { jump_to = Some succeed; fail_to = Some fail; switch_to = None; _ } ->
+        Branch { succeed; fail }
+    | { jump_to = None; fail_to = None; switch_to = Some { cases; offset }; _ }
+      ->
+        Switch { offset; cases }
+    | { jump_to = None; fail_to = None; switch_to = None; _ } -> Return
+    | _ ->
+        Core.raise_s
+          [%message
+            "can't understand block terminator"
+              (block : Radatnet.Types.func_block)]
+  in
+  let ops =
+    Core.Array.map block.ops ~f:(fun instr ->
+        seek c instr.offset;
+        analyze_opcode c)
+  in
+  { offset = block.offset; ops; terminator }
+
+let translate_func c addr ~intrinsics =
+  let module Cmd = Radatnet.Commands in
+  Cmd.seek c addr;
+  let func = Cmd.get_func_blocks c in
+  let name =
+    match func.name with Some n -> n | _ -> Printf.sprintf "%x" func.offset
+  in
+  let blocks = Array.map (make_block c) func.blocks in
+  Func_translator.translate ~intrinsics ~blocks ~name
+
 let main () =
   let c = Radatnet.Core.create () in
   let module Cmd = Radatnet.Commands in
@@ -67,5 +120,3 @@ let main () =
     funcs;
   let stop = Sys.time () in
   Printf.printf "Elapsed: %f" (stop -. start)
-
-let () = main ()

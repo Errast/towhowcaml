@@ -1,6 +1,0 @@
-(library
- (name towhowcaml_test)
- (libraries radatnet towhowcaml base)
- (preprocess
-  (pps ppx_inline_test ppx_assert))
- (inline_tests))

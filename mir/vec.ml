@@ -11,7 +11,7 @@ let create ?(cap = 4) () =
   }
 
 let length vec = vec.length
-let valid_index vec i = length vec <= i
+let valid_index vec i = i < length vec
 
 let valid_index_exn vec i =
   if not @@ valid_index vec i then
@@ -36,13 +36,12 @@ let add vec value =
   let len = length vec in
   if len >= Option_array.length vec.array then (
     let new_arr =
-      Option_array.create ~len:(Int.min 4 @@ Int.ceil_pow2 @@ (len + 1))
+      Option_array.create ~len:(Int.max 4 @@ (Int.floor_pow2 2 * len))
     in
     Option_array.blito ~src:vec.array ~dst:new_arr ();
-    vec.array <- new_arr)
-  else
-    (* Option_array.unsafe_set_some vec.array len value *)
-    Option_array.set_some vec.array len value;
+    vec.array <- new_arr);
+  (* Option_array.unsafe_set_some vec.array len value *)
+  Option_array.set_some vec.array len value;
   vec.length <- len + 1
 
 let copy vec = { vec with array = Option_array.copy vec.array }

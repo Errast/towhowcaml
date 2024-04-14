@@ -1,11 +1,9 @@
 open! Core
 
-type jump_case = { num : int; target : int } [@@deriving sexp]
-
 type terminator =
   | Goto of int
   | Branch of { succeed : int; fail : int }
-  | Switch of { offset : int; cases : jump_case list }
+  | Switch of { offset : int; cases : Radatnet.Types.jump_table_case list }
   | Return
   | Trap
 [@@deriving sexp]

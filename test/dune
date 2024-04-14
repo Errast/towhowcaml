@@ -1,5 +1,6 @@
-(test
+(library
  (name test_towhowcaml)
  (libraries radatnet mir towhowcaml core)
- (preprocess (pps ppx_inline_test)))
-
+ (inline_tests)
+ (preprocess
+  (pps ppx_inline_test ppx_expect)))

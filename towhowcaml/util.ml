@@ -2,12 +2,7 @@ open! Core
 open Mir
 open Radatnet
 
-type intrinsic = {
-  addr : int;
-  signature : func_sig;
-  name : string;
-  mir_name : string;
-}
+type intrinsic = { addr : int; signature : func_sig; name : string }
 [@@deriving sexp]
 
 external int32_to_float : int -> (float[@unboxed])

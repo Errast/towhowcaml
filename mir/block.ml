@@ -13,12 +13,13 @@ type terminator =
       default : branch_target;
       switch_on : Instr.Ref.t;
     }
+  | Return
 [@@deriving sexp]
 
 type t = {
   id : int;
   terminator : terminator;
-  instrs : (Instr.t, Perms.Export.immutable) Array.Permissioned.t;
+  instrs : Instr_list.t;
   roots : Set.M(Instr.Ref).t;
 }
 [@@deriving sexp]
