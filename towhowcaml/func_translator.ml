@@ -56,7 +56,7 @@ let add_block_branches c id (block : block) =
   | Switch { cases; _ } ->
       let[@warning "-8"] (Some (Block trap_block)) = c.trap_block in
       add_branch trap_block;
-      List.fold ~f:(fun () { jump; _ } -> add_branch jump) ~init:() cases
+      List.iter ~f:(fun { jump; _ } -> add_branch jump) cases
   | Return | Trap -> ()
 
 let translate_block c id block =
@@ -161,8 +161,8 @@ let add_input_blocks inverted_cfg block_data b =
       [%message
         "block has input condition but no parents" ~block:(b.offset : int)];
   let condition_instr = b.state.input_condition_instr in
-  List.fold
-    ~f:(fun () p ->
+  List.iter
+    ~f:(fun p ->
       let parent = block_data.(p) in
       if Poly.(parent.output_condition_op <> condition_instr) then (
         if Poly.(parent.output_condition_op <> INVALID) then
@@ -180,7 +180,7 @@ let add_input_blocks inverted_cfg block_data b =
         Instr_translator.translate_output_condition parent.builder parent.state
           condition_instr;
         parent.output_condition_op <- condition_instr))
-    ~init:() parents
+    parents
 
 let add_used_local used_locals ident typ =
   let found_typ =
@@ -249,9 +249,7 @@ let translate ~intrinsics ~name ~(blocks : block array) =
     ~init:() block_data;
   let used_locals = Hashtbl.create (module String) in
   let signature = Util.fast_call in
-  List.fold
-    ~f:(fun () a -> add_used_local used_locals a.name a.typ)
-    ~init:() signature.args;
+  List.iter ~f:(fun a -> add_used_local used_locals a.name a.typ) signature.args;
   add_used_local used_locals signature.return.name Util.fast_call.return.typ;
   let mir_blocks = AP.map ~f:(to_mir_block used_locals) block_data in
   Func.

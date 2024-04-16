@@ -486,7 +486,7 @@ let translate_float_store_status_word c =
   match operands c with
   | [ Register { reg = `ax; _ } ] ->
       assert_c c
-        (not @@ Instr.Ref.equal c.state.fpu_status_word Instr.Ref.invalid)
+        (Instr.Ref.equal c.state.fpu_status_word Instr.Ref.invalid)
         ~msg:"only store fpu status word once";
       let value = B.landmine c.builder Int ~varName:(X86reg.to_ident `eax) in
       c.state.fpu_status_word <- value;

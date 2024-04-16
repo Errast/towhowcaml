@@ -29,9 +29,6 @@ let%expect_test _ =
   test_trans 0x47ea7d;
   [%expect
     {|
-    (((size 4) (base (ebp)) (index ()) (scale 1) (displacement -100)
-      (segment ()))
-     -100)
     ((name func_47ea7d)
      (signature
       ((args (((name ecx) (typ Int)) ((name edx) (typ Int))))
@@ -925,3 +922,7 @@ let%expect_test _ =
        (ecx ((name ecx) (typ Int))) (edi ((name edi) (typ Int)))
        (edx ((name edx) (typ Int))) (esi ((name esi) (typ Int)))
        (esp ((name esp) (typ Int)))))) |}]
+
+let%expect_test _ =
+  Towhowcaml.main c |> ignore;
+  [%expect {||}]

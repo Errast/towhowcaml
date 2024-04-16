@@ -1,3 +1,4 @@
+open! Core
 module Status_flags = Status_flags
 module Func_translator = Func_translator
 module Instr_translator = Instr_translator
@@ -51,7 +52,7 @@ let make_intrinsics c =
   let open Core in
   let intrinsics = Hashtbl.create (module Int) in
   Radatnet.Commands.get_imports c
-  |> List.fold ~init:() ~f:(fun () import ->
+  |> List.iter ~f:(fun import ->
          Hashtbl.add_exn intrinsics ~key:import.table_address
            ~data:
              Util.
@@ -96,28 +97,26 @@ let translate_func c addr ~intrinsics =
   Cmd.seek c addr;
   let blocks = Cmd.get_func_blocks c in
   let name = func_name c in
-  let blocks = Array.map (make_block c) blocks in
+  let blocks = Array.map ~f:(make_block c) blocks in
   Func_translator.translate ~intrinsics ~blocks ~name
 
-let main () =
-  let c = Radatnet.Core.create () in
+let main c =
   let module Cmd = Radatnet.Commands in
-  print_string @@ Sys.getcwd ();
-  Cmd.open_file c "../Touhou7/th07.exe";
-  Cmd.analyze_all c Cmd.LevelThree;
   let funcs = Cmd.list_functions c in
-  let start = Sys.time () in
-  List.iter
-    (fun f ->
-      if not @@ Core.Hash_set.mem ignroe_funcs f then
-        let f =
-          Cmd.seek c f;
-          Cmd.disassemble_function c
-        in
-        f.ops
-        |> List.iter (fun o ->
-               Cmd.seek c (o : Radatnet.Types.instr_info).offset;
-               Cmd.analyze_opcode c |> ignore))
-    funcs;
-  let stop = Sys.time () in
-  Printf.printf "Elapsed: %f" (stop -. start)
+  let intrinsics = make_intrinsics c in
+  let start = Time_ns.now () in
+  let _ =
+    Array.to_sequence_mutable funcs
+    |> Sequence.filter_map ~f:(fun f ->
+           try Some (translate_func c ~intrinsics f)
+           with exn ->
+             Exn.raise_with_original_backtrace
+               (Exn.create_s [%message "oops" ~func_addr:(f : int) (exn : exn)])
+               (Backtrace.Exn.most_recent ()))
+    |> Sequence.to_list_rev
+  in
+  let stop = Time_ns.now () in
+  Printf.printf "Elapsed: %f"
+    Time_ns.(
+      Span.( - ) (to_span_since_epoch stop) (to_span_since_epoch start)
+      |> Span.to_sec)

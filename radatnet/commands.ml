@@ -21,8 +21,7 @@ let analyze_all t = function
   | LevelThree -> run t "aaa" |> ignore
 
 let list_functions t =
-  run t "aflqj" |> Yojson.Basic.from_string |> Util.to_list
-  |> List.map ~f:Util.to_int
+  run t "aflqj" |> Yojson.Safe.from_string |> [%of_yojson: int array]
 
 let disassemble_function t =
   run t "pdfj" |> Yojson.Safe.from_string |> function_dissassembly_of_yojson
