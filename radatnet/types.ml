@@ -117,19 +117,12 @@ type jump_table = { offset : int; cases : jump_table_case list }
 [@@@warning "-11"]
 
 type func_block = {
-  offset : int;
+  addr : int; [@key "addr"]
   size : int;
   jump_to : int option; [@key "jump"] [@yojson.option]
   fail_to : int option; [@key "fail"] [@yojson.option]
-  ops : instr_info array;
+  instrs : int array;
   switch_to : jump_table option; [@key "switchop"] [@yojson.option]
-}
-[@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
-
-type func_blocks = {
-  name : string option; [@yojson.option]
-  offset : int;
-  blocks : func_block array;
 }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 

@@ -82,20 +82,21 @@ let make_block c block =
               (block : Radatnet.Types.func_block)]
   in
   let ops =
-    Core.Array.map block.ops ~f:(fun instr ->
-        seek c instr.offset;
+    Core.Array.map block.instrs ~f:(fun instr ->
+        seek c instr;
         analyze_opcode c)
   in
-  { offset = block.offset; ops; terminator }
+  { offset = block.addr; ops; terminator }
+
+let func_name c =
+  Printf.sprintf "func_%x" @@ Radatnet.Commands.get_current_func c
 
 let translate_func c addr ~intrinsics =
   let module Cmd = Radatnet.Commands in
   Cmd.seek c addr;
-  let func = Cmd.get_func_blocks c in
-  let name =
-    match func.name with Some n -> n | _ -> Printf.sprintf "%x" func.offset
-  in
-  let blocks = Array.map (make_block c) func.blocks in
+  let blocks = Cmd.get_func_blocks c in
+  let name = func_name c in
+  let blocks = Array.map (make_block c) blocks in
   Func_translator.translate ~intrinsics ~blocks ~name
 
 let main () =

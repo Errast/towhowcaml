@@ -140,7 +140,7 @@ let load_partial_address c mem_operand =
 
 let load_complete_address c mem_operand =
   let addr, offset = load_partial_address c mem_operand in
-  if offset = 0 then B.add c.builder ~lhs:addr ~rhs:(B.const c.builder offset)
+  if offset <> 0 then B.add c.builder ~lhs:addr ~rhs:(B.const c.builder offset)
   else addr
 
 let store_operand c src ~dest =
@@ -293,6 +293,26 @@ let store_operand_f c value ~dest =
       | 8 -> B.float_store64 c.builder ~value ~addr ~offset
       | _ -> raise_c c "invalid operand")
   | _ -> raise_c c "invalid operand"
+
+let write_globals c =
+  let newest_esp = newest_var c `esp in
+  B.set_global c.builder Util.stack_pointer_global Int newest_esp;
+  if c.state.fpu_stack_pointer_offset <> 0 then
+    B.set_global c.builder Util.fpu_stack_pointer_global Int
+    @@ B.add c.builder ~lhs:c.state.fpu_stack_pointer
+         ~rhs:(B.const c.builder c.state.fpu_stack_pointer_offset)
+
+(* this sucks. i guess the difference is that esp has a local
+   and fpu_stack_pointer doesn't. but i still don't like it. if we
+   give the latter a local, then without intrablock info, we'll need
+   to get_global it at the end of every block (that does a function call),
+   so that's right out. i guess moving esp to be a second return would work too. *)
+let read_globals c =
+  B.get_global c.builder ~varName:(X86reg.to_ident `esp)
+    Util.stack_pointer_global Int
+  |> ignore;
+  c.state.fpu_stack_pointer <- Instr.Ref.invalid;
+  c.state.fpu_stack_pointer_offset <- 0
 
 let translate_mov c =
   match operands c with
@@ -482,9 +502,11 @@ let translate_call_start c =
     B.sub c.builder ~rhs:(B.const c.builder 4) ~lhs:(newest_var c `esp)
       ~varName:(X86reg.to_ident `esp)
   in
-  B.store32 c.builder ~addr:esp ~value:(B.const c.builder c.opcode.address)
+  B.store32 c.builder ~addr:esp ~value:(B.const c.builder c.opcode.address);
+  write_globals c
 
 let translate_call_end c =
+  read_globals c;
   (* assert address is correct *)
   let esp = newest_var c `esp in
   B.mir_assert c.builder
@@ -614,21 +636,20 @@ let translate_cond_branch c cond_func =
       Some (Conditional { target = value; condition = cond_func c })
   | _ -> raise_ops c
 
-let translate_setne c =
-  match c.state.compare_instr with
-  | TEST -> cond_normalize c @@ translate_jne c
-  | _ -> translate_jne c
-
 let translate_set_cond c =
   match operands c with
   | [ dest ] ->
       let cond =
         (* make sure these only give 1 or 0 *)
-        match c.opcode.id with
-        | SETE -> translate_je c
-        | SETNE -> translate_setne c
-        | SETBE -> translate_jbe c
-        | SETGE -> translate_jge c
+        match (c.opcode.id, c.state.compare_instr) with
+        | SETE, INVALID -> cond_normalize c @@ translate_je c
+        | SETE, _ -> translate_je c
+        | SETNE, (INVALID | TEST) -> cond_normalize c @@ translate_jne c
+        | SETNE, _ -> translate_jne c
+        | SETBE, INVALID -> cond_normalize c @@ translate_jbe c
+        | SETBE, _ -> translate_jbe c
+        | SETGE, INVALID -> cond_normalize c @@ translate_jge c
+        | SETGE, _ -> translate_jge c
         | _ -> raise_c c "Invalid instruction"
       in
       store_operand c cond ~dest

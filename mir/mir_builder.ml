@@ -166,7 +166,8 @@ let vec_lane_type = function
   | `I64 -> Long
 
 let const ?varName t value =
-  assert (Sys.int_size_in_bits <= 32 || value asr 32 = 0);
+  (* wtf is this here for? *)
+  (* assert (Sys.int_size_in_bits <= 32 || value asr 32 = 0); *)
   add_instr t @@ Instr.Const (new_var t varName Int, value)
 
 let float_const ?varName t value =

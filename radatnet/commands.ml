@@ -1,6 +1,7 @@
 [@@@warning "-8"]
 
 open! Core
+open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 open Basic
 open Types
 open Yojson.Basic
@@ -37,9 +38,10 @@ let analyze_opcodes t n =
   |> List.map ~f:Types.opcode_of_yojson
 
 let get_func_blocks t =
-  let (`List [ blocks ]) = run t "agfj" |> Yojson.Safe.from_string in
-  Types.func_blocks_of_yojson blocks
+  run t "afbj" |> Yojson.Safe.from_string |> [%of_yojson: func_block array]
 
 let get_imports t =
   run t "iij" |> Yojson.Safe.from_string |> Yojson.Safe.Util.to_list
   |> List.map ~f:Types.bin_import_of_yojson
+
+let get_current_func t = run t "afo" |> String.strip |> int_of_string
