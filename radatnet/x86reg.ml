@@ -127,7 +127,8 @@ type t =
   [ reg_32bit | reg_16bit | reg_low8bit | reg_high8bit | x87_float | mmx | sse ]
 [@@deriving of_yojson, sexp, equal]
 
-let to_32_bit (reg : [ reg_32bit | reg_16bit | reg_high8bit | reg_low8bit ]) =
+let to_32_bit (reg : [< reg_32bit | reg_16bit | reg_high8bit | reg_low8bit ]) :
+    reg_32bit =
   match reg with
   | `eax -> `eax
   | `ax -> `eax
@@ -160,7 +161,7 @@ let to_32_bit (reg : [ reg_32bit | reg_16bit | reg_high8bit | reg_low8bit ]) =
   | `eip -> `eip
   | `ip -> `eip
 
-let to_ident (reg : t) =
+let to_ident (reg : [< t ]) =
   match reg with
   | `eax -> "eax"
   | `ebx -> "ebx"

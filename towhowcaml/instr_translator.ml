@@ -189,14 +189,14 @@ let load_operand_typed c src : Instr.ref * X86reg.gpr_type =
         | _ -> raise_c c "const size"
       in
       (B.const c.builder value, r_typ)
-  | Register { reg; _ } ->
+  | Register { reg = #X86reg.general_purpose as reg; _ } ->
       let r_type =
         match X86reg.reg_type reg with
         | `X87Float | `Mmx | `Sse ->
             raise_m c [%message "can't load operand" (src : operand)]
         | #X86reg.gpr_type as t -> t
       in
-      (X86reg.to_ident reg |> B.newest_var c.builder, r_type)
+      (X86reg.to_32_bit reg |> X86reg.to_ident |> B.newest_var c.builder, r_type)
   | Memory ({ segment = None; _ } as address) -> (
       let addr_var, offset = load_partial_address c address in
       match address.size with
