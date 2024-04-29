@@ -22,6 +22,7 @@ type t = {
 let deconstruct { instrs; currentVar; locals; roots; _ } =
   (Vec.to_perm_array instrs, currentVar, locals, roots)
 
+let get_instr t (Instr.Ref.Ref i) = Vec.get t.instrs i
 let set_check_var_is_latest t b = t.check_var_is_latest <- b
 let float_temp : ident = "__fl"
 let long_temp : ident = "__i64"

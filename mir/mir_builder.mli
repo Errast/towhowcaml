@@ -21,6 +21,7 @@ val deconstruct :
 val set_check_var_is_latest : t -> bool -> unit
 val newest_var : t -> ident -> Instr.ref
 val newest_var_opt : t -> ident -> Instr.ref option
+val get_instr : t -> Instr.ref -> Instr.t
 val const : ?varName:ident -> t -> int -> Instr.ref
 val float_const : ?varName:ident -> t -> float -> Instr.ref
 val long_const : ?varName:ident -> t -> int64 -> Instr.ref

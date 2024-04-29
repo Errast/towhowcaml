@@ -100,7 +100,7 @@ let raise_m c msg =
   raise_s msg
 
 let raise_ops c = raise_c c "Invalid operands"
-let raise_comp_ops c = raise_c c "Invalid comparison arguments"
+let raise_comp_ops c = raise_c c "Invalid comparison or compariosn arguments"
 let assert_c c ?(msg = "Assert failed") b = if not b then raise_c c msg
 let operands c = c.opcode.opex.operands
 let newest_var c reg = X86reg.to_ident reg |> B.newest_var c.builder
@@ -230,7 +230,7 @@ let load_operand = load_operand_s
 let add_comparison c args =
   c.state.compare_instr <- c.opcode.id;
   c.state.compare_args <- args;
-  c.state.changed_flags <- Status_flags.all
+  c.state.changed_flags <- Status_flags.none
 
 let add_float_comparison c args =
   c.state.float_compare_instr <- c.opcode.id;
@@ -432,18 +432,6 @@ let translate_inc c =
       add_comparison c [ (res, loaded_reg_type arg) ]
   | _ -> raise_ops c
 
-let translate_comparison c =
-  assert_c c
-    (Status_flags.equal c.state.changed_flags @@ flags_used_exn c.opcode.id)
-    ~msg:"Flag has been modified";
-  B.set_check_var_is_latest c.builder false;
-  let condition =
-    match c.state.compare_instr with
-    | _ -> raise_c c "invalid comparison instruction"
-  in
-  B.set_check_var_is_latest c.builder true;
-  condition
-
 let translate_lea c =
   match operands c with
   | [ dest; Memory mem ] -> store_operand c ~dest @@ load_complete_address c mem
@@ -573,86 +561,113 @@ let translate_input_cond c =
   c.state.input_condition_instr <- c.opcode.id;
   B.newest_var c.builder Util.input_compare_arg
 
-let cond_normalize c cond =
-  B.equals_zero c.builder ~operand:(B.equals_zero c.builder ~operand:cond)
+let translate_float_test_comparison c =
+  let constant, lhs, rhs =
+    match (c.state.compare_args, c.state.fpu_status_word_args) with
+    | [ _; (value, _) ], [ lhs; rhs ] -> (value, lhs, rhs)
+    | _ -> raise_ops c
+  in
+  let constant =
+    match B.get_instr c.builder constant with
+    | Const (_, value) -> value
+    | _ -> raise_ops c
+  in
+  match (c.opcode.id, constant) with
+  | JP, 0x41 ->
+      B.equals_zero c.builder
+        ~operand:(B.float_less_than_equal c.builder ~lhs ~rhs)
+  | JP, 0x44 ->
+      B.equals_zero c.builder ~operand:(B.float_equal c.builder ~lhs ~rhs)
+  | _ -> raise_comp_ops c
 
-let translate_je c =
-  match (c.state.compare_instr, c.state.compare_args) with
-  | CMP, [ lhs; rhs ] ->
-      let lhs = extend_either c lhs in
-      let rhs = extend_either c rhs in
-      B.equal c.builder ~lhs ~rhs
-  | TEST, [ arg; arg2 ] when typed_ref_equal arg arg2 ->
-      let lhs = extend_either c arg in
-      B.equal c.builder ~lhs ~rhs:(B.const c.builder 0)
-  | TEST, [ lhs; rhs ] ->
+let translate_reflexive_test_comparison c =
+  let arg =
+    match c.state.compare_args with [ arg; _ ] -> arg | _ -> raise_ops c
+  in
+  match c.opcode.id with
+  | JE | SETE ->
+      let operand = extend_either c arg in
+      B.equals_zero c.builder ~operand
+  | JNE -> extend_either c arg
+  | SETNE ->
+      let operand = extend_either c arg in
+      B.equals_zero c.builder ~operand:(B.equals_zero c.builder ~operand)
+  | JG | SETG ->
+      let operand = extend_either c arg in
+      B.greater_than c.builder ~lhs:operand ~rhs:(B.const c.builder 0)
+        ~signed:true
+  | JGE | SETGE ->
+      let operand = extend_either c arg in
+      B.greater_than_equal c.builder ~lhs:operand ~rhs:(B.const c.builder 0)
+        ~signed:true
+  | JL | SETL ->
+      let operand = extend_either c arg in
+      B.less_than c.builder ~lhs:operand ~rhs:(B.const c.builder 0) ~signed:true
+  | JLE | SETLE ->
+      let operand = extend_either c arg in
+      B.less_than_equal c.builder ~lhs:operand ~rhs:(B.const c.builder 0)
+        ~signed:true
+  | _ -> raise_comp_ops c
+
+let translate_test_comparison c =
+  match (c.opcode.id, c.state.compare_args) with
+  | _, [ (lhs, `RegHigh8Bit); _ ]
+    when Instr.Ref.equal lhs c.state.fpu_status_word ->
+      translate_float_test_comparison c
+  | _, [ arg; arg2 ] when typed_ref_equal arg arg2 ->
+      translate_reflexive_test_comparison c
+  | (JE | SETE), [ lhs; rhs ] ->
       let lhs = extend_unsigned c lhs in
       let rhs = extend_unsigned c rhs in
       let anded = B.int_and c.builder ~lhs ~rhs in
       B.equals_zero c.builder ~operand:anded
-  | INVALID, _ -> translate_input_cond c
-  | _ -> raise_comp_ops c
-
-let translate_jne c =
-  match (c.state.compare_instr, c.state.compare_args) with
-  | CMP, [ lhs; rhs ] ->
-      let lhs = extend_either c lhs in
-      let rhs = extend_either c rhs in
-      B.not_equal c.builder ~lhs ~rhs
-  (* arg != 0 *)
-  | TEST, [ arg; arg2 ] when typed_ref_equal arg arg2 -> extend_unsigned c arg
-  | TEST, [ lhs; rhs ] ->
+  | JNE, [ lhs; rhs ] ->
       let lhs = extend_unsigned c lhs in
       let rhs = extend_unsigned c rhs in
       B.int_and c.builder ~lhs ~rhs
-  | INVALID, _ -> translate_input_cond c
+  | SETNE, [ lhs; rhs ] ->
+      let lhs = extend_unsigned c lhs in
+      let rhs = extend_unsigned c rhs in
+      let anded = B.int_and c.builder ~lhs ~rhs in
+      B.equals_zero c.builder ~operand:(B.equals_zero c.builder ~operand:anded)
   | _ -> raise_comp_ops c
 
-let translate_jbe c =
-  match (c.state.compare_instr, c.state.compare_args) with
-  | CMP, [ lhs; rhs ] ->
+let translate_cmp_comparison c =
+  match (c.opcode.id, c.state.compare_args) with
+  | (JE | SETE), [ lhs; rhs ] ->
+      let lhs = extend_either c lhs in
+      let rhs = extend_either c rhs in
+      B.equal c.builder ~lhs ~rhs
+  | (JNE | SETNE), [ lhs; rhs ] ->
+      let lhs = extend_either c lhs in
+      let rhs = extend_either c rhs in
+      B.not_equal c.builder ~lhs ~rhs
+  | (JBE | SETBE), [ lhs; rhs ] ->
       let lhs = extend_unsigned c lhs in
       let rhs = extend_unsigned c rhs in
       B.less_than_equal c.builder ~lhs ~rhs ~signed:false
-  | INVALID, _ -> translate_input_cond c
   | _ -> raise_comp_ops c
 
-let translate_jge c =
-  match (c.state.compare_instr, c.state.compare_args) with
-  | CMP, [ lhs; rhs ] ->
-      let lhs = extend_signed c lhs in
-      let rhs = extend_signed c rhs in
-      B.greater_than_equal c.builder ~lhs ~rhs ~signed:true
-  (* SF = OF, OF is cleared -> SF = 0 -> arg >= 0 *)
-  | TEST, [ arg; arg2 ] when typed_ref_equal arg arg2 ->
-      let lhs = extend_signed c arg in
-      B.greater_than_equal c.builder ~lhs ~rhs:(B.const c.builder 0)
-        ~signed:true
-  | _ -> raise_comp_ops c
+let translate_condition c =
+  assert_c c Poly.(c.opcode.prefix = opcode_prefix_none);
+  assert_c c
+    Status_flags.(
+      equal none @@ (c.state.changed_flags %& flags_used_exn c.opcode.id))
+    ~msg:"Flag has been modified";
+  B.set_check_var_is_latest c.builder false;
+  let result =
+    match c.state.compare_instr with
+    | TEST -> translate_test_comparison c
+    | CMP -> translate_cmp_comparison c
+    | INVALID -> translate_input_cond c
+    | _ -> raise_c c "Invalid instruction"
+  in
+  B.set_check_var_is_latest c.builder true;
+  result
 
-let translate_cond_branch c cond_func =
+let translate_set_stuff c =
   match operands c with
-  | [ Immediate { value; _ } ] ->
-      Some (Conditional { target = value; condition = cond_func c })
-  | _ -> raise_ops c
-
-let translate_set_cond c =
-  match operands c with
-  | [ dest ] ->
-      let cond =
-        (* make sure these only give 1 or 0 *)
-        match (c.opcode.id, c.state.compare_instr) with
-        | SETE, INVALID -> cond_normalize c @@ translate_je c
-        | SETE, _ -> translate_je c
-        | SETNE, (INVALID | TEST) -> cond_normalize c @@ translate_jne c
-        | SETNE, _ -> translate_jne c
-        | SETBE, INVALID -> cond_normalize c @@ translate_jbe c
-        | SETBE, _ -> translate_jbe c
-        | SETGE, INVALID -> cond_normalize c @@ translate_jge c
-        | SETGE, _ -> translate_jge c
-        | _ -> raise_c c "Invalid instruction"
-      in
-      store_operand c cond ~dest
+  | [ dest ] -> store_operand c (translate_condition c) ~dest
   | _ -> raise_ops c
 
 let translate_no_prefix c =
@@ -674,7 +689,7 @@ let translate_no_prefix c =
   | SHR -> translate_shift_right c ~signed:true
   | INC -> translate_inc c
   | SETG | SETGE | SETL | SETLE | SETE | SETNE | SETA | SETAE | SETB | SETBE ->
-      translate_set_cond c
+      translate_set_stuff c
   | LEA -> translate_lea c
   | FLD -> translate_float_load c
   | FCOM -> translate_float_comparison c ~after_pop:`None
@@ -696,16 +711,6 @@ let translate intrinsics builder state opcode =
   | p when p = opcode_prefix_rep -> translate_rep_prefix c
   | p when p = opcode_prefix_repne -> translate_repne_prefix c
   | _ -> raise_c c "Invalid opcode prefix"
-
-let translate_condition intrinsics builder state opcode =
-  let c = { builder; opcode; state; intrinsics } in
-  assert_c c Poly.(c.opcode.prefix = opcode_prefix_none);
-  match opcode.id with
-  | JE -> translate_cond_branch c translate_je
-  | JNE -> translate_cond_branch c translate_jne
-  | JBE -> translate_cond_branch c translate_jbe
-  | JGE -> translate_cond_branch c translate_jge
-  | _ -> None
 
 let translate_terminator intrinsics builder state opcode =
   match opcode with
@@ -758,11 +763,19 @@ let translate_terminator intrinsics builder state opcode =
       in
       B.set_global builder Util.stack_pointer_global Int esp;
       Return
+  | {
+   id = JP | JE | JNE | JB | JBE | JGE | JG | JL | JLE;
+   prefix = 0;
+   opex = { operands = [ Immediate { value; _ } ] };
+   _;
+  } ->
+      Conditional
+        {
+          target = value;
+          condition = translate_condition { intrinsics; builder; state; opcode };
+        }
   | _ ->
-      Option.value_or_thunk
-        (translate_condition intrinsics builder state opcode)
-        ~default:(fun () ->
-          translate intrinsics builder state opcode;
-          Nothing)
+      translate intrinsics builder state opcode;
+      Nothing
 
 let translate_output_condition builder state condition_instr = ()

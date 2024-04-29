@@ -260,14 +260,12 @@ let%expect_test _ =
        ((id 11)
         (instrs
          ((0 (OutsideContext (var __input_compare_arg__) (typ Int)))
-          (1 (UniOp (var __i32) (op EqualsZero) (operand (Ref 0))))
-          (2 (UniOp (var __i32) (op EqualsZero) (operand (Ref 1))))
-          (3 (OutsideContext (var eax) (typ Int)))
-          (4 (BiOp (var eax) (op MergeTruncLow8) (lhs (Ref 2)) (rhs (Ref 3))))
-          (5 (OutsideContext (var ebp) (typ Int)))
-          (6 (StoreOp (op Store32) (addr (Ref 5)) (value (Ref 4)) (offset -28)))))
+          (1 (OutsideContext (var eax) (typ Int)))
+          (2 (BiOp (var eax) (op MergeTruncLow8) (lhs (Ref 0)) (rhs (Ref 1))))
+          (3 (OutsideContext (var ebp) (typ Int)))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 2)) (offset -28)))))
         (terminator (Goto (Block 12)))
-        (roots ((Ref 0) (Ref 3) (Ref 4) (Ref 5) (Ref 6))))
+        (roots ((Ref 0) (Ref 1) (Ref 2) (Ref 3) (Ref 4))))
        ((id 12)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -924,5 +922,5 @@ let%expect_test _ =
        (esp ((name esp) (typ Int)))))) |}]
 
 let%expect_test _ =
-  Towhowcaml.main c |> ignore;
+  test_trans_block 4429197;
   [%expect {||}]

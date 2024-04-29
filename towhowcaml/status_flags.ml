@@ -9,5 +9,5 @@ let carry = 4
 let zero = 8
 let parity = 16
 let ( %| ) l r = l lor r
-let ( .&[] ) set value = set land value = 0
+let ( %& ) set value = set land value
 let all = sign %| overflow %| carry %| zero %| parity
