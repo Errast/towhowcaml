@@ -143,7 +143,7 @@ let translate_block c id block =
                 (term_found : Instr_translator.term_trans_result)
                 ~block_term:(block.terminator : terminator)]
   in
-  if state.backward_direction then
+  if Instr_translator.backward_direction state then
     raise_s [%message "ended in backward direction" ~block:(block.offset : int)];
   {
     id;
@@ -160,7 +160,7 @@ let add_input_blocks inverted_cfg block_data b =
     raise_s
       [%message
         "block has input condition but no parents" ~block:(b.offset : int)];
-  let condition_instr = b.state.input_condition_instr in
+  let condition_instr = Instr_translator.compare_instr b.state in
   List.iter
     ~f:(fun p ->
       let parent = block_data.(p) in
@@ -171,7 +171,7 @@ let add_input_blocks inverted_cfg block_data b =
               "parent block has different output condition"
                 ~block:(b.offset : int)
                 ~parent:(parent.offset : int)];
-        if Poly.(parent.state.compare_instr = INVALID) then
+        if Poly.(Instr_translator.compare_instr parent.state = INVALID) then
           raise_s
             [%message
               "parent block has no output condition"
@@ -244,7 +244,7 @@ let translate ~intrinsics ~name ~(blocks : block array) =
   let block_data = AP.mapi ~f:(translate_block c) c.raw_blocks in
   AP.fold
     ~f:(fun () b ->
-      if Poly.(b.state.input_condition_instr <> INVALID) then
+      if Poly.(Instr_translator.input_condition_instr b.state <> INVALID) then
         add_input_blocks c.inverted_cfg block_data b)
     ~init:() block_data;
   let used_locals = Hashtbl.create (module String) in

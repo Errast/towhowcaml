@@ -24,6 +24,7 @@ type state = {
   mutable backward_direction : bool;
   mutable fpu_stack_pointer : Instr.Ref.t;
   mutable fpu_stack_pointer_offset : int;
+  fpu_stack_changes : (int, Instr.Ref.t) Hashtbl.t;
   mutable fpu_status_word : Instr.Ref.t;
 }
 [@@deriving sexp_of]
@@ -41,8 +42,13 @@ let initial_state () =
     backward_direction = false;
     fpu_stack_pointer = Instr.Ref.invalid;
     fpu_stack_pointer_offset = 0;
+    fpu_stack_changes = Hashtbl.create ~size:0 (module Int);
     fpu_status_word = Instr.Ref.invalid;
   }
+
+let backward_direction s = s.backward_direction
+let compare_instr s = s.compare_instr
+let input_condition_instr s = s.input_condition_instr
 
 type context = {
   opcode : Radatnet.Types.opcode;
@@ -236,36 +242,40 @@ let add_float_comparison c args =
   c.state.float_compare_instr <- c.opcode.id;
   c.state.float_compare_args <- args
 
-let get_fpu_stack_pointer c =
+let get_fpu_stack_pointer ~state ~builder =
   (* only should be invalid if never previously used, so fpu_stack_pointer_offset should already be 0 *)
-  if Instr.Ref.equal Instr.Ref.invalid c.state.fpu_stack_pointer then
-    c.state.fpu_stack_pointer <-
-      B.get_global c.builder T_Util.fpu_stack_pointer_global Int;
-  c.state.fpu_stack_pointer
+  if Instr.Ref.equal Instr.Ref.invalid state.fpu_stack_pointer then
+    state.fpu_stack_pointer <-
+      B.get_global builder T_Util.fpu_stack_pointer_global Int;
+  state.fpu_stack_pointer
 
 let set_fpu_stack c value index =
-  let addr = get_fpu_stack_pointer c in
-  let offset = (c.state.fpu_stack_pointer_offset - index) * float_size in
-  match float_size with
-  | 4 -> B.float_store32 c.builder ~addr ~value ~offset
-  | 8 -> B.float_store64 c.builder ~addr ~value ~offset
-  | _ -> failwith "invalid float size"
+  Hashtbl.set c.state.fpu_stack_changes
+    ~key:(c.state.fpu_stack_pointer_offset - index)
+    ~data:value
 
+(* this currently store things to the stack that were read but not modified *)
+(* not a big deal *)
 let get_fpu_stack c index =
-  let addr = get_fpu_stack_pointer c in
-  let offset = (c.state.fpu_stack_pointer_offset - index) * float_size in
-  match float_size with
-  | 4 -> B.float_load32 c.builder addr ~offset
-  | 8 -> B.float_load64 c.builder addr ~offset
-  | _ -> failwith "invalid float size"
+  let offset = c.state.fpu_stack_pointer_offset - index in
+  Hashtbl.find_or_add c.state.fpu_stack_changes offset ~default:(fun () ->
+      let addr = get_fpu_stack_pointer ~state:c.state ~builder:c.builder in
+      let offset = offset * float_size in
+      match float_size with
+      | 4 -> B.float_load32 c.builder addr ~offset
+      | 8 -> B.float_load64 c.builder addr ~offset
+      | _ -> failwith "invalid float size")
 
 let fpu_push c value =
   c.state.fpu_stack_pointer_offset <- c.state.fpu_stack_pointer_offset + 1;
   set_fpu_stack c value 0
 
 let fpu_pop c =
+  c.state.fpu_stack_pointer_offset <- c.state.fpu_stack_pointer_offset - 1
+
+let fpu_pop_off c =
   let value = get_fpu_stack c 0 in
-  c.state.fpu_stack_pointer_offset <- c.state.fpu_stack_pointer_offset - 1;
+  fpu_pop c;
   value
 
 let load_operand_f c src =
@@ -294,13 +304,29 @@ let store_operand_f c value ~dest =
       | _ -> raise_c c "invalid operand")
   | _ -> raise_c c "invalid operand"
 
+(* Do this before resetting fpu_stack_pointer_offset *)
+let write_fpu_stack_changes ~state ~builder =
+  let ptr_offset = state.fpu_stack_pointer_offset in
+  let addr = get_fpu_stack_pointer ~state ~builder in
+  Hashtbl.iteri state.fpu_stack_changes ~f:(fun ~key ~data ->
+      if key <= ptr_offset then
+        match float_size with
+        | 4 ->
+            B.float_store32 builder ~addr ~value:data ~offset:(key * float_size)
+        | 8 ->
+            B.float_store64 builder ~addr ~value:data ~offset:(key * float_size)
+        | _ -> failwith "invalid float size");
+  Hashtbl.clear state.fpu_stack_changes;
+
+  if state.fpu_stack_pointer_offset <> 0 then
+    B.set_global builder Util.fpu_stack_pointer_global Int
+    @@ B.add builder ~lhs:state.fpu_stack_pointer
+         ~rhs:(B.const builder state.fpu_stack_pointer_offset)
+
 let write_globals c =
   let newest_esp = newest_var c `esp in
   B.set_global c.builder Util.stack_pointer_global Int newest_esp;
-  if c.state.fpu_stack_pointer_offset <> 0 then
-    B.set_global c.builder Util.fpu_stack_pointer_global Int
-    @@ B.add c.builder ~lhs:c.state.fpu_stack_pointer
-         ~rhs:(B.const c.builder c.state.fpu_stack_pointer_offset)
+  write_fpu_stack_changes ~state:c.state ~builder:c.builder
 
 (* this sucks. i guess the difference is that esp has a local
    and fpu_stack_pointer doesn't. but i still don't like it. if we
@@ -455,10 +481,10 @@ let translate_float_comparison c ~after_pop =
   add_float_comparison c [ lhs; rhs ];
   match after_pop with
   | `None -> ()
-  | `Once -> fpu_pop c |> ignore
+  | `Once -> fpu_pop_off c |> ignore
   | `Twice ->
-      fpu_pop c |> ignore;
-      fpu_pop |> ignore
+      fpu_pop_off c |> ignore;
+      fpu_pop_off |> ignore
 
 let translate_float_store c ~after_pop =
   match operands c with
@@ -467,7 +493,7 @@ let translate_float_store c ~after_pop =
       add_float_comparison c [];
       let value = get_fpu_stack c 0 in
       store_operand_f c value ~dest;
-      if after_pop then fpu_pop c |> ignore
+      if after_pop then fpu_pop_off c |> ignore
   | _ -> raise_ops c
 
 let translate_float_store_status_word c =
@@ -578,6 +604,9 @@ let translate_float_test_comparison c =
         ~operand:(B.float_less_than_equal c.builder ~lhs ~rhs)
   | JP, 0x44 ->
       B.equals_zero c.builder ~operand:(B.float_equal c.builder ~lhs ~rhs)
+  | JNE, 0x1 ->
+      B.equals_zero c.builder
+        ~operand:(B.float_greater_than_equal c.builder ~lhs ~rhs)
   | _ -> raise_comp_ops c
 
 let translate_reflexive_test_comparison c =
@@ -670,6 +699,55 @@ let translate_set_stuff c =
   | [ dest ] -> store_operand c (translate_condition c) ~dest
   | _ -> raise_ops c
 
+let translate_float_add ~after_pop c =
+  match operands c with
+  | [ arg ] when not after_pop ->
+      set_fpu_stack c
+        (B.float_add c.builder ~lhs:(load_operand_f c arg)
+           ~rhs:(get_fpu_stack c 0))
+        0
+  | [ lhs; rhs ] ->
+      store_operand_f c ~dest:lhs
+      @@ B.float_add c.builder ~lhs:(load_operand_f c lhs)
+           ~rhs:(load_operand_f c rhs);
+      if after_pop then fpu_pop c
+  | [] when after_pop ->
+      set_fpu_stack c
+        (B.float_add c.builder ~lhs:(get_fpu_stack c 0) ~rhs:(get_fpu_stack c 1))
+        0
+  | _ -> raise_ops c
+
+let translate_float_sub ~after_pop c =
+  match operands c with
+  | [ arg ] when not after_pop ->
+      set_fpu_stack c
+        (B.float_sub c.builder ~rhs:(load_operand_f c arg)
+           ~lhs:(get_fpu_stack c 0))
+        0
+  | [ lhs; rhs ] ->
+      store_operand_f c ~dest:lhs
+      @@ B.float_sub c.builder ~lhs:(load_operand_f c lhs)
+           ~rhs:(load_operand_f c rhs);
+      if after_pop then fpu_pop c
+  | [] when after_pop ->
+      set_fpu_stack c
+        (B.float_sub c.builder ~lhs:(get_fpu_stack c 0) ~rhs:(get_fpu_stack c 1))
+        0
+  | _ -> raise_ops c
+
+let translate_leave c =
+  match operands c with
+  | [] ->
+      let esp =
+        B.dup_var c.builder ~varName:(X86reg.to_ident `esp) (newest_var c `ebp)
+          Int
+      in
+      B.load32 c.builder ~varName:(X86reg.to_ident `ebp) esp |> ignore;
+      B.add c.builder ~varName:(X86reg.to_ident `esp) ~lhs:esp
+        ~rhs:(B.const c.builder 4)
+      |> ignore
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   match c.opcode.id with
@@ -699,6 +777,10 @@ let translate_no_prefix c =
   | FSTP -> translate_float_store c ~after_pop:true
   | FNSTSW -> translate_float_store_status_word c
   | CALL -> translate_call c
+  | FADD -> translate_float_add c ~after_pop:false
+  (* | FADDP -> translate_float_add c ~after_pop:true *)
+  | FSUB -> translate_float_sub c ~after_pop:false
+  | LEAVE -> translate_leave c
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c = raise_c c "rep prefix"
@@ -713,69 +795,75 @@ let translate intrinsics builder state opcode =
   | _ -> raise_c c "Invalid opcode prefix"
 
 let translate_terminator intrinsics builder state opcode =
-  match opcode with
-  | {
-   id = JMP;
-   prefix = 0;
-   opex =
-     {
-       operands =
-         [
-           Memory
-             {
-               index = Some (#X86reg.reg_32bit as switch_reg);
-               base = None;
-               segment = None;
-               scale = 4;
-               displacement;
-               size = 4;
-             };
-         ];
-     };
-   _;
-  } ->
-      Switch
-        {
-          table_addr = displacement;
-          switch_on = B.newest_var builder (X86reg.to_ident switch_reg);
-        }
-  | {
-   id = JMP;
-   prefix = 0;
-   opex = { operands = [ Immediate { size = 4; value } ] };
-   _;
-  } ->
-      Unconditional { target = value }
-  | { id = RET; prefix = 0; opex = { operands = [] }; _ } ->
-      B.set_global builder Util.stack_pointer_global Int
-      @@ B.newest_var builder @@ X86reg.to_ident `esp;
-      Return
-  | {
-   id = RET;
-   prefix = 0;
-   opex = { operands = [ Immediate { value; _ } ] };
-   _;
-  } ->
-      let esp = X86reg.to_ident `esp in
-      let esp =
-        B.add builder ~lhs:(B.newest_var builder esp)
-          ~rhs:(B.const builder value) ~varName:esp
-      in
-      B.set_global builder Util.stack_pointer_global Int esp;
-      Return
-  | {
-   id = JP | JE | JNE | JB | JBE | JGE | JG | JL | JLE;
-   prefix = 0;
-   opex = { operands = [ Immediate { value; _ } ] };
-   _;
-  } ->
-      Conditional
-        {
-          target = value;
-          condition = translate_condition { intrinsics; builder; state; opcode };
-        }
-  | _ ->
-      translate intrinsics builder state opcode;
-      Nothing
+  let result =
+    match opcode with
+    | {
+     id = JMP;
+     prefix = 0;
+     opex =
+       {
+         operands =
+           [
+             Memory
+               {
+                 index = Some (#X86reg.reg_32bit as switch_reg);
+                 base = None;
+                 segment = None;
+                 scale = 4;
+                 displacement;
+                 size = 4;
+               };
+           ];
+       };
+     _;
+    } ->
+        Switch
+          {
+            table_addr = displacement;
+            switch_on = B.newest_var builder (X86reg.to_ident switch_reg);
+          }
+    | {
+     id = JMP;
+     prefix = 0;
+     opex = { operands = [ Immediate { size = 4; value } ] };
+     _;
+    } ->
+        Unconditional { target = value }
+    | { id = RET; prefix = 0; opex = { operands = [] }; _ } ->
+        B.set_global builder Util.stack_pointer_global Int
+        @@ B.newest_var builder @@ X86reg.to_ident `esp;
+        Return
+    | {
+     id = RET;
+     prefix = 0;
+     opex = { operands = [ Immediate { value; _ } ] };
+     _;
+    } ->
+        let esp = X86reg.to_ident `esp in
+        let esp =
+          B.add builder ~lhs:(B.newest_var builder esp)
+            ~rhs:(B.const builder value) ~varName:esp
+        in
+        B.set_global builder Util.stack_pointer_global Int esp;
+        Return
+    | {
+     id = JP | JE | JNE | JB | JBE | JGE | JG | JL | JLE;
+     prefix = 0;
+     opex = { operands = [ Immediate { value; _ } ] };
+     _;
+    } ->
+        Conditional
+          {
+            target = value;
+            condition =
+              translate_condition { intrinsics; builder; state; opcode };
+          }
+    | _ ->
+        translate intrinsics builder state opcode;
+        Nothing
+  in
+  (* maybe this is not the right way to do this *)
+  write_fpu_stack_changes ~state ~builder;
+  result
 
 let translate_output_condition builder state condition_instr = ()
