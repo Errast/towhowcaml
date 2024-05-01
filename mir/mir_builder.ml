@@ -1,17 +1,8 @@
 open! Core
 open Types
 
-type instr_list = Instr.t Vec.t
-
-let sexp_of_instr_list vec =
-  Sexp.List
-    (Vec.to_array vec
-    |> Array.mapi ~f:(fun i instr ->
-           Sexp.List [ sexp_of_int i; Instr.sexp_of_t instr ])
-    |> List.of_array)
-
 type t = {
-  instrs : instr_list;
+  instrs : Instr_list.builder;
   currentVar : (ident, Local_info.t) Hashtbl.t;
   locals : (local_type Map.M(String).t[@sexp.opaque]);
   mutable roots : Set.M(Instr.Ref).t;
@@ -20,7 +11,7 @@ type t = {
 [@@deriving sexp_of]
 
 let deconstruct { instrs; currentVar; locals; roots; _ } =
-  (Vec.to_perm_array instrs, currentVar, locals, roots)
+  (Vec.to_array instrs, currentVar, locals, roots)
 
 let get_instr t (Instr.Ref.Ref i) = Vec.get t.instrs i
 let set_check_var_is_latest t b = t.check_var_is_latest <- b

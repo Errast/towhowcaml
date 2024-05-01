@@ -306,22 +306,25 @@ let store_operand_f c value ~dest =
 
 (* Do this before resetting fpu_stack_pointer_offset *)
 let write_fpu_stack_changes ~state ~builder =
-  let ptr_offset = state.fpu_stack_pointer_offset in
-  let addr = get_fpu_stack_pointer ~state ~builder in
-  Hashtbl.iteri state.fpu_stack_changes ~f:(fun ~key ~data ->
-      if key <= ptr_offset then
-        match float_size with
-        | 4 ->
-            B.float_store32 builder ~addr ~value:data ~offset:(key * float_size)
-        | 8 ->
-            B.float_store64 builder ~addr ~value:data ~offset:(key * float_size)
-        | _ -> failwith "invalid float size");
-  Hashtbl.clear state.fpu_stack_changes;
+  if not @@ Hashtbl.is_empty state.fpu_stack_changes then (
+    let ptr_offset = state.fpu_stack_pointer_offset in
+    let addr = get_fpu_stack_pointer ~state ~builder in
+    Hashtbl.iteri state.fpu_stack_changes ~f:(fun ~key ~data ->
+        if key <= ptr_offset then
+          match float_size with
+          | 4 ->
+              B.float_store32 builder ~addr ~value:data
+                ~offset:(key * float_size)
+          | 8 ->
+              B.float_store64 builder ~addr ~value:data
+                ~offset:(key * float_size)
+          | _ -> failwith "invalid float size");
+    Hashtbl.clear state.fpu_stack_changes;
 
-  if state.fpu_stack_pointer_offset <> 0 then
-    B.set_global builder Util.fpu_stack_pointer_global Int
-    @@ B.add builder ~lhs:state.fpu_stack_pointer
-         ~rhs:(B.const builder state.fpu_stack_pointer_offset)
+    if state.fpu_stack_pointer_offset <> 0 then
+      B.set_global builder Util.fpu_stack_pointer_global Int
+      @@ B.add builder ~lhs:state.fpu_stack_pointer
+           ~rhs:(B.const builder state.fpu_stack_pointer_offset))
 
 let write_globals c =
   let newest_esp = newest_var c `esp in
@@ -675,6 +678,10 @@ let translate_cmp_comparison c =
       let lhs = extend_unsigned c lhs in
       let rhs = extend_unsigned c rhs in
       B.less_than_equal c.builder ~lhs ~rhs ~signed:false
+  | (JL | SETL), [ lhs; rhs ] ->
+      let lhs = extend_signed c lhs in
+      let rhs = extend_signed c rhs in
+      B.less_than c.builder ~lhs ~rhs ~signed:true
   | _ -> raise_comp_ops c
 
 let translate_condition c =
@@ -863,6 +870,7 @@ let translate_terminator intrinsics builder state opcode =
         Nothing
   in
   (* maybe this is not the right way to do this *)
+  (* too much work to keep track of fpu stack offset cross-block *)
   write_fpu_stack_changes ~state ~builder;
   result
 
