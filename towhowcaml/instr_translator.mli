@@ -6,7 +6,7 @@ type state
 
 val initial_state : unit -> state
 val backward_direction : state -> bool
-val input_condition_instr : state -> X86_instr.t
+val input_condition_opcode : state -> opcode option
 val compare_instr : state -> X86_instr.t
 
 val translate :
@@ -16,7 +16,7 @@ val translate :
   Radatnet.Types.opcode ->
   unit
 
-val translate_output_condition : Mir.Builder.t -> state -> X86_instr.t -> unit
+val translate_output_condition : Mir.Builder.t -> state -> opcode -> unit
 
 type term_trans_result =
   | Nothing

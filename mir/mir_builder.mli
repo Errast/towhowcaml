@@ -13,7 +13,7 @@ val create : local_type String.Map.t -> t
 
 val deconstruct :
   t ->
-  Instr.t array
+  Instr_list.t
   * (ident, Local_info.t) Hashtbl.t
   * local_type Map.M(String).t
   * Set.M(Instr.Ref).t
@@ -26,7 +26,7 @@ val const : ?varName:ident -> t -> int -> Instr.ref
 val float_const : ?varName:ident -> t -> float -> Instr.ref
 val long_const : ?varName:ident -> t -> int64 -> Instr.ref
 val vec_const : ?varName:ident -> t -> l:int64 -> h:int64 -> Instr.ref
-val dup_var : ?varName:ident -> t -> Instr.ref -> local_type -> Instr.ref
+val dup_var : ?varName:ident -> t -> local_type -> Instr.ref -> Instr.ref
 
 type uni_op_add = ?varName:ident -> t -> operand:Instr.ref -> Instr.ref
 

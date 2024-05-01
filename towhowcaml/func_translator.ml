@@ -155,32 +155,35 @@ let translate_block c id block =
   }
 
 let add_input_blocks inverted_cfg block_data b =
-  let parents = inverted_cfg.(b.id) in
-  if List.is_empty parents then
-    raise_s
-      [%message
-        "block has input condition but no parents" ~block:(b.offset : int)];
-  let condition_instr = Instr_translator.compare_instr b.state in
-  List.iter
-    ~f:(fun p ->
-      let parent = block_data.(p) in
-      if Poly.(parent.output_condition_op <> condition_instr) then (
-        if Poly.(parent.output_condition_op <> INVALID) then
-          raise_s
-            [%message
-              "parent block has different output condition"
-                ~block:(b.offset : int)
-                ~parent:(parent.offset : int)];
-        if Poly.(Instr_translator.compare_instr parent.state = INVALID) then
-          raise_s
-            [%message
-              "parent block has no output condition"
-                ~block:(b.offset : int)
-                ~parent:(parent.offset : int)];
-        Instr_translator.translate_output_condition parent.builder parent.state
-          condition_instr;
-        parent.output_condition_op <- condition_instr))
-    parents
+  match Instr_translator.input_condition_opcode b.state with
+  | None -> ()
+  | Some condition_op ->
+      let parents = inverted_cfg.(b.id) in
+      if List.is_empty parents then
+        raise_s
+          [%message
+            "block has input condition but no parents" ~block:(b.offset : int)];
+      let open Poly in
+      List.iter
+        ~f:(fun p ->
+          let parent = block_data.(p) in
+          if parent.output_condition_op <> condition_op.id then (
+            if parent.output_condition_op <> INVALID then
+              raise_s
+                [%message
+                  "parent block has different output condition"
+                    ~block:(b.offset : int)
+                    ~parent:(parent.offset : int)];
+            if Instr_translator.compare_instr parent.state = INVALID then
+              raise_s
+                [%message
+                  "parent block has no output condition"
+                    ~block:(b.offset : int)
+                    ~parent:(parent.offset : int)];
+            Instr_translator.translate_output_condition parent.builder
+              parent.state condition_op;
+            parent.output_condition_op <- condition_op.id))
+        parents
 
 let add_used_local used_locals ident typ =
   let found_typ =
@@ -242,11 +245,7 @@ let translate ~intrinsics ~name ~(blocks : block array) =
   let c = { inverted_cfg; intrinsics; trap_block; raw_blocks = blocks } in
   AP.foldi ~f:(fun i () b -> add_block_branches c i b) ~init:() blocks;
   let block_data = AP.mapi ~f:(translate_block c) c.raw_blocks in
-  AP.fold
-    ~f:(fun () b ->
-      if Poly.(Instr_translator.input_condition_instr b.state <> INVALID) then
-        add_input_blocks c.inverted_cfg block_data b)
-    ~init:() block_data;
+  AP.iter ~f:(add_input_blocks c.inverted_cfg block_data) block_data;
   let used_locals = Hashtbl.create (module String) in
   let signature = Util.fast_call in
   List.iter ~f:(fun a -> add_used_local used_locals a.name a.typ) signature.args;

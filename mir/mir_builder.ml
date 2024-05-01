@@ -173,7 +173,7 @@ let vec_const ?varName t ~l ~h =
   @@ Instr.VecConst
        { var = new_var t varName Vec; lower_bits = l; upper_bits = h }
 
-let dup_var ?varName t src typ =
+let dup_var ?varName t typ src =
   verify_var src typ t;
   add_instr t @@ Instr.DupVar { var = new_var t varName typ; src; typ }
 

@@ -15,7 +15,7 @@ type term_trans_result =
 type state = {
   mutable compare_args : (Instr.Ref.t * X86reg.gpr_type) list;
   mutable compare_instr : X86_instr.t;
-  mutable input_condition_instr : X86_instr.t;
+  mutable input_condition_opcode : opcode option;
   mutable changed_flags : Status_flags.t;
   mutable fpu_status_word_args : Instr.Ref.t list;
   mutable fpu_status_word_instr : X86_instr.t;
@@ -33,7 +33,7 @@ let initial_state () =
   {
     compare_args = [];
     compare_instr = INVALID;
-    input_condition_instr = INVALID;
+    input_condition_opcode = None;
     changed_flags = Status_flags.none;
     fpu_status_word_args = [];
     fpu_status_word_instr = INVALID;
@@ -48,7 +48,7 @@ let initial_state () =
 
 let backward_direction s = s.backward_direction
 let compare_instr s = s.compare_instr
-let input_condition_instr s = s.input_condition_instr
+let input_condition_opcode s = s.input_condition_opcode
 
 type context = {
   opcode : Radatnet.Types.opcode;
@@ -57,6 +57,8 @@ type context = {
   intrinsics : ((int, Util.intrinsic) Hashtbl.t[@sexp.opaque]);
 }
 [@@deriving sexp_of]
+
+let empty_hashtbl = Hashtbl.create ~growth_allowed:false ~size:0 (module Int)
 
 let flags_used_tbl =
   Hashtbl.of_alist_exn
@@ -158,7 +160,7 @@ let store_operand c src ~dest =
       (let reg_ident = X86reg.to_32_bit reg |> X86reg.to_ident
        and b = c.builder in
        match reg with
-       | #X86reg.reg_32bit -> B.dup_var b ~varName:reg_ident src Int
+       | #X86reg.reg_32bit -> B.dup_var b ~varName:reg_ident Int src
        | #X86reg.reg_16bit ->
            B.merge_trunc_16 b ~varName:reg_ident ~lhs:src
              ~rhs:(B.newest_var b reg_ident)
@@ -583,11 +585,11 @@ let translate_call c =
 
 let translate_input_cond c =
   if
-    Poly.(
-      c.state.input_condition_instr <> INVALID
-      && c.state.input_condition_instr <> c.opcode.id)
+    match c.state.input_condition_opcode with
+    | None -> false
+    | Some o -> Poly.(o.id <> c.opcode.id)
   then raise_c c "multiple input conditions";
-  c.state.input_condition_instr <- c.opcode.id;
+  c.state.input_condition_opcode <- Some c.opcode;
   B.newest_var c.builder Util.input_compare_arg
 
 let translate_float_test_comparison c =
@@ -746,8 +748,8 @@ let translate_leave c =
   match operands c with
   | [] ->
       let esp =
-        B.dup_var c.builder ~varName:(X86reg.to_ident `esp) (newest_var c `ebp)
-          Int
+        B.dup_var c.builder ~varName:(X86reg.to_ident `esp) Int
+          (newest_var c `ebp)
       in
       B.load32 c.builder ~varName:(X86reg.to_ident `ebp) esp |> ignore;
       B.add c.builder ~varName:(X86reg.to_ident `esp) ~lhs:esp
@@ -874,4 +876,8 @@ let translate_terminator intrinsics builder state opcode =
   write_fpu_stack_changes ~state ~builder;
   result
 
-let translate_output_condition builder state condition_instr = ()
+let translate_output_condition builder state condition_opcode =
+  translate_condition
+    { builder; state; opcode = condition_opcode; intrinsics = empty_hashtbl }
+  |> B.dup_var builder ~varName:Util.input_compare_arg Int
+  |> ignore
