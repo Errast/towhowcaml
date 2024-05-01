@@ -684,6 +684,10 @@ let translate_cmp_comparison c =
       let lhs = extend_signed c lhs in
       let rhs = extend_signed c rhs in
       B.less_than c.builder ~lhs ~rhs ~signed:true
+  | (JGE | SETGE), [ lhs; rhs ] ->
+      let lhs = extend_signed c lhs in
+      let rhs = extend_signed c rhs in
+      B.greater_than_equal c.builder ~lhs ~rhs ~signed:true
   | _ -> raise_comp_ops c
 
 let translate_condition c =

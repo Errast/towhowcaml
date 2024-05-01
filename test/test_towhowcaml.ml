@@ -25,9 +25,26 @@ let test_trans_block addr =
   print_s @@ Mir.Block.sexp_of_t
   @@ (Func_translator.translate ~blocks ~name ~intrinsics).blocks.(index)
 
+let%expect_test "jge" =
+  test_trans_block 4380548;
+  [%expect {|
+    ((id 2)
+     (instrs
+      ((0 (OutsideContext (var ebp) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -4)))
+       (2 (DupVar (var eax) (src (Ref 1)) (typ Int)))
+       (3 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -16)))
+       (4
+        (SignedBiOp (var __i32) (op GreaterThanEqual) (signed true) (lhs (Ref 2))
+         (rhs (Ref 3))))))
+     (terminator
+      (Branch (succeed (Block 4)) (fail (Block 3)) (condition (Ref 4))))
+     (roots ((Ref 0) (Ref 2)))) |}]
+
 let%expect_test _ =
   test_trans_block 0x0040127a;
-  [%expect {|
+  [%expect
+    {|
     ((id 4)
      (instrs
       ((0 (OutsideContext (var ebp) (typ Int)))
