@@ -318,6 +318,7 @@ let rotate_left = bi_op Int Instr.RotateLeft Int
 let long_equal = bi_op Long Instr.LongEq Long
 let long_not_equal = bi_op Long Instr.LongNotEq Int
 let float_equal = bi_op Float Instr.FloatEq Int
+let float_not_equal = bi_op Float Instr.FloatNotEq Int
 let aad_float_not_equal = bi_op Float Instr.FloatNotEq Int
 let float_greater_than = bi_op Float Instr.FloatGreaterThan Int
 let float_less_than = bi_op Float Instr.FloatLessThan Int

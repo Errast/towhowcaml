@@ -4,7 +4,6 @@ open! Core
 open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 open Basic
 open Types
-open Yojson.Basic
 
 let open_file t file = "o '" ^ file ^ "'" |> run t |> ignore
 let seek t address = "s " ^ string_of_int address |> run t |> ignore

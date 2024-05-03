@@ -612,6 +612,14 @@ let translate_float_test_comparison c =
   | JNE, 0x1 ->
       B.equals_zero c.builder
         ~operand:(B.float_greater_than_equal c.builder ~lhs ~rhs)
+  | JP, 0x5 ->
+      B.equals_zero c.builder ~operand:(B.float_less_than c.builder ~lhs ~rhs)
+  | JNP, 0x44 -> B.float_equal c.builder ~lhs ~rhs
+  | JNE, 0x41 ->
+      (* ooh evaluation order *)
+      B.int_or c.builder
+        ~rhs:(B.float_not_equal c.builder ~lhs:rhs ~rhs)
+        ~lhs:(B.float_not_equal c.builder ~lhs ~rhs:lhs)
   | _ -> raise_comp_ops c
 
 let translate_reflexive_test_comparison c =
@@ -680,6 +688,10 @@ let translate_cmp_comparison c =
       let lhs = extend_unsigned c lhs in
       let rhs = extend_unsigned c rhs in
       B.less_than_equal c.builder ~lhs ~rhs ~signed:false
+  | (JLE | SETLE), [ lhs; rhs ] ->
+      let lhs = extend_signed c lhs in
+      let rhs = extend_signed c rhs in
+      B.less_than_equal c.builder ~lhs ~rhs ~signed:true
   | (JL | SETL), [ lhs; rhs ] ->
       let lhs = extend_signed c lhs in
       let rhs = extend_signed c rhs in
@@ -688,6 +700,14 @@ let translate_cmp_comparison c =
       let lhs = extend_signed c lhs in
       let rhs = extend_signed c rhs in
       B.greater_than_equal c.builder ~lhs ~rhs ~signed:true
+  | (JG | SETG), [ lhs; rhs ] ->
+      let lhs = extend_signed c lhs in
+      let rhs = extend_signed c rhs in
+      B.greater_than c.builder ~lhs ~rhs ~signed:true
+  | (JA | SETA), [ lhs; rhs ] ->
+      let lhs = extend_unsigned c lhs in
+      let rhs = extend_unsigned c rhs in
+      B.greater_than c.builder ~lhs ~rhs ~signed:false
   | _ -> raise_comp_ops c
 
 let translate_condition c =
@@ -712,42 +732,6 @@ let translate_set_stuff c =
   | [ dest ] -> store_operand c (translate_condition c) ~dest
   | _ -> raise_ops c
 
-let translate_float_add ~after_pop c =
-  match operands c with
-  | [ arg ] when not after_pop ->
-      set_fpu_stack c
-        (B.float_add c.builder ~lhs:(load_operand_f c arg)
-           ~rhs:(get_fpu_stack c 0))
-        0
-  | [ lhs; rhs ] ->
-      store_operand_f c ~dest:lhs
-      @@ B.float_add c.builder ~lhs:(load_operand_f c lhs)
-           ~rhs:(load_operand_f c rhs);
-      if after_pop then fpu_pop c
-  | [] when after_pop ->
-      set_fpu_stack c
-        (B.float_add c.builder ~lhs:(get_fpu_stack c 0) ~rhs:(get_fpu_stack c 1))
-        0
-  | _ -> raise_ops c
-
-let translate_float_sub ~after_pop c =
-  match operands c with
-  | [ arg ] when not after_pop ->
-      set_fpu_stack c
-        (B.float_sub c.builder ~rhs:(load_operand_f c arg)
-           ~lhs:(get_fpu_stack c 0))
-        0
-  | [ lhs; rhs ] ->
-      store_operand_f c ~dest:lhs
-      @@ B.float_sub c.builder ~lhs:(load_operand_f c lhs)
-           ~rhs:(load_operand_f c rhs);
-      if after_pop then fpu_pop c
-  | [] when after_pop ->
-      set_fpu_stack c
-        (B.float_sub c.builder ~lhs:(get_fpu_stack c 0) ~rhs:(get_fpu_stack c 1))
-        0
-  | _ -> raise_ops c
-
 let translate_leave c =
   match operands c with
   | [] ->
@@ -759,6 +743,108 @@ let translate_leave c =
       B.add c.builder ~varName:(X86reg.to_ident `esp) ~lhs:esp
         ~rhs:(B.const c.builder 4)
       |> ignore
+  | _ -> raise_ops c
+
+let translate_float_bi_op c (op : B.bi_op_add)
+    (cond : [ `PopAfter | `IntArg | `None ]) =
+  match (cond, operands c) with
+  (* | `None, [ lhs; rhs ] -> *)
+  (*     let lhs_arg = load_operand_f c lhs in *)
+  (*     let rhs_arg = load_operand_f c rhs in *)
+  (*     store_operand_f c ~dest:lhs @@ op c.builder ~lhs:lhs_arg ~rhs:rhs_arg *)
+  | `IntArg, [ arg ] ->
+      (* tecnically supposed to work with long too *)
+      set_fpu_stack c
+        (op c.builder
+           ~rhs:
+             (B.int32_to_float c.builder ~signed:true
+                ~operand:(load_operand_s c arg))
+           ~lhs:(get_fpu_stack c 0))
+        0
+  | `PopAfter, [ arg ] ->
+      store_operand_f c ~dest:arg
+      @@ op c.builder ~rhs:(load_operand_f c arg) ~lhs:(get_fpu_stack c 0);
+      fpu_pop c
+  | `None, [ arg ] ->
+      set_fpu_stack c
+        (op c.builder ~rhs:(load_operand_f c arg) ~lhs:(get_fpu_stack c 0))
+        0
+  | `PopAfter, [] ->
+      set_fpu_stack c
+        (op c.builder ~rhs:(get_fpu_stack c 1) ~lhs:(get_fpu_stack c 0))
+        1;
+      fpu_pop c
+  | _ -> raise_ops c
+
+let translate_imul c =
+  match operands c with
+  | [ dest; lhs; rhs ] | [ (lhs as dest); rhs ] ->
+      let lhs = load_operand_s c lhs in
+      let rhs = load_operand_s c rhs in
+      store_operand c ~dest @@ B.mul c.builder ~lhs ~rhs
+  | _ -> raise_ops c
+
+let translate_cdq c =
+  match operands c with
+  | [] ->
+      B.shift_right c.builder ~varName:(X86reg.to_ident `edx)
+        ~lhs:(newest_var c `eax) ~rhs:(B.const c.builder 31) ~signed:true
+      |> ignore
+  | _ -> raise_ops c
+
+let translate_idiv c =
+  match operands c with
+  | [ divisor ]
+    when operand_size divisor = 4
+         &&
+         (* this is a bit much just to detect cdq.
+              maybe have an instruction to merge to ints into longs,
+            and deal with this stuff during optimization *)
+         match B.get_instr c.builder @@ newest_var c `edx with
+         | SignedBiOp { op = ShiftRight; signed = true; rhs; _ } -> (
+             match B.get_instr c.builder rhs with
+             | Const (_, 31) -> true
+             | _ -> false)
+         | _ -> false ->
+      let lhs = newest_var c `eax in
+      let rhs = load_operand_s c divisor in
+      B.set_check_var_is_latest c.builder false;
+      B.div c.builder ~varName:(X86reg.to_ident `eax) ~lhs ~rhs ~signed:true
+      |> ignore;
+      B.remainder c.builder ~varName:(X86reg.to_ident `edx) ~lhs ~rhs
+        ~signed:true
+      |> ignore;
+      B.set_check_var_is_latest c.builder true
+  | _ -> raise_ops c
+
+let translate_div c =
+  match operands c with
+  | [ divisor ]
+    when operand_size divisor = 4
+         &&
+         (* yeah this should be an optimization *)
+         match B.get_instr c.builder @@ newest_var c `edx with
+         | DupVar { src; _ } -> (
+             match B.get_instr c.builder src with
+             | Const (_, 0) -> true
+             | _ -> false)
+         | _ -> false ->
+      let lhs = newest_var c `eax in
+      let rhs = load_operand_u c divisor in
+      B.set_check_var_is_latest c.builder false;
+      B.div c.builder ~varName:(X86reg.to_ident `eax) ~lhs ~rhs ~signed:false
+      |> ignore;
+      B.remainder c.builder ~varName:(X86reg.to_ident `edx) ~lhs ~rhs
+        ~signed:false
+      |> ignore;
+      B.set_check_var_is_latest c.builder true
+  | _ -> raise_ops c
+
+let translate_float_int_load c =
+  match operands c with
+  | [ arg ] ->
+      fpu_push c
+      @@ B.int32_to_float c.builder ~operand:(load_operand_s c arg) ~signed:true
   | _ -> raise_ops c
 
 let translate_no_prefix c =
@@ -790,10 +876,19 @@ let translate_no_prefix c =
   | FSTP -> translate_float_store c ~after_pop:true
   | FNSTSW -> translate_float_store_status_word c
   | CALL -> translate_call c
-  | FADD -> translate_float_add c ~after_pop:false
+  | FADD -> translate_float_bi_op c B.float_add `None
   (* | FADDP -> translate_float_add c ~after_pop:true *)
-  | FSUB -> translate_float_sub c ~after_pop:false
+  | FSUB -> translate_float_bi_op c B.float_sub `None
+  | FMUL -> translate_float_bi_op c B.float_mul `None
   | LEAVE -> translate_leave c
+  | IMUL -> translate_imul c
+  | CDQ -> translate_cdq c
+  | IDIV -> translate_idiv c
+  | FDIV -> translate_float_bi_op c B.float_div `None
+  | FDIVP -> translate_float_bi_op c B.float_div `PopAfter
+  | FILD -> translate_float_int_load c
+  | FIADD -> translate_float_bi_op c B.float_add `IntArg
+  | DIV -> translate_div c
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c = raise_c c "rep prefix"
@@ -860,7 +955,7 @@ let translate_terminator intrinsics builder state opcode =
         B.set_global builder Util.stack_pointer_global Int esp;
         Return
     | {
-     id = JP | JE | JNE | JB | JBE | JGE | JG | JL | JLE;
+     id = JP | JNP | JE | JNE | JB | JBE | JGE | JG | JL | JLE | JA | JAE;
      prefix = 0;
      opex = { operands = [ Immediate { value; _ } ] };
      _;

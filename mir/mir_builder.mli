@@ -107,6 +107,7 @@ val rotate_left : bi_op_add
 val long_equal : bi_op_add
 val long_not_equal : bi_op_add
 val float_equal : bi_op_add
+val float_not_equal : bi_op_add
 val aad_float_not_equal : bi_op_add
 val float_greater_than : bi_op_add
 val float_less_than : bi_op_add

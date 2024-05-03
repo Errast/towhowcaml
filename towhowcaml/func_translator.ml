@@ -41,7 +41,8 @@ let offset_to_block_id c offset =
   AP.binary_search c.raw_blocks
     ~compare:(fun b o -> compare_int b.offset o)
     `First_equal_to offset
-  |> Option.value_exn
+  |> Option.value_or_thunk ~default:(fun () ->
+         raise_s [%message "offset not found" (offset : int)])
 
 let add_block_branches c id (block : block) =
   let add_branch b =
@@ -54,8 +55,8 @@ let add_block_branches c id (block : block) =
       add_branch succeed;
       add_branch fail
   | Switch { cases; _ } ->
-      let[@warning "-8"] (Some (Block trap_block)) = c.trap_block in
-      add_branch trap_block;
+      (* Technically there is an edge from here to the trap_block,
+         but the trap block shouldn't do anything anyway so it doesn't matter*)
       List.iter ~f:(fun { jump; _ } -> add_branch jump) cases
   | Return | Trap -> ()
 

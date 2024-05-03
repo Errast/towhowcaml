@@ -109,20 +109,21 @@ let opcode_prefix_none = 0
 let opcode_prefix_rep = 1
 let opcode_prefix_repne = 1 lsr 1
 
-type jump_table_case = { value : int; jump : int } [@@deriving of_yojson, sexp]
+type jump_table_case = { value : int; jump : int }
+[@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
-type jump_table = { offset : int; cases : jump_table_case list }
-[@@deriving of_yojson, sexp]
+type jump_table = { offset : int; [@key "addr"] cases : jump_table_case list }
+[@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
 [@@@warning "-11"]
 
 type func_block = {
-  addr : int; [@key "addr"]
+  addr : int;
   size : int;
   jump_to : int option; [@key "jump"] [@yojson.option]
   fail_to : int option; [@key "fail"] [@yojson.option]
-  instrs : int array;
-  switch_to : jump_table option; [@key "switchop"] [@yojson.option]
+  instrs : int array; [@default [||]]
+  switch_to : jump_table option; [@key "switch_op"] [@yojson.option]
 }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
