@@ -235,3 +235,4 @@ val set_global : t -> ident -> local_type -> Instr.ref -> unit
 val mir_assert : t -> Instr.ref -> unit
 val unreachable : t -> unit -> unit
 val memset : t -> count:Instr.ref -> value:Instr.ref -> dest:Instr.ref -> unit
+val memcopy : t -> count:Instr.ref -> src:Instr.ref -> dest:Instr.ref -> unit

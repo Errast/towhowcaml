@@ -471,3 +471,9 @@ let memset t ~count ~value ~dest =
   verify_var value Int t;
   verify_var count Int t;
   add_instr t @@ Instr.Memset { dest; value; count } |> ignore
+
+let memcopy t ~count ~src ~dest =
+  verify_var dest Int t;
+  verify_var src Int t;
+  verify_var count Int t;
+  add_instr t @@ Instr.Memcopy { dest; src; count } |> ignore

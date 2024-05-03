@@ -267,6 +267,7 @@ type t =
     }
   | AssertOp of { condition : Ref.t }
   | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
+  | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t }
   | Unreachable
 [@@deriving sexp]
 
@@ -356,7 +357,7 @@ let replace_var instr var =
   | OutsideContext v -> OutsideContext { v with var }
   | Landmine v -> Landmine { v with var }
   | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _ | AssertOp _ | Memset _
-  | Unreachable ->
+  | Memcopy _ | Unreachable ->
       instr
 
 let replace_instr_ref t ~from ~into =
@@ -416,6 +417,9 @@ let replace_instr_ref t ~from ~into =
   | Memset v when v.dest <> from && v.value <> from && v.count <> from -> t
   | Memset v ->
       Memset { dest = swap v.dest; value = swap v.value; count = swap v.count }
+  | Memcopy v when v.dest <> from && v.src <> from && v.count <> from -> t
+  | Memcopy v ->
+      Memcopy { count = swap v.count; src = swap v.src; dest = swap v.dest }
   | Landmine _ | Unreachable | OutsideContext _ | GetGlobalOp _ | Const _
   | FloatConst _ | LongConst _ | VecConst _ ->
       t
@@ -429,7 +433,8 @@ let is_pure = function
   | VecLoadLaneOp _ | Landmine _ ->
       true
   | CallOp _ | CallIndirectOp _ | GetGlobalOp _ | OutsideContext _ | StoreOp _
-  | VecStoreLaneOp _ | AssertOp _ | Memset _ | Unreachable | SetGlobalOp _ ->
+  | VecStoreLaneOp _ | AssertOp _ | Memset _ | Memcopy _ | Unreachable
+  | SetGlobalOp _ ->
       false
 
 let is_assignment = function
@@ -440,7 +445,7 @@ let is_assignment = function
   | OutsideContext _ | Landmine _ ->
       true
   | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Unreachable | SetGlobalOp _
-  | Memset _ ->
+  | Memset _ | Memcopy _ ->
       false
 
 let assignment_var = function
@@ -467,5 +472,5 @@ let assignment_var = function
   | Landmine { var; _ } ->
       Some var
   | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _ | AssertOp _ | Unreachable
-  | Memset _ ->
+  | Memset _ | Memcopy _ ->
       None

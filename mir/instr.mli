@@ -254,6 +254,7 @@ type t =
     }
   | AssertOp of { condition : Ref.t }
   | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
+  | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t }
   | Unreachable
 [@@deriving sexp]
 

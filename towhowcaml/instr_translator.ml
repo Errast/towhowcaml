@@ -715,6 +715,9 @@ let translate_cmp_comparison c =
       let lhs = extend_unsigned c lhs in
       let rhs = extend_unsigned c rhs in
       B.greater_than c.builder ~lhs ~rhs ~signed:false
+  | (JAE | SETAE), [ lhs; rhs ] ->
+      B.greater_than_equal c.builder ~signed:false ~rhs:(extend_unsigned c rhs)
+        ~lhs:(extend_unsigned c lhs)
   | _ -> raise_comp_ops c
 
 let translate_condition c =
@@ -754,7 +757,7 @@ let translate_leave c =
 
 let translate_float_bi_op c (op : B.bi_op_add)
     (cond : [ `PopAfter | `IntArg | `None ]) =
-  match (cond, operands c) with
+  (match (cond, operands c) with
   (* | `None, [ lhs; rhs ] -> *)
   (*     let lhs_arg = load_operand_f c lhs in *)
   (*     let rhs_arg = load_operand_f c rhs in *)
@@ -781,14 +784,16 @@ let translate_float_bi_op c (op : B.bi_op_add)
         (op c.builder ~rhs:(get_fpu_stack c 1) ~lhs:(get_fpu_stack c 0))
         1;
       fpu_pop c
-  | _ -> raise_ops c
+  | _ -> raise_ops c);
+  add_float_comparison c []
 
 let translate_imul c =
   match operands c with
   | [ dest; lhs; rhs ] | [ (lhs as dest); rhs ] ->
       let lhs = load_operand_s c lhs in
       let rhs = load_operand_s c rhs in
-      store_operand c ~dest @@ B.mul c.builder ~lhs ~rhs
+      store_operand c ~dest @@ B.mul c.builder ~lhs ~rhs;
+      add_comparison c []
   | _ -> raise_ops c
 
 let translate_cdq c =
@@ -821,7 +826,8 @@ let translate_idiv c =
       B.remainder c.builder ~varName:(X86reg.to_ident `edx) ~lhs ~rhs
         ~signed:true
       |> ignore;
-      B.set_check_var_is_latest c.builder true
+      B.set_check_var_is_latest c.builder true;
+      add_comparison c []
   | _ -> raise_ops c
 
 let translate_div c =
@@ -844,14 +850,16 @@ let translate_div c =
       B.remainder c.builder ~varName:(X86reg.to_ident `edx) ~lhs ~rhs
         ~signed:false
       |> ignore;
-      B.set_check_var_is_latest c.builder true
+      B.set_check_var_is_latest c.builder true;
+      add_comparison c []
   | _ -> raise_ops c
 
 let translate_float_int_load c =
   match operands c with
   | [ arg ] ->
       fpu_push c
-      @@ B.int32_to_float c.builder ~operand:(load_operand_s c arg) ~signed:true
+      @@ B.int32_to_float c.builder ~operand:(load_operand_s c arg) ~signed:true;
+      add_float_comparison c []
   | _ -> raise_ops c
 
 let translate_rep_stos c =
@@ -877,6 +885,39 @@ let translate_rep_stos c =
       B.memset c.builder ~count ~dest:(newest_var c `edi)
         ~value:(B.const c.builder 0)
   | _ -> raise_ops c
+
+let translate_rep_movs c =
+  match operands c with
+  | [
+   Memory
+     {
+       size = 4;
+       segment = Some Es;
+       base = Some `edi;
+       scale = 1;
+       displacement = 0;
+       index = None;
+     };
+   Memory
+     {
+       size = 4;
+       segment = None;
+       base = Some `esi;
+       scale = 1;
+       displacement = 0;
+       index = None;
+     };
+  ] ->
+      B.memcopy c.builder ~dest:(newest_var c `edi) ~src:(newest_var c `esi)
+        ~count:
+          (B.shift_left c.builder ~rhs:(B.const c.builder 2)
+             ~lhs:(newest_var c `ecx))
+  | _ -> raise_ops c
+
+let translate_float_abs c =
+  assert_c c (List.is_empty @@ operands c);
+  set_fpu_stack c (B.float_abs c.builder ~operand:(get_fpu_stack c 0)) 0;
+  add_float_comparison c []
 
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
@@ -920,10 +961,12 @@ let translate_no_prefix c =
   | FILD -> translate_float_int_load c
   | FIADD -> translate_float_bi_op c B.float_add `IntArg
   | DIV -> translate_div c
+  | FABS -> translate_float_abs c
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c =
   match c.opcode.id with
+  | MOVSD -> translate_rep_movs c
   | STOSD -> translate_rep_stos c
   | _ -> raise_c c "Invalid instruction"
 
