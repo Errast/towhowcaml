@@ -253,6 +253,7 @@ type t =
       global_type : local_type;
     }
   | AssertOp of { condition : Ref.t }
+  | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
   | Unreachable
 [@@deriving sexp]
 

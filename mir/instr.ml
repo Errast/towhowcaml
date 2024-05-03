@@ -266,6 +266,7 @@ type t =
       global_type : local_type;
     }
   | AssertOp of { condition : Ref.t }
+  | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
   | Unreachable
 [@@deriving sexp]
 
@@ -354,7 +355,8 @@ let replace_var instr var =
   | GetGlobalOp v -> GetGlobalOp { v with var }
   | OutsideContext v -> OutsideContext { v with var }
   | Landmine v -> Landmine { v with var }
-  | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _ | AssertOp _ | Unreachable ->
+  | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _ | AssertOp _ | Memset _
+  | Unreachable ->
       instr
 
 let replace_instr_ref t ~from ~into =
@@ -411,6 +413,9 @@ let replace_instr_ref t ~from ~into =
   | SetGlobalOp v -> SetGlobalOp { v with value = into }
   | AssertOp v when v.condition <> from -> t
   | AssertOp _ -> AssertOp { condition = into }
+  | Memset v when v.dest <> from && v.value <> from && v.count <> from -> t
+  | Memset v ->
+      Memset { dest = swap v.dest; value = swap v.value; count = swap v.count }
   | Landmine _ | Unreachable | OutsideContext _ | GetGlobalOp _ | Const _
   | FloatConst _ | LongConst _ | VecConst _ ->
       t
@@ -424,7 +429,7 @@ let is_pure = function
   | VecLoadLaneOp _ | Landmine _ ->
       true
   | CallOp _ | CallIndirectOp _ | GetGlobalOp _ | OutsideContext _ | StoreOp _
-  | VecStoreLaneOp _ | AssertOp _ | Unreachable | SetGlobalOp _ ->
+  | VecStoreLaneOp _ | AssertOp _ | Memset _ | Unreachable | SetGlobalOp _ ->
       false
 
 let is_assignment = function
@@ -434,7 +439,8 @@ let is_assignment = function
   | VecLoadLaneOp _ | CallOp _ | CallIndirectOp _ | GetGlobalOp _
   | OutsideContext _ | Landmine _ ->
       true
-  | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Unreachable | SetGlobalOp _ ->
+  | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Unreachable | SetGlobalOp _
+  | Memset _ ->
       false
 
 let assignment_var = function
@@ -460,5 +466,6 @@ let assignment_var = function
   | OutsideContext { var; _ }
   | Landmine { var; _ } ->
       Some var
-  | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _ | AssertOp _ | Unreachable ->
+  | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _ | AssertOp _ | Unreachable
+  | Memset _ ->
       None

@@ -108,7 +108,6 @@ val long_equal : bi_op_add
 val long_not_equal : bi_op_add
 val float_equal : bi_op_add
 val float_not_equal : bi_op_add
-val aad_float_not_equal : bi_op_add
 val float_greater_than : bi_op_add
 val float_less_than : bi_op_add
 val float_greater_than_equal : bi_op_add
@@ -235,3 +234,4 @@ val vec_store :
 val set_global : t -> ident -> local_type -> Instr.ref -> unit
 val mir_assert : t -> Instr.ref -> unit
 val unreachable : t -> unit -> unit
+val memset : t -> count:Instr.ref -> value:Instr.ref -> dest:Instr.ref -> unit

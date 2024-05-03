@@ -113,6 +113,12 @@ let assert_c c ?(msg = "Assert failed") b = if not b then raise_c c msg
 let operands c = c.opcode.opex.operands
 let newest_var c reg = X86reg.to_ident reg |> B.newest_var c.builder
 
+let rec instr_is_zeroed c ref =
+  match B.get_instr c.builder ref with
+  | Const (_, 0) -> true
+  | DupVar { src; _ } -> instr_is_zeroed c src
+  | _ -> false
+
 let reg_type_of_size = function
   | 4 -> `Reg32Bit
   | 2 -> `Reg16Bit
@@ -306,8 +312,8 @@ let store_operand_f c value ~dest =
       | _ -> raise_c c "invalid operand")
   | _ -> raise_c c "invalid operand"
 
-(* Do this before resetting fpu_stack_pointer_offset *)
 let write_fpu_stack_changes ~state ~builder =
+  (* Do this before resetting fpu_stack_pointer_offset *)
   if not @@ Hashtbl.is_empty state.fpu_stack_changes then (
     let ptr_offset = state.fpu_stack_pointer_offset in
     let addr = get_fpu_stack_pointer ~state ~builder in
@@ -326,7 +332,8 @@ let write_fpu_stack_changes ~state ~builder =
     if state.fpu_stack_pointer_offset <> 0 then
       B.set_global builder Util.fpu_stack_pointer_global Int
       @@ B.add builder ~lhs:state.fpu_stack_pointer
-           ~rhs:(B.const builder state.fpu_stack_pointer_offset))
+           ~rhs:
+             (B.const builder @@ (state.fpu_stack_pointer_offset * float_size)))
 
 let write_globals c =
   let newest_esp = newest_var c `esp in
@@ -847,6 +854,30 @@ let translate_float_int_load c =
       @@ B.int32_to_float c.builder ~operand:(load_operand_s c arg) ~signed:true
   | _ -> raise_ops c
 
+let translate_rep_stos c =
+  match operands c with
+  | [
+   Memory
+     {
+       size = 4;
+       segment = Some Es;
+       base = Some `edi;
+       scale = 1;
+       displacement = 0;
+       index = None;
+     };
+   Register { size = 4; reg = `eax };
+  ]
+    when instr_is_zeroed c @@ newest_var c `eax ->
+      (* we just have to fill zeroes *)
+      let count =
+        B.shift_left c.builder ~rhs:(B.const c.builder 2)
+          ~lhs:(newest_var c `ecx)
+      in
+      B.memset c.builder ~count ~dest:(newest_var c `edi)
+        ~value:(B.const c.builder 0)
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   match c.opcode.id with
@@ -891,7 +922,11 @@ let translate_no_prefix c =
   | DIV -> translate_div c
   | _ -> raise_c c "Invalid instruction"
 
-let translate_rep_prefix c = raise_c c "rep prefix"
+let translate_rep_prefix c =
+  match c.opcode.id with
+  | STOSD -> translate_rep_stos c
+  | _ -> raise_c c "Invalid instruction"
+
 let translate_repne_prefix c = raise_c c "repne prefix"
 
 let translate intrinsics builder state opcode =

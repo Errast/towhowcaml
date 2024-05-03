@@ -319,7 +319,6 @@ let long_equal = bi_op Long Instr.LongEq Long
 let long_not_equal = bi_op Long Instr.LongNotEq Int
 let float_equal = bi_op Float Instr.FloatEq Int
 let float_not_equal = bi_op Float Instr.FloatNotEq Int
-let aad_float_not_equal = bi_op Float Instr.FloatNotEq Int
 let float_greater_than = bi_op Float Instr.FloatGreaterThan Int
 let float_less_than = bi_op Float Instr.FloatLessThan Int
 let float_greater_than_equal = bi_op Float Instr.FloatGreaterThanEqual Int
@@ -466,3 +465,9 @@ let mir_assert t condition =
   add_instr t @@ Instr.AssertOp { condition } |> ignore
 
 let unreachable t () = add_instr t Unreachable |> ignore
+
+let memset t ~count ~value ~dest =
+  verify_var dest Int t;
+  verify_var value Int t;
+  verify_var count Int t;
+  add_instr t @@ Instr.Memset { dest; value; count } |> ignore
