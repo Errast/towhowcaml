@@ -46,6 +46,8 @@ let ignroe_funcs =
       0x483B35;
       (*  Actually looks at float status word *)
       0x00483ae7;
+      (* just weird *)
+      4212368;
     ]
 
 let make_intrinsics c =
@@ -107,6 +109,7 @@ let main c =
   let start = Time_ns.now () in
   let _ =
     Array.to_sequence_mutable funcs
+    |> Sequence.filter ~f:(fun f -> not @@ Hash_set.mem ignroe_funcs f)
     |> Sequence.filter_map ~f:(fun f ->
            try Some (translate_func c ~intrinsics f)
            with exn ->

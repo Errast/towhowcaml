@@ -61,38 +61,43 @@ type context = {
 let empty_hashtbl = Hashtbl.create ~growth_allowed:false ~size:0 (module Int)
 
 let flags_used_tbl =
+  let open X86_instr in
   Hashtbl.of_alist_exn
     (module X86_instr)
     Status_flags.
       [
-        (X86_instr.JG, zero %| sign %| overflow);
-        (X86_instr.SETG, zero %| sign %| overflow);
-        (X86_instr.JGE, sign %| overflow);
-        (X86_instr.SETGE, sign %| overflow);
-        (X86_instr.JL, sign %| overflow);
-        (X86_instr.SETL, sign %| overflow);
-        (X86_instr.JLE, zero %| sign %| overflow);
-        (X86_instr.SETLE, zero %| sign %| overflow);
-        (X86_instr.JE, zero);
-        (X86_instr.SETE, zero);
-        (X86_instr.JNE, zero);
-        (X86_instr.SETNE, zero);
-        (X86_instr.JA, carry %| overflow);
-        (X86_instr.SETA, carry %| overflow);
-        (X86_instr.JAE, zero %| carry %| overflow);
-        (X86_instr.SETAE, zero %| carry %| overflow);
-        (X86_instr.JB, carry);
-        (X86_instr.SETB, carry);
-        (X86_instr.JBE, zero %| carry);
-        (X86_instr.SETBE, zero %| carry);
-        (X86_instr.JP, parity);
-        (X86_instr.JNP, parity);
-        (X86_instr.SETNP, parity);
-        (X86_instr.JNS, sign);
-        (X86_instr.JS, sign);
-        (X86_instr.SBB, carry);
-        (X86_instr.ADC, carry);
-        (X86_instr.JECXZ, none);
+        (JG, zero %| sign %| overflow);
+        (SETG, zero %| sign %| overflow);
+        (JGE, sign %| overflow);
+        (SETGE, sign %| overflow);
+        (JL, sign %| overflow);
+        (SETL, sign %| overflow);
+        (JLE, zero %| sign %| overflow);
+        (SETLE, zero %| sign %| overflow);
+        (JE, zero);
+        (SETE, zero);
+        (JNE, zero);
+        (SETNE, zero);
+        (JA, carry %| overflow);
+        (SETA, carry %| overflow);
+        (JAE, zero %| carry %| overflow);
+        (SETAE, zero %| carry %| overflow);
+        (JB, carry);
+        (SETB, carry);
+        (JBE, zero %| carry);
+        (SETBE, zero %| carry);
+        (JP, parity);
+        (JNP, parity);
+        (SETNP, parity);
+        (JNS, sign);
+        (JS, sign);
+        (SBB, carry);
+        (ADC, carry);
+        (JECXZ, none);
+        (JNO, overflow);
+        (SETNO, overflow);
+        (JO, overflow);
+        (SETO, overflow);
       ]
 
 let flags_used_exn instr = Hashtbl.find_exn flags_used_tbl instr
@@ -720,6 +725,26 @@ let translate_cmp_comparison c =
         ~lhs:(extend_unsigned c lhs)
   | _ -> raise_comp_ops c
 
+let translate_add_comparison c =
+  match (c.opcode.id, c.state.compare_args) with
+  | (JNO | SETNO), [ lhs; rhs; res ] ->
+      (* check if lhs & rhs have different signs, or if their sign is the same as result's *)
+      (* (lhs xor rhs) >>s 31 || lhs <s res  -> (lhs xor rhs) >s 0 | res >=s lhs*)
+      let res = extend_signed c res in
+      let lhs = extend_signed c lhs in
+      let increased =
+        B.greater_than_equal c.builder ~lhs:res ~rhs:lhs ~signed:true
+      in
+      let rhs = extend_signed c rhs in
+      let same_sign =
+        B.less_than c.builder ~rhs:(B.const c.builder 0)
+          ~lhs:(B.xor c.builder ~lhs ~rhs)
+          ~signed:true
+      in
+      B.int_or c.builder ~lhs:increased ~rhs:same_sign
+  | (JLE | SETLE), [ lhs; rhs; res ] -> failwith "vvvvv"
+  | _ -> raise_comp_ops c
+
 let translate_condition c =
   assert_c c Poly.(c.opcode.prefix = opcode_prefix_none);
   assert_c c
@@ -732,6 +757,7 @@ let translate_condition c =
     | TEST -> translate_test_comparison c
     | CMP -> translate_cmp_comparison c
     | INVALID -> translate_input_cond c
+    | ADD -> translate_add_comparison c
     | _ -> raise_c c "Invalid instruction"
   in
   B.set_check_var_is_latest c.builder true;
@@ -762,7 +788,7 @@ let translate_float_bi_op c (op : B.bi_op_add)
   (*     let lhs_arg = load_operand_f c lhs in *)
   (*     let rhs_arg = load_operand_f c rhs in *)
   (*     store_operand_f c ~dest:lhs @@ op c.builder ~lhs:lhs_arg ~rhs:rhs_arg *)
-  | `IntArg, [ arg ] ->
+  | `IntArg, [ (Memory _ as arg) ] ->
       (* tecnically supposed to work with long too *)
       set_fpu_stack c
         (op c.builder
@@ -773,17 +799,38 @@ let translate_float_bi_op c (op : B.bi_op_add)
         0
   | `PopAfter, [ arg ] ->
       store_operand_f c ~dest:arg
-      @@ op c.builder ~rhs:(load_operand_f c arg) ~lhs:(get_fpu_stack c 0);
+      @@ op c.builder ~rhs:(get_fpu_stack c 0) ~lhs:(load_operand_f c arg);
       fpu_pop c
   | `None, [ arg ] ->
       set_fpu_stack c
         (op c.builder ~rhs:(load_operand_f c arg) ~lhs:(get_fpu_stack c 0))
         0
-  | `PopAfter, [] ->
+  | _ -> raise_ops c);
+  add_float_comparison c []
+
+let translate_float_bi_op_r c (op : B.bi_op_add)
+    (cond : [ `PopAfter | `IntArg | `None ]) =
+  (match (cond, operands c) with
+  (* | `None, [ lhs; rhs ] -> *)
+  (*     let lhs_arg = load_operand_f c lhs in *)
+  (*     let rhs_arg = load_operand_f c rhs in *)
+  (*     store_operand_f c ~dest:lhs @@ op c.builder ~lhs:lhs_arg ~rhs:rhs_arg *)
+  | `IntArg, [ arg ] ->
+      (* tecnically supposed to work with long too *)
       set_fpu_stack c
-        (op c.builder ~rhs:(get_fpu_stack c 1) ~lhs:(get_fpu_stack c 0))
-        1;
+        (op c.builder ~rhs:(get_fpu_stack c 0)
+           ~lhs:
+             (B.int32_to_float c.builder ~signed:true
+                ~operand:(load_operand_s c arg)))
+        0
+  | `PopAfter, [ arg ] ->
+      store_operand_f c ~dest:arg
+      @@ op c.builder ~rhs:(load_operand_f c arg) ~lhs:(get_fpu_stack c 0);
       fpu_pop c
+  | `None, [ arg ] ->
+      set_fpu_stack c
+        (op c.builder ~rhs:(get_fpu_stack c 0) ~lhs:(load_operand_f c arg))
+        0
   | _ -> raise_ops c);
   add_float_comparison c []
 
@@ -948,8 +995,9 @@ let translate_no_prefix c =
   | FSTP -> translate_float_store c ~after_pop:true
   | FNSTSW -> translate_float_store_status_word c
   | CALL -> translate_call c
+  (*TODO: there is currently no way to tell FADD from FADDP
+    https://github.com/capstone-engine/capstone/issues/1456 *)
   | FADD -> translate_float_bi_op c B.float_add `None
-  (* | FADDP -> translate_float_add c ~after_pop:true *)
   | FSUB -> translate_float_bi_op c B.float_sub `None
   | FMUL -> translate_float_bi_op c B.float_mul `None
   | LEAVE -> translate_leave c
@@ -962,6 +1010,9 @@ let translate_no_prefix c =
   | FIADD -> translate_float_bi_op c B.float_add `IntArg
   | DIV -> translate_div c
   | FABS -> translate_float_abs c
+  | CLC ->
+      c.state.changed_flags <- Status_flags.(c.state.changed_flags %| carry)
+  | FSUBR -> translate_float_bi_op_r c B.float_sub `None
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c =
@@ -1033,7 +1084,9 @@ let translate_terminator intrinsics builder state opcode =
         B.set_global builder Util.stack_pointer_global Int esp;
         Return
     | {
-     id = JP | JNP | JE | JNE | JB | JBE | JGE | JG | JL | JLE | JA | JAE;
+     id =
+       ( JP | JNP | JE | JNE | JB | JBE | JGE | JG | JL | JLE | JA | JAE | JO
+       | JNO );
      prefix = 0;
      opex = { operands = [ Immediate { value; _ } ] };
      _;
