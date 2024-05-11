@@ -439,9 +439,9 @@ let translate_xor c =
 
 let translate_shift_left c =
   match operands c with
-  | [ dest; src ] when operand_size src = 1 ->
+  | [ dest; Immediate { value; _ } ] when value < operand_size dest * 8 ->
       let lhs = load_operand c dest in
-      let rhs = load_operand_u c src in
+      let rhs = B.const c.builder value in
       let res = B.shift_left c.builder ~lhs ~rhs in
       store_operand c res ~dest;
       add_comparison c [ (res, loaded_reg_type dest) ]
@@ -482,9 +482,9 @@ let translate_lea c =
 
 let translate_float_load c =
   match operands c with
-  | [ (Memory _ as mem) ] ->
-      add_float_comparison c [];
-      load_operand_f c mem |> fpu_push c
+  | [ arg ] ->
+      load_operand_f c arg |> fpu_push c;
+      add_float_comparison c []
   | _ -> raise_ops c
 
 let translate_float_comparison c ~after_pop =
@@ -661,6 +661,12 @@ let translate_reflexive_test_comparison c =
       let operand = extend_either c arg in
       B.less_than_equal c.builder ~lhs:operand ~rhs:(B.const c.builder 0)
         ~signed:true
+  | JS | SETS ->
+      B.less_than c.builder ~rhs:(B.const c.builder 0)
+        ~lhs:(extend_signed c arg) ~signed:true
+  | JNS | SETNS ->
+      B.greater_than_equal c.builder ~rhs:(B.const c.builder 0)
+        ~lhs:(extend_signed c arg) ~signed:true
   | _ -> raise_comp_ops c
 
 let translate_test_comparison c =
@@ -696,6 +702,9 @@ let translate_cmp_comparison c =
       let lhs = extend_either c lhs in
       let rhs = extend_either c rhs in
       B.not_equal c.builder ~lhs ~rhs
+  | (JB | SETB), [ lhs; rhs ] ->
+      B.less_than c.builder ~rhs:(extend_unsigned c rhs)
+        ~lhs:(extend_unsigned c lhs) ~signed:false
   | (JBE | SETBE), [ lhs; rhs ] ->
       let lhs = extend_unsigned c lhs in
       let rhs = extend_unsigned c rhs in
@@ -727,22 +736,47 @@ let translate_cmp_comparison c =
 
 let translate_add_comparison c =
   match (c.opcode.id, c.state.compare_args) with
-  | (JNO | SETNO), [ lhs; rhs; res ] ->
-      (* check if lhs & rhs have different signs, or if their sign is the same as result's *)
-      (* (lhs xor rhs) >>s 31 || lhs <s res  -> (lhs xor rhs) >s 0 | res >=s lhs*)
-      let res = extend_signed c res in
-      let lhs = extend_signed c lhs in
-      let increased =
-        B.greater_than_equal c.builder ~lhs:res ~rhs:lhs ~signed:true
-      in
-      let rhs = extend_signed c rhs in
-      let same_sign =
-        B.less_than c.builder ~rhs:(B.const c.builder 0)
-          ~lhs:(B.xor c.builder ~lhs ~rhs)
-          ~signed:true
-      in
-      B.int_or c.builder ~lhs:increased ~rhs:same_sign
-  | (JLE | SETLE), [ lhs; rhs; res ] -> failwith "vvvvv"
+  (* Don't think jno is necessary *)
+  (* | (JNO | SETNO), [ lhs; rhs; res ] -> *)
+  (*     (* check if lhs & rhs have different signs, or if their sign is the same as result's *) *)
+  (*     (* (lhs xor rhs) >>s 31 || lhs <s res  -> (lhs xor rhs) >s 0 | res >=s lhs*) *)
+  (*     let res = extend_signed c res in *)
+  (*     let lhs = extend_signed c lhs in *)
+  (*     let increased = *)
+  (*       B.greater_than_equal c.builder ~lhs:res ~rhs:lhs ~signed:true *)
+  (*     in *)
+  (*     let rhs = extend_signed c rhs in *)
+  (*     let same_sign = *)
+  (*       B.less_than c.builder ~rhs:(B.const c.builder 0) *)
+  (*         ~lhs:(B.xor c.builder ~lhs ~rhs) *)
+  (*         ~signed:true *)
+  (*     in *)
+  (*     B.int_or c.builder ~lhs:increased ~rhs:same_sign *)
+  | (ADC | SBB), [ lhs; _; res ] ->
+      B.less_than ~rhs:(extend_unsigned c lhs) ~lhs:(extend_unsigned c res)
+        ~signed:false
+  | _ -> raise_comp_ops c
+
+let translate_dec_comparison c =
+  (* slightly different from cmp *)
+  match (c.opcode.id, c.state.compare_args) with
+  | (JS | SETS), [ result ] ->
+      B.less_than ~rhs:(B.const c.builder 0) ~lhs:(extend_signed c result)
+        ~signed:true c.builder
+  | _ -> raise_comp_ops c
+
+let translate_add_comparison c =
+  match (c.opcode.id, c.state.compare_args) with
+  | (ADC | SBB), [ lhs; _; result ] ->
+      B.less_than c.builder ~rhs:(extend_unsigned c lhs)
+        ~lhs:(extend_unsigned c result) ~signed:false
+  | _ -> raise_comp_ops c
+
+let translate_sub_comparison c =
+  match (c.opcode.id, c.state.compare_args) with
+  | (ADC | SBB), [ lhs; _; result ] ->
+      B.greater_than c.builder ~rhs:(extend_unsigned c lhs)
+        ~lhs:(extend_unsigned c result) ~signed:false
   | _ -> raise_comp_ops c
 
 let translate_condition c =
@@ -757,7 +791,9 @@ let translate_condition c =
     | TEST -> translate_test_comparison c
     | CMP -> translate_cmp_comparison c
     | INVALID -> translate_input_cond c
-    | ADD -> translate_add_comparison c
+    | DEC -> translate_dec_comparison c
+    | ADD | ADC -> translate_add_comparison c
+    | SUB | SBB -> translate_sub_comparison c
     | _ -> raise_c c "Invalid instruction"
   in
   B.set_check_var_is_latest c.builder true;
@@ -904,9 +940,32 @@ let translate_div c =
 let translate_float_int_load c =
   match operands c with
   | [ arg ] ->
-      fpu_push c
-      @@ B.int32_to_float c.builder ~operand:(load_operand_s c arg) ~signed:true;
+      (fpu_push c
+      @@
+      match arg with
+      | Memory ({ size = 8; _ } as src) ->
+          let addr, offset = load_partial_address c src in
+          (* why is this named this? *)
+          B.int64_to_float c.builder
+            ~operand:(B.long_load64 c.builder addr ~offset)
+            ~signed:true
+      | _ ->
+          B.int32_to_float c.builder ~operand:(load_operand_s c arg)
+            ~signed:true);
       add_float_comparison c []
+  | _ -> raise_ops c
+
+let translate_float_int_store c ~pop_after =
+  match operands c with
+  | [ dest ] ->
+      let value = B.float_to_long c.builder ~operand:(get_fpu_stack c 0) in
+      (match dest with
+      (* TODO if i ever make a store_operand_l, replace this *)
+      | Memory ({ size = 8; _ } as dest) ->
+          let addr, offset = load_partial_address c dest in
+          B.long_store64 c.builder ~addr ~offset ~value
+      | _ -> store_operand c ~dest value);
+      if pop_after then fpu_pop c
   | _ -> raise_ops c
 
 let translate_rep_stos c =
@@ -966,6 +1025,45 @@ let translate_float_abs c =
   set_fpu_stack c (B.float_abs c.builder ~operand:(get_fpu_stack c 0)) 0;
   add_float_comparison c []
 
+let translate_dec c =
+  match operands c with
+  | [ arg ] ->
+      let result =
+        B.sub c.builder ~rhs:(B.const c.builder 1) ~lhs:(load_operand c arg)
+      in
+      store_operand c ~dest:arg result;
+      add_comparison c [ (result, loaded_reg_type arg) ]
+  | _ -> raise_ops c
+
+let translate_add_carry c =
+  match operands c with
+  | [ dest; src ] ->
+      (* the fact that one load_operand is signed is intentional *)
+      let lhs =
+        B.add c.builder ~rhs:(load_operand_s c src) ~lhs:(translate_condition c)
+      in
+      let rhs = load_operand c dest in
+      let result = B.add c.builder ~lhs ~rhs in
+      store_operand c ~dest @@ result;
+      let loaded_type = loaded_reg_type dest in
+      add_comparison c
+        [ (lhs, loaded_type); (rhs, loaded_type); (result, loaded_type) ]
+  | _ -> raise_ops c
+
+let translate_subtract_borrow c =
+  match operands c with
+  | [ dest; src ] ->
+      let rhs =
+        B.add c.builder ~rhs:(load_operand_s c src) ~lhs:(translate_condition c)
+      in
+      let lhs = load_operand c dest in
+      let result = B.sub c.builder ~lhs ~rhs in
+      store_operand c ~dest result;
+      let loaded_type = loaded_reg_type dest in
+      add_comparison c
+        [ (lhs, loaded_type); (rhs, loaded_type); (result, loaded_type) ]
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   match c.opcode.id with
@@ -999,6 +1097,7 @@ let translate_no_prefix c =
     https://github.com/capstone-engine/capstone/issues/1456 *)
   | FADD -> translate_float_bi_op c B.float_add `None
   | FSUB -> translate_float_bi_op c B.float_sub `None
+  | FSUBP -> translate_float_bi_op c B.float_sub `PopAfter
   | FMUL -> translate_float_bi_op c B.float_mul `None
   | LEAVE -> translate_leave c
   | IMUL -> translate_imul c
@@ -1013,6 +1112,10 @@ let translate_no_prefix c =
   | CLC ->
       c.state.changed_flags <- Status_flags.(c.state.changed_flags %| carry)
   | FSUBR -> translate_float_bi_op_r c B.float_sub `None
+  | DEC -> translate_dec c
+  | FISTP -> translate_float_int_store c ~pop_after:true
+  | ADC -> translate_add_carry c
+  | SBB -> translate_subtract_borrow c
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c =
@@ -1086,11 +1189,12 @@ let translate_terminator intrinsics builder state opcode =
     | {
      id =
        ( JP | JNP | JE | JNE | JB | JBE | JGE | JG | JL | JLE | JA | JAE | JO
-       | JNO );
+       | JNO | JS | JNS );
      prefix = 0;
      opex = { operands = [ Immediate { value; _ } ] };
      _;
     } ->
+        (* would it be better to write_fpu_stack_changes first here? *)
         Conditional
           {
             target = value;

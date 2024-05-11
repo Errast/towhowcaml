@@ -220,6 +220,7 @@ val store16 : store_op_add
 val store32 : store_op_add
 val float_store32 : store_op_add
 val float_store64 : store_op_add
+val long_store64 : store_op_add
 val vec_store128 : store_op_add
 
 val vec_store :

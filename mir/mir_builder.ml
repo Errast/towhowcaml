@@ -447,6 +447,7 @@ let store16 = store_op Int Store16
 let store32 = store_op Int Store32
 let float_store32 = store_op Float Store32
 let float_store64 = store_op Float FloatStore64
+let long_store64 = store_op Long LongStore64
 let vec_store128 = store_op Vec VecStore128
 
 let vec_store ?(offset = 0) t ~addr ~vec ~shape ~lane =
