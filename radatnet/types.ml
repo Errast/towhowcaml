@@ -105,6 +105,14 @@ type opcode = {
 }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
+let opcode_of_basic_opcode (basic : Basic.basic_opcode) =
+  {
+    opex = Yojson.Safe.from_string basic.opex_str |> opex_of_yojson;
+    id = X86_instr.t_of_int basic.id;
+    address = basic.address;
+    prefix = basic.prefix;
+  }
+
 let opcode_prefix_none = 0
 let opcode_prefix_rep = 1 lsl 1
 let opcode_prefix_repne = 1 lsr 2

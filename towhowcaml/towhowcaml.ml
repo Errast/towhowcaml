@@ -86,21 +86,16 @@ let make_block c block =
             "can't understand block terminator"
               (block : Radatnet.Types.func_block)]
   in
-  let ops =
-    Core.Array.map block.instrs ~f:(fun instr ->
-        seek c instr;
-        analyze_opcode c)
-  in
+  let ops = Core.Array.map block.instrs ~f:(analyze_opcode c) in
   { offset = block.addr; ops; terminator }
 
-let func_name c =
-  Printf.sprintf "func_%x" @@ Radatnet.Commands.get_current_func c
+let func_name c addr =
+  Printf.sprintf "func_%x" @@ Radatnet.Commands.get_surrounding_func c addr
 
 let translate_func c addr ~intrinsics =
   let module Cmd = Radatnet.Commands in
-  Cmd.seek c addr;
-  let blocks = Cmd.get_func_blocks c in
-  let name = func_name c in
+  let blocks = Cmd.get_func_blocks c addr in
+  let name = func_name c addr in
   let blocks = Array.map ~f:(make_block c) blocks in
   Func_translator.translate ~intrinsics ~blocks ~name
 

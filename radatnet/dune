@@ -24,4 +24,4 @@
   (names stubs)
   (flags
    (:standard -I /usr/include/libr)))
- (c_library_flags (-lr_core)))
+ (c_library_flags (-lr_core -lr_util -lr_arch -lr_anal -lr_io)))

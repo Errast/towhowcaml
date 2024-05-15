@@ -13,9 +13,8 @@ let translate = translate_func c ~intrinsics
 let test_trans addr = print_s @@ Mir.Func.sexp_of_t @@ translate addr
 
 let test_trans_block addr =
-  C.seek c addr;
-  let name = func_name c in
-  let blocks = C.get_func_blocks c |> Array.map ~f:(make_block c) in
+  let name = func_name c addr in
+  let blocks = C.get_func_blocks c addr |> Array.map ~f:(make_block c) in
   let index =
     Option.value_exn
     @@ Array.binary_search
