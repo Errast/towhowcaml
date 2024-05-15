@@ -14,6 +14,9 @@ let addr_to_index_func : ident = "__addrToIndex__"
 let stack_pointer_global : ident = "__stack__"
 let fpu_stack_pointer_global : ident = "__fpuStack__"
 let input_compare_arg : ident = "__input_compare_arg__"
+let float_sqrt_func : ident = "__float_sqrt__"
+let float_sine_func : ident = "__float_sine__"
+let float_cosine_func : ident = "float_cosine__"
 
 let std_call =
   { args = []; return = { name = X86reg.to_ident `eax; typ = Int } }

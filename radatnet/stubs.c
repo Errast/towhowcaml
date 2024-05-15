@@ -27,9 +27,19 @@ value radatnet_core_new(value unit) {
 
 value radatnet_core_cmd_str(value core, value string) {
 	CAMLparam2(string, core);
+  CAMLlocal1(actual_result);
 	// String better not have null bytes in it 
 	char* result = r_core_cmd_str(*((void**) Data_custom_val(core)), String_val(string));
-	value actual_result = caml_copy_string(result);
+	actual_result = caml_copy_string(result);
 	free(result);
 	CAMLreturn(actual_result);
+}
+
+value radatnet_core_cmd_str_at(value core, value address, value string) {
+  CAMLparam3(core,address, string);
+  CAMLlocal1(actual_result);
+  char* result = r_core_cmd_str_at(*((void**) Data_custom_val(core)), Long_val(address), String_val(string));
+  actual_result = caml_copy_string(result);
+  free(result);
+  CAMLreturn(actual_result);
 }

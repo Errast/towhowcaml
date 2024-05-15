@@ -48,6 +48,8 @@ let ignroe_funcs =
       0x00483ae7;
       (* just weird *)
       4212368;
+      (* fnstcw, a lot of references *)
+      0x0048bcaa;
     ]
 
 let make_intrinsics c =

@@ -25,9 +25,86 @@ let test_trans_block addr =
   print_s @@ Mir.Block.sexp_of_t
   @@ (Func_translator.translate ~blocks ~name ~intrinsics).blocks.(index)
 
+let%expect_test "inc jne" =
+  test_trans_block 0x00461b7c;
+  [%expect {||}]
+
+let%expect_test "xchg" =
+  test_trans_block 0x0047f3b0;
+  [%expect {||}]
+
+let%expect_test "fsqrt" =
+  test_trans_block 0x00461f7b;
+  [%expect
+    {|
+    ((id 6)
+     (instrs
+      ((0 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+       (1 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0))))
+       (2
+        (CallOp (var __fl) (func __float_sqrt__) (args ((Ref 1)))
+         (return_type Float)))
+       (3 (Const __i32 4819540))
+       (4 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 3))))
+       (5 (BiOp (var __fl) (op FloatDiv) (lhs (Ref 4)) (rhs (Ref 2))))
+       (6 (OutsideContext (var esi) (typ Int)))
+       (7 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 6))))
+       (8 (BiOp (var __fl) (op FloatMult) (lhs (Ref 5)) (rhs (Ref 7))))
+       (9 (OutsideContext (var ebp) (typ Int)))
+       (10 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 8)) (offset -12)))
+       (11 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 6)) (offset 4)))
+       (12 (BiOp (var __fl) (op FloatMult) (lhs (Ref 5)) (rhs (Ref 11))))
+       (13 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 12)) (offset -8)))
+       (14 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 6)) (offset 8)))
+       (15 (BiOp (var __fl) (op FloatMult) (lhs (Ref 5)) (rhs (Ref 14))))
+       (16 (Const __i32 -12))
+       (17 (BiOp (var __i32) (op Add) (lhs (Ref 9)) (rhs (Ref 16))))
+       (18 (DupVar (var esi) (src (Ref 17)) (typ Int)))
+       (19 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 15)) (offset -4)))
+       (20 (Const __i32 -8))
+       (21 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 20))))
+       (22
+        (SetGlobalOp (global_name __fpuStack__) (value (Ref 21))
+         (global_type Int)))))
+     (terminator (Goto (Block 3)))
+     (roots
+      ((Ref 0) (Ref 2) (Ref 6) (Ref 9) (Ref 10) (Ref 13) (Ref 18) (Ref 19)
+       (Ref 22)))) |}]
+
+let%expect_test "movsd" =
+  test_trans_block 0x00461f64;
+  [%expect
+    {|
+    ((id 3)
+     (instrs
+      ((0 (OutsideContext (var eax) (typ Int)))
+       (1 (DupVar (var edi) (src (Ref 0)) (typ Int)))
+       (2 (OutsideContext (var esi) (typ Int)))
+       (3 (LoadOp (var __i32) (op Load32) (addr (Ref 2))))
+       (4 (StoreOp (op Store32) (addr (Ref 1)) (value (Ref 3))))
+       (5 (Const __i32 4))
+       (6 (BiOp (var edi) (op Add) (lhs (Ref 1)) (rhs (Ref 5))))
+       (7 (Const __i32 4))
+       (8 (BiOp (var esi) (op Add) (lhs (Ref 2)) (rhs (Ref 7))))
+       (9 (LoadOp (var __i32) (op Load32) (addr (Ref 8))))
+       (10 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 9))))
+       (11 (Const __i32 4))
+       (12 (BiOp (var edi) (op Add) (lhs (Ref 6)) (rhs (Ref 11))))
+       (13 (Const __i32 4))
+       (14 (BiOp (var esi) (op Add) (lhs (Ref 8)) (rhs (Ref 13))))
+       (15 (LoadOp (var __i32) (op Load32) (addr (Ref 14))))
+       (16 (StoreOp (op Store32) (addr (Ref 12)) (value (Ref 15))))
+       (17 (Const __i32 4))
+       (18 (BiOp (var edi) (op Add) (lhs (Ref 12)) (rhs (Ref 17))))
+       (19 (Const __i32 4))
+       (20 (BiOp (var esi) (op Add) (lhs (Ref 14)) (rhs (Ref 19))))))
+     (terminator (Goto (Block 8)))
+     (roots ((Ref 0) (Ref 2) (Ref 4) (Ref 10) (Ref 16) (Ref 18) (Ref 20)))) |}]
+
 let%expect_test "sbb" =
   test_trans_block 0x0048b8f3;
-  [%expect{|
+  [%expect
+    {|
     ((id 3)
      (instrs
       ((0 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
@@ -64,7 +141,8 @@ let%expect_test "sbb" =
 
 let%expect_test "adc" =
   test_trans_block 0x0048b8db;
-  [%expect{|
+  [%expect
+    {|
     ((id 2)
      (instrs
       ((0 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
@@ -104,7 +182,8 @@ let%expect_test "adc" =
 
 let%expect_test "test reflexive jns" =
   test_trans_block 0x0048b8c7;
-  [%expect{|
+  [%expect
+    {|
     ((id 1)
      (instrs
       ((0 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
@@ -127,7 +206,8 @@ let%expect_test "test reflexive jns" =
 
 let%expect_test "fistp" =
   test_trans_block 0x0048b8af;
-  [%expect{|
+  [%expect
+    {|
     ((id 0)
      (instrs
       ((0 (GetGlobalOp (var esp) (global_name __stack__) (global_type Int)))

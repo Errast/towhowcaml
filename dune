@@ -2,7 +2,7 @@
  (dev
   (flags
    (:standard -warn-error -A))
-  (ocamlopt_flags :standard -Oclassic))
+  (ocamlopt_flags :standard ))
  (release
   (flags :standard -warn-error +A)
   (ocamlopt_flags :standard -O3)))
