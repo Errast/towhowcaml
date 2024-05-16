@@ -606,6 +606,11 @@ let translate_input_cond c =
   B.newest_var c.builder Util.input_compare_arg
 
 let translate_float_test_comparison c =
+  assert_c c
+    (match c.state.fpu_status_word_instr with
+    | FCOM | FCOMP -> true
+    | _ -> false)
+    ~msg:"must use fcom";
   let constant, lhs, rhs =
     match (c.state.compare_args, c.state.fpu_status_word_args) with
     | [ _; (value, _) ], [ lhs; rhs ] -> (value, lhs, rhs)
@@ -766,6 +771,25 @@ let translate_inc_comparison c =
   | JNE, [ result ] -> extend_either c result
   | _ -> raise_comp_ops c
 
+let translate_result_comparison c =
+  match (c.opcode.id, c.state.compare_args) with
+  | JE, [ result ] -> B.equals_zero c.builder ~operand:(extend_either c result)
+  | JNE, [ result ] -> extend_either c result
+  | _ -> raise_comp_ops c
+
+let translate_sahf_comparison c =
+  assert_c c
+    (match c.state.fpu_status_word_instr with
+    | FCOM | FCOMP -> true
+    | _ -> false)
+    ~msg:"must use fcom";
+  match (c.opcode.id, c.state.fpu_status_word_args) with
+  | JAE, [ lhs; rhs ] -> B.float_greater_than c.builder ~lhs ~rhs
+  | JBE, [ lhs; rhs ] ->
+      B.equals_zero c.builder
+        ~operand:(B.float_greater_than c.builder ~lhs ~rhs)
+  | _ -> raise_comp_ops c
+
 let translate_condition c =
   assert_c c Poly.(c.opcode.prefix = opcode_prefix_none);
   assert_c c
@@ -782,6 +806,8 @@ let translate_condition c =
     | ADD | ADC -> translate_add_comparison c
     | SUB | SBB -> translate_sub_comparison c
     | INC -> translate_inc_comparison c
+    | OR | AND -> translate_result_comparison c
+    | SAHF -> translate_sahf_comparison c
     | _ -> raise_c c "Invalid instruction"
   in
   B.set_check_var_is_latest c.builder true;
@@ -1136,6 +1162,23 @@ let translate_float_exchange c =
       add_float_comparison c []
   | _ -> raise_ops c
 
+let translate_float_scale c =
+  assert_c c (List.is_empty @@ operands c);
+  set_fpu_stack c
+    (B.call c.builder Util.float_scale_func
+       [ get_fpu_stack c 0; get_fpu_stack c 1 ]
+       Float)
+    0;
+  add_float_comparison c []
+
+let translate_sahf c =
+  assert_c c (List.is_empty @@ operands c);
+  assert_c c
+    (Instr.Ref.equal c.state.fpu_status_word @@ newest_var c `eax)
+    ~msg:"fpu status word must be in eax";
+  (* this only works because we only allow doing fnstsw once in a block*)
+  add_comparison c []
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   match c.opcode.id with
@@ -1200,7 +1243,14 @@ let translate_no_prefix c =
   | NEG -> translate_negate c
   | XCHG -> translate_exchange c
   | FXCH -> translate_float_exchange c
-  | FFREE | WAIT -> (* i don't care? *) add_float_comparison c []
+  | WAIT ->
+      ()
+      (* technically this should add a comparison, but the executible seems to think it doesn't *)
+  | FFREE -> (* i don't care? *) add_float_comparison c []
+  | FLDCW -> assert_c c (List.length (operands c) = 1)
+  | FSCALE -> translate_float_scale c
+  | SAHF -> translate_sahf c
+  | CLD -> c.state.backward_direction <- false
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c =
