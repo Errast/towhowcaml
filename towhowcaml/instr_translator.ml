@@ -1321,6 +1321,7 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
     | { id = RET; prefix = 0; opex = { operands = [] }; _ } when tail_position
       ->
         Return
+    (* TODO this is wrong! it's supposed to pop eip, _then_ pop n bytes. this is backwards *)
     | {
      id = RET;
      prefix = 0;
