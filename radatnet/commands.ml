@@ -7,12 +7,13 @@ open Types
 
 let open_file t file = "o '" ^ file ^ "'" |> run t |> ignore
 
-type analysis_level = LevelOne | LevelTwo | LevelThree
+type analysis_level = LevelOne | LevelTwo | LevelThree | LevelFour
 
 let analyze_all t = function
   | LevelOne -> run t "a" |> ignore
   | LevelTwo -> run t "aa" |> ignore
   | LevelThree -> run t "aaa" |> ignore
+  | LevelFour -> run t "aaaa" |> ignore
 
 let list_functions t =
   run t "aflqj" |> Yojson.Safe.from_string |> [%of_yojson: int array]

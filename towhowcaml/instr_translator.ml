@@ -445,6 +445,13 @@ let translate_shift_left c =
       let res = B.shift_left c.builder ~lhs ~rhs in
       store_operand c res ~dest;
       add_comparison c [ (res, loaded_reg_type dest) ]
+  | [ dest; arg ] ->
+      let res =
+        B.shift_left c.builder ~rhs:(load_operand c arg)
+          ~lhs:(load_operand c dest)
+      in
+      store_operand c res ~dest;
+      add_comparison c [ (res, loaded_reg_type dest) ]
   | _ -> raise_ops c
 
 let translate_shift_right c ~signed =
@@ -1216,6 +1223,7 @@ let translate_no_prefix c =
   | FSUBP -> translate_float_bi_op c B.float_sub `PopAfter
   | FMUL -> translate_float_bi_op c B.float_mul `None
   | FMULP -> translate_float_bi_op c B.float_mul `PopAfter
+  | FIMUL -> translate_float_bi_op c B.float_mul `IntArg
   | LEAVE -> translate_leave c
   | IMUL -> translate_imul c
   | CDQ -> translate_cdq c
@@ -1224,6 +1232,7 @@ let translate_no_prefix c =
   | FDIVP -> translate_float_bi_op c B.float_div `PopAfter
   | FDIVR -> translate_float_bi_op_r c B.float_div `None
   | FDIVRP -> translate_float_bi_op_r c B.float_div `PopAfter
+  | FIDIV -> translate_float_bi_op c B.float_div `IntArg
   | FILD -> translate_float_int_load c
   | FIADD -> translate_float_bi_op c B.float_add `IntArg
   | DIV -> translate_div c
@@ -1269,7 +1278,7 @@ let translate intrinsics builder state opcode =
   | p when p = opcode_prefix_repne -> translate_repne_prefix c
   | _ -> raise_c c "Invalid opcode prefix"
 
-let translate_terminator intrinsics builder state opcode =
+let translate_terminator intrinsics builder state opcode ~tail_position =
   let result =
     match opcode with
     | {
@@ -1291,7 +1300,8 @@ let translate_terminator intrinsics builder state opcode =
            ];
        };
      _;
-    } ->
+    }
+      when not tail_position ->
         Switch
           {
             table_addr = displacement;
@@ -1303,8 +1313,13 @@ let translate_terminator intrinsics builder state opcode =
      opex = { operands = [ Immediate { size = 4; value } ] };
      _;
     } ->
-        Unconditional { target = value }
-    | { id = RET; prefix = 0; opex = { operands = [] }; _ } ->
+        if tail_position then (
+          (* tail call*)
+          translate_call { intrinsics; builder; state; opcode };
+          Return)
+        else Unconditional { target = value }
+    | { id = RET; prefix = 0; opex = { operands = [] }; _ } when tail_position
+      ->
         B.set_global builder Util.stack_pointer_global Int
         @@ B.newest_var builder @@ X86reg.to_ident `esp;
         Return
@@ -1313,7 +1328,8 @@ let translate_terminator intrinsics builder state opcode =
      prefix = 0;
      opex = { operands = [ Immediate { value; _ } ] };
      _;
-    } ->
+    }
+      when tail_position ->
         let esp = X86reg.to_ident `esp in
         let esp =
           B.add builder ~lhs:(B.newest_var builder esp)
@@ -1328,7 +1344,8 @@ let translate_terminator intrinsics builder state opcode =
      prefix = 0;
      opex = { operands = [ Immediate { value; _ } ] };
      _;
-    } ->
+    }
+      when not tail_position ->
         (* would it be better to write_fpu_stack_changes first here? *)
         Conditional
           {

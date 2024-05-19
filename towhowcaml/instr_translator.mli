@@ -31,4 +31,5 @@ val translate_terminator :
   Mir.Builder.t ->
   state ->
   Radatnet.Types.opcode ->
+  tail_position:bool ->
   term_trans_result

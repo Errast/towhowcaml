@@ -80,10 +80,11 @@ let translate_block c id block =
       Block.Return)
     else
       let term_op = AP.last block.ops in
+      let block_term = block.terminator in
       let term_found =
         Instr_translator.translate_terminator c.intrinsics builder state term_op
+          ~tail_position:Poly.(block_term = Return)
       in
-      let block_term = block.terminator in
       match (term_found, block_term) with
       | Nothing, Goto next_addr ->
           let next_block = id + 1 in
@@ -136,6 +137,9 @@ let translate_block c id block =
           in
           Switch { cases; default = default_case; switch_on }
       | Return, Return -> Return
+      | Unconditional _, Return ->
+          (* tail call *)
+          Return
       | _ ->
           raise_s
             [%message

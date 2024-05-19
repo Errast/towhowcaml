@@ -6,7 +6,7 @@ let c = Radatnet.Core.create ()
 
 let () =
   C.open_file c "/home/errast/code/Touhou7/th07.exe";
-  C.analyze_all c LevelThree
+  C.analyze_all c LevelFour
 
 let intrinsics = make_intrinsics c
 let translate = translate_func c ~intrinsics
@@ -23,6 +23,67 @@ let test_trans_block addr =
   in
   print_s @@ Mir.Block.sexp_of_t
   @@ (Func_translator.translate ~blocks ~name ~intrinsics).blocks.(index)
+
+let%expect_test "tail call" =
+  test_trans 0x0047d43c;
+  [%expect
+    {|
+    ((name func_47d43c)
+     (signature
+      ((args (((name ecx) (typ Int)) ((name edx) (typ Int))))
+       (return ((name eax) (typ Int)))))
+     (blocks
+      (((id 0)
+        (instrs
+         ((0 (GetGlobalOp (var esp) (global_name __stack__) (global_type Int)))
+          (1 (OutsideContext (var ecx) (typ Int)))
+          (2 (OutsideContext (var edx) (typ Int))) (3 (Const __i32 4))
+          (4 (BiOp (var esp) (op Subtract) (lhs (Ref 0)) (rhs (Ref 3))))
+          (5 (Const __i32 4707388))
+          (6 (StoreOp (op Store32) (addr (Ref 4)) (value (Ref 5))))
+          (7
+           (SetGlobalOp (global_name __stack__) (value (Ref 4))
+            (global_type Int)))
+          (8
+           (CallOp (var eax) (func __func47d285__) (args ((Ref 1) (Ref 2)))
+            (return_type Int)))
+          (9 (GetGlobalOp (var esp) (global_name __stack__) (global_type Int)))
+          (10 (Const __i32 4707388))
+          (11 (LoadOp (var __i32) (op Load32) (addr (Ref 9))))
+          (12 (BiOp (var __i32) (op Equal) (lhs (Ref 11)) (rhs (Ref 10))))
+          (13 (AssertOp (condition (Ref 12)))) (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 9)) (rhs (Ref 14))))))
+        (terminator Return)
+        (roots
+         ((Ref 0) (Ref 1) (Ref 2) (Ref 6) (Ref 7) (Ref 8) (Ref 9) (Ref 13)
+          (Ref 15))))))
+     (locals
+      ((eax ((name eax) (typ Int))) (ecx ((name ecx) (typ Int)))
+       (edx ((name edx) (typ Int))) (esp ((name esp) (typ Int)))))) |}]
+
+let%expect_test "shl reg" =
+  test_trans_block 0x0040f3de;
+  [%expect
+    {|
+    ((id 1)
+     (instrs
+      ((0 (OutsideContext (var ebp) (typ Int)))
+       (1
+        (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed false)
+         (offset 8)))
+       (2 (UniOp (var __i32) (op ZeroExtend16) (operand (Ref 1))))
+       (3 (DupVar (var eax) (src (Ref 2)) (typ Int))) (4 (Const __i32 1))
+       (5 (DupVar (var edx) (src (Ref 4)) (typ Int)))
+       (6 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 12)))
+       (7 (DupVar (var ecx) (src (Ref 6)) (typ Int)))
+       (8 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 7))))
+       (9 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 5)) (rhs (Ref 8))))
+       (10 (DupVar (var edx) (src (Ref 9)) (typ Int)))
+       (11 (BiOp (var __i32) (op And) (lhs (Ref 3)) (rhs (Ref 10))))
+       (12 (DupVar (var eax) (src (Ref 11)) (typ Int)))))
+     (terminator
+      (Branch (succeed (Block 3)) (fail (Block 2)) (condition (Ref 12))))
+     (roots ((Ref 0) (Ref 7) (Ref 10) (Ref 12)))) |}]
 
 let%expect_test "cld" =
   test_trans_block 0x0048c237;
