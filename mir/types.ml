@@ -9,4 +9,4 @@ type vec_lane_shape = [ `I8 | `I16 | `I32 | `I64 | `F32 | `F64 ]
 
 type branch_target = Block of int [@@unboxed] [@@deriving sexp]
 type local = { name : ident; typ : local_type } [@@deriving sexp]
-type func_sig = { args : local list; return : local } [@@deriving sexp]
+type func_sig = { args : local list; returns : local list } [@@deriving sexp]

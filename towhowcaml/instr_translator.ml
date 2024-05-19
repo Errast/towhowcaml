@@ -340,20 +340,9 @@ let write_fpu_stack_changes ~state ~builder =
            ~rhs:
              (B.const builder @@ (state.fpu_stack_pointer_offset * float_size)))
 
-let write_globals c =
-  let newest_esp = newest_var c `esp in
-  B.set_global c.builder Util.stack_pointer_global Int newest_esp;
-  write_fpu_stack_changes ~state:c.state ~builder:c.builder
+let write_globals c = write_fpu_stack_changes ~state:c.state ~builder:c.builder
 
-(* this sucks. i guess the difference is that esp has a local
-   and fpu_stack_pointer doesn't. but i still don't like it. if we
-   give the latter a local, then without intrablock info, we'll need
-   to get_global it at the end of every block (that does a function call),
-   so that's right out. i guess moving esp to be a second return would work too. *)
 let read_globals c =
-  B.get_global c.builder ~varName:(X86reg.to_ident `esp)
-    Util.stack_pointer_global Int
-  |> ignore;
   c.state.fpu_stack_pointer <- Instr.Ref.invalid;
   c.state.fpu_stack_pointer_offset <- 0
 
@@ -556,24 +545,24 @@ let translate_call_end c =
   |> ignore
 
 let translate_direct_call c func_name func_sig =
+  translate_call_start c;
   let args =
     List.map ~f:(fun a -> B.newest_var c.builder a.name) func_sig.args
   in
-  translate_call_start c;
-  B.call c.builder func_name args func_sig.return.typ
-    ~varName:func_sig.return.name
-  |> ignore;
+  B.call c.builder func_name args |> ignore;
+  List.iter func_sig.returns ~f:(fun { name; typ } ->
+      B.returned c.builder ~varName:name typ |> ignore);
   translate_call_end c
 
 let translate_indirect_call c ~addr func_sig =
+  translate_call_start c;
   let args =
     (* maybe check the types line up? *)
     List.map ~f:(fun a -> B.newest_var c.builder a.name) func_sig.args
   in
-  translate_call_start c;
-  B.call_indirect c.builder addr args ~varName:func_sig.return.name
-    func_sig.return.typ
-  |> ignore;
+  B.call_indirect c.builder addr args;
+  List.iter func_sig.returns ~f:(fun { name; typ } ->
+      B.returned c.builder ~varName:name typ |> ignore);
   translate_call_end c
 
 let translate_call c =
@@ -1120,9 +1109,11 @@ let translate_move_data c =
 
 let translate_float_sqrt c =
   assert_c c (List.is_empty @@ operands c);
-  set_fpu_stack c
-    (B.call c.builder Util.float_sqrt_func [ get_fpu_stack c 0 ] Float)
-    0;
+  let result =
+    B.call c.builder Util.float_sqrt_func [ get_fpu_stack c 0 ];
+    B.returned c.builder Float
+  in
+  set_fpu_stack c result 0;
   add_float_comparison c []
 
 let translate_float_load_constant c const =
@@ -1132,8 +1123,16 @@ let translate_float_load_constant c const =
 
 let translate_float_sin_cos c =
   let angle = fpu_pop_off c in
-  fpu_push c @@ B.call c.builder Util.float_sine_func [ angle ] Float;
-  fpu_push c @@ B.call c.builder Util.float_cosine_func [ angle ] Float;
+  let sin =
+    B.call c.builder Util.float_sine_func [ angle ];
+    B.returned c.builder Float
+  in
+  let cos =
+    B.call c.builder Util.float_cosine_func [ angle ];
+    B.returned c.builder Float
+  in
+  fpu_push c sin;
+  fpu_push c cos;
   add_float_comparison c []
 
 let translate_float_negate c =
@@ -1171,11 +1170,12 @@ let translate_float_exchange c =
 
 let translate_float_scale c =
   assert_c c (List.is_empty @@ operands c);
-  set_fpu_stack c
-    (B.call c.builder Util.float_scale_func
-       [ get_fpu_stack c 0; get_fpu_stack c 1 ]
-       Float)
-    0;
+  let result =
+    B.call c.builder Util.float_scale_func
+      [ get_fpu_stack c 0; get_fpu_stack c 1 ];
+    B.returned c.builder Float
+  in
+  set_fpu_stack c result 0;
   add_float_comparison c []
 
 let translate_sahf c =
@@ -1320,8 +1320,6 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
         else Unconditional { target = value }
     | { id = RET; prefix = 0; opex = { operands = [] }; _ } when tail_position
       ->
-        B.set_global builder Util.stack_pointer_global Int
-        @@ B.newest_var builder @@ X86reg.to_ident `esp;
         Return
     | {
      id = RET;
@@ -1331,11 +1329,9 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
     }
       when tail_position ->
         let esp = X86reg.to_ident `esp in
-        let esp =
-          B.add builder ~lhs:(B.newest_var builder esp)
-            ~rhs:(B.const builder value) ~varName:esp
-        in
-        B.set_global builder Util.stack_pointer_global Int esp;
+        B.add builder ~rhs:(B.const builder value)
+          ~lhs:(B.newest_var builder esp) ~varName:esp
+        |> ignore;
         Return
     | {
      id =

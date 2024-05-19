@@ -63,10 +63,6 @@ let add_block_branches c id (block : block) =
 let translate_block c id block =
   let state = Instr_translator.initial_state () in
   let builder = Builder.create Util.used_locals in
-  if id = 0 then
-    Builder.get_global builder Util.stack_pointer_global Int
-      ~varName:(Radatnet.X86reg.to_ident `esp)
-    |> ignore;
 
   AP.foldi
     ~f:(fun i () op ->
@@ -254,7 +250,8 @@ let translate ~intrinsics ~name ~(blocks : block array) =
   let used_locals = Hashtbl.create (module String) in
   let signature = Util.fast_call in
   List.iter ~f:(fun a -> add_used_local used_locals a.name a.typ) signature.args;
-  add_used_local used_locals signature.return.name Util.fast_call.return.typ;
+  List.iter signature.returns ~f:(fun r ->
+      add_used_local used_locals r.name r.typ);
   let mir_blocks = AP.map ~f:(to_mir_block used_locals) block_data in
   Func.
     {

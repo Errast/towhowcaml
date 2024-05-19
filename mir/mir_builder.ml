@@ -424,15 +424,16 @@ let vec_load ?varName ?(offset = 0) t ~dest ~addr ~shape ~lane =
          offset;
        }
 
-let call ?varName t func args return_type =
-  add_instr t
-  @@ Instr.CallOp
-       { var = new_var t varName return_type; func; args; return_type }
+let call t func args = add_instr t @@ Instr.CallOp { func; args } |> ignore
 
-let call_indirect ?varName t table_index args return_type =
-  add_instr t
-  @@ Instr.CallIndirectOp
-       { var = new_var t varName return_type; table_index; args; return_type }
+let call_indirect t table_index args =
+  add_instr t @@ Instr.CallIndirectOp { table_index; args } |> ignore
+
+let returned ?varName t typ =
+  (match Vec.get_opt t.instrs (Vec.length t.instrs - 1) with
+  | Some Instr.(CallOp _ | CallIndirectOp _ | ReturnedOp _) -> ()
+  | _ -> raise_s [%message "invalid previous instr for returned" (t : t)]);
+  add_instr t @@ Instr.ReturnedOp { var = new_var t varName typ; typ }
 
 let get_global ?varName t global_name global_type =
   add_instr t

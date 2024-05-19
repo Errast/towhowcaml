@@ -220,18 +220,9 @@ type t =
       lane : int;
       offset : int;
     }
-  | CallOp of {
-      var : Variable.t;
-      func : ident;
-      args : Ref.t list;
-      return_type : local_type;
-    }
-  | CallIndirectOp of {
-      var : Variable.t;
-      table_index : Ref.t;
-      args : Ref.t list;
-      return_type : local_type;
-    }
+  | CallOp of { func : ident; args : Ref.t list }
+  | CallIndirectOp of { table_index : Ref.t; args : Ref.t list }
+  | ReturnedOp of { var : Variable.t; typ : local_type }
   | GetGlobalOp of {
       var : Variable.t;
       global_name : ident;

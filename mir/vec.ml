@@ -27,6 +27,8 @@ let unsafe_get vec i =
   (* Option_array.unsafe_get_some_assuming_some *)
   Option_array.get_some_exn vec.array i
 
+let get_opt vec i = if valid_index vec i then Some (unsafe_get vec i) else None
+
 let set vec i value =
   valid_index_exn vec i;
   (* Option_array.unsafe_set_some vec.array i value *)

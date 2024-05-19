@@ -11,7 +11,6 @@ external int32_to_float : int -> (float[@unboxed])
 
 let addr_to_func_name = Printf.sprintf "__func%x__"
 let addr_to_index_func : ident = "__addrToIndex__"
-let stack_pointer_global : ident = "__stack__"
 let fpu_stack_pointer_global : ident = "__fpuStack__"
 let input_compare_arg : ident = "__input_compare_arg__"
 let float_sqrt_func : ident = "__float_sqrt__"
@@ -20,7 +19,14 @@ let float_cosine_func : ident = "__float_cosine__"
 let float_scale_func : ident = "__float_scale__"
 
 let std_call =
-  { args = []; return = { name = X86reg.to_ident `eax; typ = Int } }
+  {
+    args = [ { name = X86reg.to_ident `esp; typ = Int } ];
+    returns =
+      [
+        { name = X86reg.to_ident `eax; typ = Int };
+        { name = X86reg.to_ident `esp; typ = Int };
+      ];
+  }
 
 let fast_call =
   X86reg.
@@ -28,9 +34,14 @@ let fast_call =
       args =
         [
           { name = to_ident `ecx; typ = Int };
+          { name = X86reg.to_ident `esp; typ = Int };
           { name = to_ident `edx; typ = Int };
         ];
-      return = { name = X86reg.to_ident `eax; typ = Int };
+      returns =
+        [
+          { name = X86reg.to_ident `esp; typ = Int };
+          { name = X86reg.to_ident `eax; typ = Int };
+        ];
     }
 
 let used_locals =

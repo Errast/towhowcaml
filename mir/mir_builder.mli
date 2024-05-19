@@ -207,12 +207,9 @@ val vec_load :
   lane:int ->
   Instr.ref
 
-val call :
-  ?varName:ident -> t -> ident -> Instr.ref list -> local_type -> Instr.ref
-
-val call_indirect :
-  ?varName:ident -> t -> Instr.ref -> Instr.ref list -> local_type -> Instr.ref
-
+val call : t -> ident -> Instr.ref list -> unit
+val call_indirect : t -> Instr.ref -> Instr.ref list -> unit
+val returned : ?varName:ident -> t -> local_type -> Instr.ref
 val get_global : ?varName:ident -> t -> ident -> local_type -> Instr.ref
 val landmine : ?varName:ident -> t -> local_type -> Instr.ref
 val store8 : store_op_add

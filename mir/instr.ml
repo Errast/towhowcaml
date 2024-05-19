@@ -228,18 +228,9 @@ type t =
       lane : int;
       offset : int; [@default 0] [@sexp_drop_default.equal]
     }
-  | CallOp of {
-      var : Variable.t;
-      func : ident;
-      args : Ref.t list;
-      return_type : local_type;
-    }
-  | CallIndirectOp of {
-      var : Variable.t;
-      table_index : Ref.t;
-      args : Ref.t list;
-      return_type : local_type;
-    }
+  | CallOp of { func : ident; args : Ref.t list }
+  | CallIndirectOp of { table_index : Ref.t; args : Ref.t list }
+  | ReturnedOp of { var : Variable.t; typ : local_type }
   | GetGlobalOp of {
       var : Variable.t;
       global_name : ident;
@@ -327,7 +318,7 @@ let value_type = function
       | VecLoad32ZeroExtend | VecLoad64ZeroExtend | VecLoad128 -> Vec)
   | SignedLoadOp { op = Load8 | Load16; _ } -> Int
   | VecLoadLaneOp _ -> Vec
-  | CallOp { return_type; _ } | CallIndirectOp { return_type; _ } -> return_type
+  | ReturnedOp { typ; _ } -> typ
   | GetGlobalOp { global_type; _ } -> global_type
   | OutsideContext { typ; _ } -> typ
   | Landmine { typ; _ } -> typ
@@ -351,13 +342,12 @@ let replace_var instr var =
   | LoadOp v -> LoadOp { v with var }
   | SignedLoadOp v -> SignedLoadOp { v with var }
   | VecLoadLaneOp v -> VecLoadLaneOp { v with var }
-  | CallOp v -> CallOp { v with var }
-  | CallIndirectOp v -> CallIndirectOp { v with var }
+  | ReturnedOp v -> ReturnedOp { v with var }
   | GetGlobalOp v -> GetGlobalOp { v with var }
   | OutsideContext v -> OutsideContext { v with var }
   | Landmine v -> Landmine { v with var }
-  | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _ | AssertOp _ | Memset _
-  | Memcopy _ | Unreachable ->
+  | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _
+  | AssertOp _ | Memset _ | Memcopy _ | Unreachable ->
       instr
 
 let replace_instr_ref t ~from ~into =
@@ -400,11 +390,7 @@ let replace_instr_ref t ~from ~into =
       t
   | CallIndirectOp v ->
       CallIndirectOp
-        {
-          v with
-          table_index = swap v.table_index;
-          args = List.map v.args ~f:swap;
-        }
+        { table_index = swap v.table_index; args = List.map v.args ~f:swap }
   | StoreOp v when v.addr <> from && v.value <> from -> t
   | StoreOp v -> StoreOp { v with addr = swap v.addr; value = swap v.value }
   | VecStoreLaneOp v when v.addr <> from && v.value <> from -> t
@@ -420,8 +406,8 @@ let replace_instr_ref t ~from ~into =
   | Memcopy v when v.dest <> from && v.src <> from && v.count <> from -> t
   | Memcopy v ->
       Memcopy { count = swap v.count; src = swap v.src; dest = swap v.dest }
-  | Landmine _ | Unreachable | OutsideContext _ | GetGlobalOp _ | Const _
-  | FloatConst _ | LongConst _ | VecConst _ ->
+  | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
+  | Const _ | FloatConst _ | LongConst _ | VecConst _ ->
       t
 
 (* Using flambda terminology, this definition of pureness only accounts for effects, not coeffects *)
@@ -432,20 +418,20 @@ let is_pure = function
   | SignedLoadOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _ | VecShuffleOp _
   | VecLoadLaneOp _ | Landmine _ ->
       true
-  | CallOp _ | CallIndirectOp _ | GetGlobalOp _ | OutsideContext _ | StoreOp _
-  | VecStoreLaneOp _ | AssertOp _ | Memset _ | Memcopy _ | Unreachable
-  | SetGlobalOp _ ->
+  | CallOp _ | CallIndirectOp _ | ReturnedOp _ | GetGlobalOp _
+  | OutsideContext _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Memset _
+  | Memcopy _ | Unreachable | SetGlobalOp _ ->
       false
 
 let is_assignment = function
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | DupVar _ | UniOp _
   | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _ | LoadOp _
   | SignedLoadOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _ | VecShuffleOp _
-  | VecLoadLaneOp _ | CallOp _ | CallIndirectOp _ | GetGlobalOp _
-  | OutsideContext _ | Landmine _ ->
+  | VecLoadLaneOp _ | ReturnedOp _ | GetGlobalOp _ | OutsideContext _
+  | Landmine _ ->
       true
-  | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Unreachable | SetGlobalOp _
-  | Memset _ | Memcopy _ ->
+  | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _
+  | Unreachable | SetGlobalOp _ | Memset _ | Memcopy _ ->
       false
 
 let assignment_var = function
@@ -465,12 +451,11 @@ let assignment_var = function
   | LoadOp { var; _ }
   | SignedLoadOp { var; _ }
   | VecLoadLaneOp { var; _ }
-  | CallOp { var; _ }
-  | CallIndirectOp { var; _ }
+  | ReturnedOp { var; _ }
   | GetGlobalOp { var; _ }
   | OutsideContext { var; _ }
   | Landmine { var; _ } ->
       Some var
-  | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _ | AssertOp _ | Unreachable
-  | Memset _ | Memcopy _ ->
+  | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _
+  | AssertOp _ | Unreachable | Memset _ | Memcopy _ ->
       None
