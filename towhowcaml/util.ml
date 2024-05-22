@@ -17,6 +17,9 @@ let float_sqrt_func : ident = "__float_sqrt__"
 let float_sine_func : ident = "__float_sine__"
 let float_cosine_func : ident = "__float_cosine__"
 let float_scale_func : ident = "__float_scale__"
+let seh_frame_global : ident = "__seh_frame__"
+let dword_diff_func : ident = "__dword_diff__"
+let dword_memset_func : ident = "__dword_memset__"
 
 let std_call =
   {
@@ -25,6 +28,7 @@ let std_call =
       [
         { name = X86reg.to_ident `eax; typ = Int };
         { name = X86reg.to_ident `esp; typ = Int };
+        { name = X86reg.to_ident `edx; typ = Int };
       ];
   }
 
@@ -39,8 +43,9 @@ let fast_call =
         ];
       returns =
         [
-          { name = X86reg.to_ident `esp; typ = Int };
           { name = X86reg.to_ident `eax; typ = Int };
+          { name = X86reg.to_ident `esp; typ = Int };
+          { name = X86reg.to_ident `edx; typ = Int };
         ];
     }
 
@@ -70,3 +75,7 @@ let used_locals =
         `xmm6;
         `xmm7;
       ]
+
+let global_of_tib_offset = function
+  | 0 -> seh_frame_global
+  | o -> failwithf "invalid tib offset: %d" o ()

@@ -52,6 +52,8 @@ let ignroe_funcs =
       0x0048bcaa;
       (* ffree  *)
       0x00461aa2;
+      (* switch table madness *)
+      0x0047d4e0;
     ]
 
 let make_intrinsics c =
@@ -94,35 +96,13 @@ let make_block c block =
 let func_name c addr =
   Printf.sprintf "func_%x" @@ Radatnet.Commands.get_surrounding_func c addr
 
-let detect_illegal_edx (block : Mir.Block.t) =
-  let recent = ref Mir.Instr.Ref.invalid in
-  let bad = ref Mir.Instr.Ref.invalid in
-  Array.existsi block.instrs
-    ~f:
-      Mir.Instr.(
-        fun i instr ->
-          match instr with
-          | CallOp _ | CallIndirectOp _ ->
-              bad := !recent;
-              false
-          | _ ->
-              if
-                not @@ phys_equal instr
-                @@ replace_instr_ref ~from:!bad ~into:Ref.invalid instr
-              then true
-              else (
-                if Poly.(assignment_var instr = Some { name = "edx" }) then
-                  recent := Ref.Ref i;
-                false))
-
 let translate_func c addr ~intrinsics =
   let module Cmd = Radatnet.Commands in
   let blocks = Cmd.get_func_blocks c addr in
   let name = func_name c addr in
   let blocks = Array.map ~f:(make_block c) blocks in
   let res = Func_translator.translate ~intrinsics ~blocks ~name in
-  if Array.exists ~f:detect_illegal_edx res.blocks then failwith "edx thing"
-  else res
+  res
 
 let main c =
   let module Cmd = Radatnet.Commands in
