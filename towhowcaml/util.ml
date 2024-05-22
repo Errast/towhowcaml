@@ -20,6 +20,7 @@ let float_scale_func : ident = "__float_scale__"
 let seh_frame_global : ident = "__seh_frame__"
 let dword_diff_func : ident = "__dword_diff__"
 let dword_memset_func : ident = "__dword_memset__"
+let ret_addr_local : ident = "__ret_addr__"
 
 let std_call =
   {
@@ -51,7 +52,7 @@ let fast_call =
 
 let used_locals =
   Map.of_alist_exn (module String)
-  @@ [ (input_compare_arg, Int) ]
+  @@ [ (input_compare_arg, Int); (ret_addr_local, Int) ]
   @ List.map
       ~f:(fun r -> (X86reg.to_ident r, Int))
       [ `eax; `ebx; `ecx; `edx; `esi; `edi; `ebp; `esp ]

@@ -63,6 +63,10 @@ let add_block_branches c id (block : block) =
 let translate_block c id block =
   let state = Instr_translator.initial_state () in
   let builder = Builder.create Util.used_locals in
+  if id = 0 then
+    Builder.load32 builder ~varName:Util.ret_addr_local
+      (Builder.newest_var builder @@ X86reg.to_ident `esp)
+    |> ignore;
 
   AP.foldi
     ~f:(fun i () op ->

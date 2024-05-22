@@ -565,17 +565,7 @@ let translate_call_start c ~push_addr =
      B.store32 c.builder ~addr:esp ~value:(B.const c.builder c.opcode.address));
   write_globals c
 
-let translate_call_end c ~pop_addr =
-  read_globals c;
-  (* assert address is correct *)
-  if pop_addr then (
-    let esp = newest_var c `esp in
-    B.mir_assert c.builder
-    @@ B.equal c.builder ~lhs:(B.load32 c.builder esp)
-         ~rhs:(B.const c.builder c.opcode.address);
-    B.add c.builder ~rhs:(B.const c.builder 4) ~lhs:esp
-      ~varName:(X86reg.to_ident `esp)
-    |> ignore)
+let translate_call_end c = read_globals c
 
 let translate_direct_call c func_name func_sig ~push_addr =
   translate_call_start c ~push_addr;
@@ -585,7 +575,7 @@ let translate_direct_call c func_name func_sig ~push_addr =
   B.call c.builder func_name args |> ignore;
   List.iter func_sig.returns ~f:(fun { name; typ } ->
       B.returned c.builder ~varName:name typ |> ignore);
-  translate_call_end c ~pop_addr:push_addr
+  translate_call_end c
 
 let translate_indirect_call c ~addr func_sig ~push_addr =
   translate_call_start c ~push_addr;
@@ -596,7 +586,7 @@ let translate_indirect_call c ~addr func_sig ~push_addr =
   B.call_indirect c.builder addr args;
   List.iter func_sig.returns ~f:(fun { name; typ } ->
       B.returned c.builder ~varName:name typ |> ignore);
-  translate_call_end c ~pop_addr:push_addr
+  translate_call_end c
 
 let translate_call c ~push_addr =
   match operands c with
@@ -1546,21 +1536,19 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
           { intrinsics; builder; state; opcode }
           intrinisc.name intrinisc.signature ~push_addr:false;
         Return
-    | { id = RET; prefix = 0; opex = { operands = [] }; _ } when tail_position
-      ->
-        Return
-    (* TODO this is wrong! it's supposed to pop eip, _then_ pop n bytes. this is backwards *)
-    | {
-     id = RET;
-     prefix = 0;
-     opex = { operands = [ Immediate { value; _ } ] };
-     _;
-    }
-      when tail_position ->
+    | { id = RET; prefix = 0; opex = { operands }; _ } when tail_position ->
         let esp = X86reg.to_ident `esp in
-        B.add builder ~rhs:(B.const builder value)
-          ~lhs:(B.newest_var builder esp) ~varName:esp
-        |> ignore;
+        let new_ret_addr = B.load32 builder (B.newest_var builder esp) in
+        B.mir_assert builder
+        @@ B.equal builder ~lhs:new_ret_addr
+             ~rhs:(B.newest_var builder Util.ret_addr_local);
+        (match operands with
+        | [] -> ()
+        | [ Immediate { value; _ } ] ->
+            B.add builder ~rhs:(B.const builder value)
+              ~lhs:(B.newest_var builder esp) ~varName:esp
+            |> ignore
+        | _ -> raise_ops { intrinsics; builder; state; opcode });
         Return
     | {
      id =
