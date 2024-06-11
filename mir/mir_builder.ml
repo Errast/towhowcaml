@@ -201,15 +201,6 @@ type signed_bi_op_add =
   signed:bool ->
   Instr.ref
 
-type signed_vec_lane_bi_op_add =
-  ?varName:ident ->
-  t ->
-  lhs:Instr.ref ->
-  rhs:Instr.ref ->
-  signed:bool ->
-  shape:vec_lane_shape ->
-  Instr.ref
-
 type load_op_add = ?varName:ident -> ?offset:int -> t -> Instr.ref -> Instr.ref
 
 type sign_load_op_add =
@@ -242,12 +233,66 @@ let sign_bi_op typ op res_typ ?varName t ~lhs ~rhs ~signed =
   add_instr t
   @@ Instr.SignedBiOp { var = new_var t varName res_typ; lhs; rhs; signed; op }
 
-let sign_vec_bi_op op ?varName t ~lhs ~rhs ~signed ~shape =
+(* the signed tag does nothing for float shapes *)
+type (_, _) vec_lane_shape_signed =
+  | I8 : ([> `I8 ], signed:bool -> Instr.ref) vec_lane_shape_signed
+  | I16 : ([> `I16 ], signed:bool -> Instr.ref) vec_lane_shape_signed
+  | I32 : ([> `I32 ], signed:bool -> Instr.ref) vec_lane_shape_signed
+  | I64 : ([> `I64 ], signed:bool -> Instr.ref) vec_lane_shape_signed
+  | F32 : ([> `F32 ], Instr.ref) vec_lane_shape_signed
+  | F64 : ([> `F64 ], Instr.ref) vec_lane_shape_signed
+
+let shape_of_gadt (type t s) (s : (t, s) vec_lane_shape_signed) : vec_lane_shape
+    =
+  match s with
+  | I8 -> `I8
+  | I16 -> `I16
+  | I32 -> `I32
+  | I64 -> `I64
+  | F32 -> `F32
+  | F64 -> `F64
+
+type ('r, 's) signed_vec_lane_bi_op_add =
+  shape:('r, 's) vec_lane_shape_signed ->
+  ?varName:ident ->
+  t ->
+  lhs:Instr.ref ->
+  rhs:Instr.ref ->
+  's
+
+(* pretty funny *)
+let sign_vec_bi_op :
+    type s r.
+    Instr.signed_vec_lane_bi_op ->
+    ?varName:ident ->
+    t ->
+    lhs:Instr.ref ->
+    rhs:Instr.ref ->
+    shape:(s, r) vec_lane_shape_signed ->
+    r =
+ fun op ?varName t ~lhs ~rhs ~shape ->
   verify_var lhs Vec t;
   verify_var rhs Vec t;
-  add_instr t
-  @@ Instr.SignedVecLaneBiOp
-       { var = new_var t varName Vec; lhs; rhs; signed; shape; op }
+  let signed_fun ~signed =
+    add_instr t
+    @@ Instr.SignedVecLaneBiOp
+         {
+           var = new_var t varName Vec;
+           shape = shape_of_gadt shape;
+           lhs;
+           rhs;
+           signed;
+           op;
+         }
+  in
+  let not_signed_fun () = signed_fun ~signed:true in
+  match shape with
+  | I8 -> signed_fun
+  | I16 -> signed_fun
+  | I32 -> signed_fun
+  | I64 -> signed_fun
+  | F32 -> not_signed_fun ()
+  | F64 -> not_signed_fun ()
 
 let load_op op res_typ ?varName ?(offset = 0) t addr =
   verify_var addr Int t;
@@ -346,7 +391,6 @@ let vec_add = vec_bi_op Instr.VecAdd
 let vec_sub = vec_bi_op Instr.VecSub
 let vec_mul = vec_bi_op Instr.VecMul
 let vec_equal = vec_bi_op Instr.VecLaneEqual
-let vec_shift_left = vec_bi_op Instr.VecShiftLeft
 let div = sign_bi_op Int Instr.Divide Int
 let remainder = sign_bi_op Int Instr.Remainder Int
 let shift_right = sign_bi_op Int Instr.ShiftRight Int
@@ -365,12 +409,35 @@ let long_shift_right = sign_bi_op Long Instr.LongShiftRight Long
 let long_rotate_right = sign_bi_op Long Instr.LongRotateRight Long
 let vec_narrow_16bit = sign_bi_op Vec Instr.VecNarrow16Bit Long
 let vec_narrow_32bit = sign_bi_op Vec Instr.VecNarrow32Bit Long
-let vec_shift_right = sign_vec_bi_op Instr.VecShiftRight
-let vec_max = sign_vec_bi_op Instr.VecMax
-let vec_min = sign_vec_bi_op Instr.VecMin
-let vec_less_than = sign_vec_bi_op Instr.VecLessThan
-let vec_add_sat = sign_vec_bi_op Instr.VecAddSaturating
-let vec_sub_sat = sign_vec_bi_op Instr.VecSubSaturating
+let vec_max ~shape = sign_vec_bi_op Instr.VecMax ~shape
+let vec_min ~shape = sign_vec_bi_op Instr.VecMin ~shape
+let vec_less_than ~shape = sign_vec_bi_op Instr.VecLessThan ~shape
+let vec_add_sat ~shape = sign_vec_bi_op Instr.VecAddSaturating ~shape
+let vec_sub_sat ~shape = sign_vec_bi_op Instr.VecSubSaturating ~shape
+
+let vec_shift_left ?varName t ~lhs ~rhs ~(shape : int_vec_lane_shape) =
+  verify_var lhs Vec t;
+  verify_var rhs Int t;
+  add_instr t
+  @@ Instr.VecShiftLeftOp
+       { var = new_var t varName Vec; operand = lhs; count = rhs; shape }
+
+let vec_shift_right ?varName t ~lhs ~rhs ~signed ~(shape : int_vec_lane_shape) =
+  verify_var lhs Vec t;
+  verify_var rhs Int t;
+  add_instr t
+  @@ Instr.VecShiftRightOp
+       {
+         var = new_var t varName Vec;
+         operand = lhs;
+         count = rhs;
+         shape;
+         signed;
+       }
+
+let vec_splat ?varName t value ~shape =
+  verify_var value (Instr.local_type_of_lane_shape shape) t;
+  add_instr t @@ Instr.VecSplatOp { var = new_var t varName Vec; value; shape }
 
 let vec_extract ?varName t src ~lane ~shape =
   verify_lane shape lane;
@@ -435,10 +502,9 @@ let returned ?varName t typ =
   | _ -> raise_s [%message "invalid previous instr for returned" (t : t)]);
   add_instr t @@ Instr.ReturnedOp { var = new_var t varName typ; typ }
 
-let get_global ?varName t global_name global_type =
+let get_global ?varName t global =
   add_instr t
-  @@ Instr.GetGlobalOp
-       { var = new_var t varName global_type; global_name; global_type }
+  @@ Instr.GetGlobalOp { var = new_var t varName global.typ; global }
 
 let landmine ?varName t typ =
   add_instr t @@ Instr.Landmine { var = new_var t varName typ; typ }
@@ -458,9 +524,9 @@ let vec_store ?(offset = 0) t ~addr ~vec ~shape ~lane =
   add_instr t @@ Instr.VecStoreLaneOp { value = vec; addr; shape; lane; offset }
   |> ignore
 
-let set_global t global_name global_type value =
-  verify_var value global_type t;
-  add_instr t @@ Instr.SetGlobalOp { global_name; value; global_type } |> ignore
+let set_global t global value =
+  verify_var value global.typ t;
+  add_instr t @@ Instr.SetGlobalOp { value; global } |> ignore
 
 let mir_assert t condition =
   verify_var condition Int t;

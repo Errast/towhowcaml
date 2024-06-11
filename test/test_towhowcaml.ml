@@ -24,6 +24,377 @@ let test_trans_block addr =
   print_s @@ Mir.Block.sexp_of_t
   @@ (Func_translator.translate ~blocks ~name ~intrinsics).blocks.(index)
 
+let%expect_test "psrlq, andpd, psubd" = 
+ test_trans_block 
+0x0047ee50;
+ [%expect {|
+   ((id 5)
+    (instrs
+     ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
+      (1 (OutsideContext (var esp) (typ Int)))
+      (2 (LoadOp (var __i64) (op LongLoad64) (addr (Ref 1)) (offset 4)))
+      (3
+       (VecReplaceLaneOp (var __vec) (dest (Ref 0)) (lane_value (Ref 2))
+        (shape I64) (lane 0)))
+      (4 (Const __i32 4785856))
+      (5 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 4))))
+      (6 (Const __i32 52))
+      (7
+       (VecShiftRightOp (var __vec) (operand (Ref 3)) (count (Ref 6))
+        (shape I64) (signed false)))
+      (8 (VecExtractLaneOp (var __vec) (src (Ref 7)) (shape I32) (lane 0)))
+      (9 (DupVar (var eax) (src (Ref 8)) (typ Int))) (10 (Const __i32 4785904))
+      (11 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 10))))
+      (12 (BiOp (var __vec) (op VecAnd) (lhs (Ref 7)) (rhs (Ref 11))))
+      (13
+       (VecLaneBiOp (var __vec) (op VecAdd) (shape I32) (lhs (Ref 5))
+        (rhs (Ref 12))))
+      (14 (VecExtractLaneOp (var __vec) (src (Ref 13)) (shape I32) (lane 0)))
+      (15
+       (VecShiftRightOp (var __vec) (operand (Ref 3)) (count (Ref 14))
+        (shape I64) (signed false)))
+      (16 (Const __i32 2048))
+      (17 (BiOp (var __i32) (op And) (lhs (Ref 9)) (rhs (Ref 16))))
+      (18
+       (SetGlobalOp (value (Ref 12))
+        (global ((name __xmm0_global__) (typ Vec)))))
+      (19
+       (SetGlobalOp (value (Ref 13))
+        (global ((name __xmm2_global__) (typ Vec)))))
+      (20
+       (SetGlobalOp (value (Ref 3)) (global ((name __xmm7_global__) (typ Vec)))))
+      (21
+       (SetGlobalOp (value (Ref 15))
+        (global ((name __xmm1_global__) (typ Vec)))))))
+    (terminator
+     (Branch (succeed (Block 12)) (fail (Block 6)) (condition (Ref 17))))
+    (roots ((Ref 1) (Ref 9) (Ref 18) (Ref 19) (Ref 20) (Ref 21))))
+   |}]
+let%expect_test "movq, psllq, cmpltpd" =
+  test_trans_block 0x0047eed2;
+  [%expect {|
+    ((id 12)
+     (instrs
+      ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
+       (1 (OutsideContext (var esp) (typ Int)))
+       (2 (LoadOp (var __i64) (op LongLoad64) (addr (Ref 1)) (offset 4)))
+       (3
+        (VecReplaceLaneOp (var __vec) (dest (Ref 0)) (lane_value (Ref 2))
+         (shape I64) (lane 0)))
+       (4 (GetGlobalOp (var __vec) (global ((name __xmm1_global__) (typ Vec)))))
+       (5 (GetGlobalOp (var __vec) (global ((name __xmm2_global__) (typ Vec)))))
+       (6 (VecExtractLaneOp (var __vec) (src (Ref 5)) (shape I32) (lane 0)))
+       (7
+        (VecShiftLeftOp (var __vec) (operand (Ref 4)) (count (Ref 6))
+         (shape I64)))
+       (8
+        (SignedVecLaneBiOp (var __vec) (op VecLessThan) (signed true) (shape F64)
+         (lhs (Ref 3)) (rhs (Ref 7))))
+       (9 (OutsideContext (var eax) (typ Int))) (10 (Const __i32 3071))
+       (11
+        (SignedBiOp (var __i32) (op LessThan) (signed true) (lhs (Ref 9))
+         (rhs (Ref 10))))
+       (12
+        (SetGlobalOp (value (Ref 3)) (global ((name __xmm3_global__) (typ Vec)))))
+       (13
+        (SetGlobalOp (value (Ref 8)) (global ((name __xmm0_global__) (typ Vec)))))
+       (14
+        (SetGlobalOp (value (Ref 7)) (global ((name __xmm1_global__) (typ Vec)))))))
+     (terminator
+      (Branch (succeed (Block 16)) (fail (Block 13)) (condition (Ref 11))))
+     (roots ((Ref 1) (Ref 4) (Ref 5) (Ref 9) (Ref 12) (Ref 13) (Ref 14))))
+    |}]
+
+let%expect_test "branch return" =
+  test_trans_block 0x0047ee10;
+  [%expect {|
+    ((id 0)
+     (instrs
+      ((0 (OutsideContext (var esp) (typ Int)))
+       (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
+       (2 (Const __i32 20336900))
+       (3 (LoadOp (var __i32) (op Load32) (addr (Ref 2)))) (4 (Const __i32 0))
+       (5 (BiOp (var __i32) (op Equal) (lhs (Ref 3)) (rhs (Ref 4))))))
+     (terminator
+      (Branch (succeed (Block 17)) (fail (Block 1)) (condition (Ref 5))))
+     (roots ((Ref 0) (Ref 1))))
+    |}]
+
+let%expect_test "and jbe" =
+  test_trans_block 0x0046632e;
+  [%expect
+    {|
+    ((id 0)
+     (instrs
+      ((0 (OutsideContext (var esp) (typ Int)))
+       (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
+       (2 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 12)))
+       (3 (DupVar (var eax) (src (Ref 2)) (typ Int)))
+       (4 (OutsideContext (var esi) (typ Int))) (5 (Const __i32 4))
+       (6 (BiOp (var esp) (op Subtract) (lhs (Ref 0)) (rhs (Ref 5))))
+       (7 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 4))))
+       (8 (OutsideContext (var ecx) (typ Int)))
+       (9 (DupVar (var esi) (src (Ref 8)) (typ Int)))
+       (10 (LoadOp (var __i32) (op Load32) (addr (Ref 9)) (offset 4)))
+       (11 (Const __i32 0))
+       (12 (BiOp (var __i32) (op And) (lhs (Ref 10)) (rhs (Ref 11))))
+       (13 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 12)) (offset 4)))
+       (14 (LoadOp (var __i32) (op Load32) (addr (Ref 9)))) (15 (Const __i32 0))
+       (16 (BiOp (var __i32) (op And) (lhs (Ref 14)) (rhs (Ref 15))))
+       (17 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 16))))
+       (18 (DupVar (var ecx) (src (Ref 3)) (typ Int))) (19 (Const __i32 65535))
+       (20 (BiOp (var __i32) (op And) (lhs (Ref 18)) (rhs (Ref 19))))
+       (21 (DupVar (var ecx) (src (Ref 20)) (typ Int)))
+       (22 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 3)) (offset 8)))
+       (23 (UniOp (var __i32) (op EqualsZero) (operand (Ref 20))))))
+     (terminator
+      (Branch (succeed (Block 23)) (fail (Block 1)) (condition (Ref 23))))
+     (roots
+      ((Ref 0) (Ref 1) (Ref 3) (Ref 4) (Ref 6) (Ref 7) (Ref 8) (Ref 9) (Ref 13)
+       (Ref 17) (Ref 21) (Ref 22))))
+    |}]
+
+(*let%expect_est "fprem1 / sahf jp" =*)
+(*  test_trans_block 0x0048b987;*)
+(*  [%expect {||}]*)
+(**)
+(*let%expect_test "fptan" =*)
+(*  test_trans_block 0x0048b952;*)
+(*  [%expect {||}]*)
+(**)
+(*let%expect_test "fnstcw" =*)
+(*  test_trans_block 0x0048b93f;*)
+(*  [%expect {||}]*)
+
+let%expect_test "frndint" =
+  test_trans_block 0x0044f059;
+  [%expect
+    {|
+    ((id 1)
+     (instrs
+      ((0 (Const __i32 4956072))
+       (1 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0))))
+       (2 (UniOp (var __fl) (op FloatRound) (operand (Ref 1))))
+       (3 (Const __i32 4819536))
+       (4 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 3))))
+       (5 (BiOp (var __fl) (op FloatSub) (lhs (Ref 2)) (rhs (Ref 4))))
+       (6 (Const __i32 4956100))
+       (7 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 6))))
+       (8 (UniOp (var __fl) (op FloatRound) (operand (Ref 7))))
+       (9 (Const __i32 4819536))
+       (10 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 9))))
+       (11 (BiOp (var __fl) (op FloatSub) (lhs (Ref 8)) (rhs (Ref 10))))
+       (12 (Const __i32 4956076))
+       (13 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 12))))
+       (14 (UniOp (var __fl) (op FloatRound) (operand (Ref 13))))
+       (15 (Const __i32 4819536))
+       (16 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 15))))
+       (17 (BiOp (var __fl) (op FloatSub) (lhs (Ref 14)) (rhs (Ref 16))))
+       (18 (Const __i32 4956132))
+       (19 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 18))))
+       (20 (UniOp (var __fl) (op FloatRound) (operand (Ref 19))))
+       (21 (Const __i32 4819536))
+       (22 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 21))))
+       (23 (BiOp (var __fl) (op FloatSub) (lhs (Ref 20)) (rhs (Ref 22))))
+       (24 (Const __i32 4956132))
+       (25 (StoreOp (op Store32) (addr (Ref 24)) (value (Ref 23))))
+       (26 (Const __i32 4956160))
+       (27 (StoreOp (op Store32) (addr (Ref 26)) (value (Ref 23))))
+       (28 (Const __i32 4956076))
+       (29 (StoreOp (op Store32) (addr (Ref 28)) (value (Ref 17))))
+       (30 (Const __i32 4956104))
+       (31 (StoreOp (op Store32) (addr (Ref 30)) (value (Ref 17))))
+       (32 (Const __i32 4956100))
+       (33 (StoreOp (op Store32) (addr (Ref 32)) (value (Ref 11))))
+       (34 (Const __i32 4956156))
+       (35 (StoreOp (op Store32) (addr (Ref 34)) (value (Ref 11))))
+       (36 (Const __i32 4956072))
+       (37 (StoreOp (op Store32) (addr (Ref 36)) (value (Ref 5))))
+       (38 (Const __i32 4956128))
+       (39 (StoreOp (op Store32) (addr (Ref 38)) (value (Ref 5))))
+       (40 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
+     (terminator (Goto (Block 2)))
+     (roots
+      ((Ref 25) (Ref 27) (Ref 29) (Ref 31) (Ref 33) (Ref 35) (Ref 37) (Ref 39)
+       (Ref 40))))
+    |}]
+
+let%expect_test "test eax,eax jae" =
+  test_trans_block 0x0045dbcd;
+  [%expect
+    {|
+    ((id 5)
+     (instrs
+      ((0 (OutsideContext (var ebp) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -52)))
+       (2 (DupVar (var edx) (src (Ref 1)) (typ Int)))
+       (3 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -44)))
+       (4 (DupVar (var eax) (src (Ref 3)) (typ Int)))
+       (5 (LoadOp (var __i32) (op Load32) (addr (Ref 2)) (offset 108)))
+       (6 (BiOp (var __i32) (op Subtract) (lhs (Ref 4)) (rhs (Ref 5))))
+       (7 (DupVar (var eax) (src (Ref 6)) (typ Int))) (8 (Const __i32 0))))
+     (terminator
+      (Branch (succeed (Block 8)) (fail (Block 6)) (condition (Ref 8))))
+     (roots ((Ref 0) (Ref 2) (Ref 7)))) |}]
+
+let%expect_test "test eax,eax jbe" =
+  test_trans_block 0x0047e73c;
+  [%expect
+    {|
+    ((id 2)
+     (instrs
+      ((0 (OutsideContext (var ebp) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 16)))
+       (2 (DupVar (var eax) (src (Ref 1)) (typ Int)))
+       (3 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 2)) (offset 28)))
+       (4 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))))
+     (terminator
+      (Branch (succeed (Block 16)) (fail (Block 3)) (condition (Ref 4))))
+     (roots ((Ref 0) (Ref 2) (Ref 3)))) |}]
+
+let%expect_test "shld" =
+  test_trans_block 0x00481fa8;
+  [%expect
+    {|
+    ((id 211)
+     (instrs
+      ((0 (OutsideContext (var ebp) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -92)))
+       (2 (DupVar (var eax) (src (Ref 1)) (typ Int)))
+       (3 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -88)))
+       (4 (DupVar (var ecx) (src (Ref 3)) (typ Int))) (5 (Const __i32 3))
+       (6 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 4)) (rhs (Ref 5))))
+       (7 (Const __i32 29))
+       (8
+        (SignedBiOp (var __i32) (op ShiftRight) (signed false) (lhs (Ref 2))
+         (rhs (Ref 7))))
+       (9 (BiOp (var __i32) (op Or) (lhs (Ref 6)) (rhs (Ref 8))))
+       (10 (DupVar (var ecx) (src (Ref 9)) (typ Int))) (11 (Const __i32 3))
+       (12 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 2)) (rhs (Ref 11))))
+       (13 (DupVar (var eax) (src (Ref 12)) (typ Int)))
+       (14 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 13)) (offset -92)))
+       (15 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 10)) (offset -88)))))
+     (terminator (Goto (Block 217)))
+     (roots ((Ref 0) (Ref 10) (Ref 13) (Ref 14) (Ref 15)))) |}]
+
+let%expect_test "repne scasb" =
+  test_trans_block 0x0047dcc4;
+  [%expect
+    {|
+    ((id 1)
+     (instrs
+      ((0 (OutsideContext (var ecx) (typ Int)))
+       (1 (DupVar (var ebx) (src (Ref 0)) (typ Int)))
+       (2 (OutsideContext (var ebp) (typ Int)))
+       (3 (LoadOp (var __i32) (op Load32) (addr (Ref 2)) (offset 8)))
+       (4 (DupVar (var edi) (src (Ref 3)) (typ Int)))
+       (5 (DupVar (var esi) (src (Ref 4)) (typ Int))) (6 (Const __i32 0))
+       (7 (DupVar (var eax) (src (Ref 6)) (typ Int)))
+       (8 (UniOp (var __i32) (op ZeroExtendLow8) (operand (Ref 7))))
+       (9 (CallOp (func __find_byte__) (args ((Ref 8) (Ref 4) (Ref 0)))))
+       (10 (ReturnedOp (var ecx) (typ Int))) (11 (Const __i32 0))
+       (12 (BiOp (var __i32) (op Subtract) (lhs (Ref 11)) (rhs (Ref 10))))
+       (13 (DupVar (var ecx) (src (Ref 12)) (typ Int)))
+       (14 (BiOp (var __i32) (op Add) (lhs (Ref 13)) (rhs (Ref 1))))
+       (15 (DupVar (var ecx) (src (Ref 14)) (typ Int)))
+       (16 (DupVar (var edi) (src (Ref 5)) (typ Int)))
+       (17 (LoadOp (var __i32) (op Load32) (addr (Ref 2)) (offset 12)))
+       (18 (DupVar (var esi) (src (Ref 17)) (typ Int)))
+       (19 (CallOp (func __byte_diff__) (args ((Ref 18) (Ref 16) (Ref 15)))))
+       (20 (ReturnedOp (var esi) (typ Int)))
+       (21 (ReturnedOp (var edi) (typ Int)))
+       (22 (ReturnedOp (var ecx) (typ Int)))
+       (23 (SignedLoadOp (var __i32) (op Load8) (addr (Ref 20)) (signed false)))
+       (24 (SignedLoadOp (var __i32) (op Load8) (addr (Ref 21)) (signed false)))
+       (25
+        (SignedLoadOp (var __i32) (op Load8) (addr (Ref 20)) (signed false)
+         (offset -1)))
+       (26 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 25))))
+       (27 (BiOp (var eax) (op MergeTruncLow8) (lhs (Ref 26)) (rhs (Ref 7))))
+       (28 (Const __i32 0)) (29 (DupVar (var ecx) (src (Ref 28)) (typ Int)))
+       (30
+        (SignedLoadOp (var __i32) (op Load8) (addr (Ref 21)) (signed false)
+         (offset -1)))
+       (31 (UniOp (var __i32) (op ZeroExtendLow8) (operand (Ref 27))))
+       (32 (UniOp (var __i32) (op ZeroExtendLow8) (operand (Ref 30))))
+       (33
+        (SignedBiOp (var __i32) (op GreaterThan) (signed false) (lhs (Ref 31))
+         (rhs (Ref 32))))
+       (34 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 27))))
+       (35 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 30))))
+       (36 (BiOp (var __i32) (op Equal) (lhs (Ref 34)) (rhs (Ref 35))))
+       (37 (DupVar (var __input_compare_arg__) (src (Ref 36)) (typ Int)))))
+     (terminator
+      (Branch (succeed (Block 4)) (fail (Block 2)) (condition (Ref 33))))
+     (roots
+      ((Ref 0) (Ref 1) (Ref 2) (Ref 9) (Ref 10) (Ref 19) (Ref 20) (Ref 21)
+       (Ref 22) (Ref 27) (Ref 29) (Ref 37)))) |}]
+
+let%expect_test "jecxz" =
+  test_trans_block 0x0047dcb9;
+  [%expect
+    {|
+    ((id 0)
+     (instrs
+      ((0 (OutsideContext (var esp) (typ Int)))
+       (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
+       (2 (OutsideContext (var ebp) (typ Int))) (3 (Const __i32 4))
+       (4 (BiOp (var esp) (op Subtract) (lhs (Ref 0)) (rhs (Ref 3))))
+       (5 (StoreOp (op Store32) (addr (Ref 4)) (value (Ref 2))))
+       (6 (DupVar (var ebp) (src (Ref 4)) (typ Int)))
+       (7 (OutsideContext (var edi) (typ Int))) (8 (Const __i32 4))
+       (9 (BiOp (var esp) (op Subtract) (lhs (Ref 4)) (rhs (Ref 8))))
+       (10 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 7))))
+       (11 (OutsideContext (var esi) (typ Int))) (12 (Const __i32 4))
+       (13 (BiOp (var esp) (op Subtract) (lhs (Ref 9)) (rhs (Ref 12))))
+       (14 (StoreOp (op Store32) (addr (Ref 13)) (value (Ref 11))))
+       (15 (OutsideContext (var ebx) (typ Int))) (16 (Const __i32 4))
+       (17 (BiOp (var esp) (op Subtract) (lhs (Ref 13)) (rhs (Ref 16))))
+       (18 (StoreOp (op Store32) (addr (Ref 17)) (value (Ref 15))))
+       (19 (LoadOp (var __i32) (op Load32) (addr (Ref 6)) (offset 16)))
+       (20 (DupVar (var ecx) (src (Ref 19)) (typ Int)))
+       (21 (UniOp (var __i32) (op EqualsZero) (operand (Ref 20))))))
+     (terminator
+      (Branch (succeed (Block 5)) (fail (Block 1)) (condition (Ref 21))))
+     (roots
+      ((Ref 0) (Ref 1) (Ref 2) (Ref 5) (Ref 6) (Ref 7) (Ref 10) (Ref 11)
+       (Ref 14) (Ref 15) (Ref 17) (Ref 18) (Ref 20)))) |}]
+
+let%expect_test "double fadd" =
+  test_trans_block 0x00444017;
+  [%expect
+    {|
+    ((id 23)
+     (instrs
+      ((0 (Const __i32 6447736))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))
+       (2 (DupVar (var ecx) (src (Ref 1)) (typ Int)))
+       (3 (LoadOp (var __i32) (op Load32) (addr (Ref 2))))
+       (4 (DupVar (var edx) (src (Ref 3)) (typ Int)))
+       (5 (OutsideContext (var ebp) (typ Int)))
+       (6 (StoreOp (op Store32) (addr (Ref 5)) (value (Ref 4)) (offset -156)))
+       (7 (Const __i32 5724880))
+       (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7))))
+       (9 (Const __i32 5724884))
+       (10 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 9))))
+       (11 (BiOp (var __fl) (op FloatDiv) (lhs (Ref 8)) (rhs (Ref 10))))
+       (12 (Const __i32 4819536))
+       (13 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 12))))
+       (14 (BiOp (var __fl) (op FloatSub) (lhs (Ref 11)) (rhs (Ref 13))))
+       (15 (BiOp (var __fl) (op FloatAdd) (lhs (Ref 14)) (rhs (Ref 14))))
+       (16 (StoreOp (op Store32) (addr (Ref 5)) (value (Ref 15)) (offset -20)))
+       (17 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 5)) (offset -20)))
+       (18 (Const __i32 4819532))
+       (19 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 18))))
+       (20 (Landmine (var eax) (typ Int))) (21 (Const __i32 5))
+       (22 (BiOp (var __i32) (op FloatLessThan) (lhs (Ref 17)) (rhs (Ref 19))))
+       (23 (UniOp (var __i32) (op EqualsZero) (operand (Ref 22))))
+       (24 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
+     (terminator
+      (Branch (succeed (Block 25)) (fail (Block 24)) (condition (Ref 23))))
+     (roots ((Ref 2) (Ref 4) (Ref 5) (Ref 6) (Ref 16) (Ref 20) (Ref 24))))
+    |}]
+
 let%expect_test "rcr" =
   test_trans_block 0x00482a92;
   [%expect
@@ -374,7 +745,7 @@ let%expect_test "rep stosd (nonzero)" =
        (4 (BiOp (var __i32) (op Or) (lhs (Ref 2)) (rhs (Ref 3))))
        (5 (DupVar (var eax) (src (Ref 4)) (typ Int))) (6 (Const __i32 5724496))
        (7 (DupVar (var edi) (src (Ref 6)) (typ Int)))
-       (8 (CallOp (func __dword_memset__) (args ((Ref 7) (Ref 5) (Ref 1)))))
+       (8 (CallOp (func __int_memset__) (args ((Ref 7) (Ref 5) (Ref 1)))))
        (9 (Const ecx 0))))
      (terminator (Goto (Block 2)))
      (roots ((Ref 2) (Ref 5) (Ref 7) (Ref 8) (Ref 9)))) |}]
@@ -463,7 +834,7 @@ let%expect_test "repe cmpsd" =
        (9 (DupVar (var edi) (src (Ref 8)) (typ Int))) (10 (Const __i32 5724776))
        (11 (DupVar (var esi) (src (Ref 10)) (typ Int))) (12 (Const __i32 0))
        (13 (DupVar (var eax) (src (Ref 12)) (typ Int)))
-       (14 (CallOp (func __dword_diff__) (args ((Ref 11) (Ref 9) (Ref 1)))))
+       (14 (CallOp (func __int_diff__) (args ((Ref 11) (Ref 9) (Ref 1)))))
        (15 (ReturnedOp (var esi) (typ Int)))
        (16 (ReturnedOp (var edi) (typ Int)))
        (17 (ReturnedOp (var ecx) (typ Int)))
@@ -542,13 +913,13 @@ let%expect_test "fidivr" =
        (37 (BiOp (var __i32) (op And) (lhs (Ref 35)) (rhs (Ref 36))))
        (38 (DupVar (var ecx) (src (Ref 37)) (typ Int)))
        (39 (UniOp (var __i32) (op EqualsZero) (operand (Ref 38))))
-       (40
-        (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))))
+       (40 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 820)) (fail (Block 819)) (condition (Ref 39))))
      (roots
       ((Ref 0) (Ref 8) (Ref 16) (Ref 23) (Ref 27) (Ref 30) (Ref 32) (Ref 38)
-       (Ref 40)))) |}]
+       (Ref 40))))
+    |}]
 
 let%expect_test "tib offset 0" =
   test_trans_block 0x0043009a;
@@ -568,14 +939,12 @@ let%expect_test "tib offset 0" =
        (11 (Const __i32 4768955)) (12 (Const __i32 4))
        (13 (BiOp (var esp) (op Subtract) (lhs (Ref 9)) (rhs (Ref 12))))
        (14 (StoreOp (op Store32) (addr (Ref 13)) (value (Ref 11))))
-       (15
-        (GetGlobalOp (var __i32) (global_name __seh_frame__) (global_type Int)))
+       (15 (GetGlobalOp (var __i32) (global ((name __seh_frame__) (typ Int)))))
        (16 (DupVar (var eax) (src (Ref 15)) (typ Int))) (17 (Const __i32 4))
        (18 (BiOp (var esp) (op Subtract) (lhs (Ref 13)) (rhs (Ref 17))))
        (19 (StoreOp (op Store32) (addr (Ref 18)) (value (Ref 16))))
        (20
-        (SetGlobalOp (global_name __seh_frame__) (value (Ref 18))
-         (global_type Int)))
+        (SetGlobalOp (value (Ref 18)) (global ((name __seh_frame__) (typ Int)))))
        (21 (Const __i32 20))
        (22 (BiOp (var __i32) (op Subtract) (lhs (Ref 18)) (rhs (Ref 21))))
        (23 (DupVar (var esp) (src (Ref 22)) (typ Int)))
@@ -606,7 +975,8 @@ let%expect_test "tib offset 0" =
      (roots
       ((Ref 0) (Ref 1) (Ref 2) (Ref 5) (Ref 6) (Ref 10) (Ref 14) (Ref 15)
        (Ref 19) (Ref 20) (Ref 24) (Ref 25) (Ref 29) (Ref 33) (Ref 34) (Ref 35)
-       (Ref 36) (Ref 37) (Ref 38) (Ref 41) (Ref 42) (Ref 44)))) |}]
+       (Ref 36) (Ref 37) (Ref 38) (Ref 41) (Ref 42) (Ref 44))))
+    |}]
 
 let%expect_test "tail call" =
   test_trans 0x0047d43c;
@@ -705,7 +1075,7 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
        (2 (StoreOp (op Store32) (addr (Ref 1)) (value (Ref 0)) (offset -142)))
        (3 (Const __i32 4820792))
        (4 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 3))))
-       (5 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+       (5 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (6 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 5))))
        (7 (CallOp (func __float_scale__) (args ((Ref 6) (Ref 4)))))
        (8 (ReturnedOp (var __fl) (typ Float)))
@@ -717,7 +1087,8 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
        (14 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 8))))))
      (terminator
       (Branch (succeed (Block 19)) (fail (Block 16)) (condition (Ref 13))))
-     (roots ((Ref 1) (Ref 2) (Ref 5) (Ref 7) (Ref 8) (Ref 12) (Ref 14)))) |}]
+     (roots ((Ref 1) (Ref 2) (Ref 5) (Ref 7) (Ref 8) (Ref 12) (Ref 14))))
+    |}]
 
 let%expect_test "fscale/fabs/fcomp sahf jbe" =
   test_trans_block 0x0048c217;
@@ -729,7 +1100,7 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
        (2 (StoreOp (op Store32) (addr (Ref 1)) (value (Ref 0)) (offset -142)))
        (3 (Const __i32 4820784))
        (4 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 3))))
-       (5 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+       (5 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (6 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 5))))
        (7 (CallOp (func __float_scale__) (args ((Ref 6) (Ref 4)))))
        (8 (ReturnedOp (var __fl) (typ Float)))
@@ -742,7 +1113,8 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
        (15 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 8))))))
      (terminator
       (Branch (succeed (Block 19)) (fail (Block 18)) (condition (Ref 14))))
-     (roots ((Ref 1) (Ref 2) (Ref 5) (Ref 7) (Ref 8) (Ref 12) (Ref 15)))) |}]
+     (roots ((Ref 1) (Ref 2) (Ref 5) (Ref 7) (Ref 8) (Ref 12) (Ref 15))))
+    |}]
 
 let%expect_test "and je" =
   test_trans_block 0x0048c178;
@@ -818,7 +1190,7 @@ let%expect_test "fsqrt" =
     {|
     ((id 6)
      (instrs
-      ((0 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+      ((0 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (1 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0))))
        (2 (CallOp (func __float_sqrt__) (args ((Ref 1)))))
        (3 (ReturnedOp (var __fl) (typ Float))) (4 (Const __i32 4819540))
@@ -841,12 +1213,12 @@ let%expect_test "fsqrt" =
        (21 (Const __i32 -8))
        (22 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 21))))
        (23
-        (SetGlobalOp (global_name __fpuStack__) (value (Ref 22))
-         (global_type Int)))))
+        (SetGlobalOp (value (Ref 22)) (global ((name __fpuStack__) (typ Int)))))))
      (terminator (Goto (Block 3)))
      (roots
       ((Ref 0) (Ref 2) (Ref 3) (Ref 7) (Ref 10) (Ref 11) (Ref 14) (Ref 19)
-       (Ref 20) (Ref 23)))) |}]
+       (Ref 20) (Ref 23))))
+    |}]
 
 let%expect_test "movsd" =
   test_trans_block 0x00461f64;
@@ -884,7 +1256,7 @@ let%expect_test "sbb" =
     {|
     ((id 3)
      (instrs
-      ((0 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+      ((0 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (1 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0))))
        (2 (OutsideContext (var esp) (typ Int)))
        (3 (StoreOp (op Store32) (addr (Ref 2)) (value (Ref 1))))
@@ -910,11 +1282,11 @@ let%expect_test "sbb" =
        (21 (DupVar (var edx) (src (Ref 20)) (typ Int))) (22 (Const __i32 -8))
        (23 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 22))))
        (24
-        (SetGlobalOp (global_name __fpuStack__) (value (Ref 23))
-         (global_type Int)))))
+        (SetGlobalOp (value (Ref 23)) (global ((name __fpuStack__) (typ Int)))))))
      (terminator (Goto (Block 6)))
      (roots
-      ((Ref 0) (Ref 2) (Ref 3) (Ref 8) (Ref 12) (Ref 14) (Ref 21) (Ref 24)))) |}]
+      ((Ref 0) (Ref 2) (Ref 3) (Ref 8) (Ref 12) (Ref 14) (Ref 21) (Ref 24))))
+    |}]
 
 let%expect_test "adc" =
   test_trans_block 0x0048b8db;
@@ -922,7 +1294,7 @@ let%expect_test "adc" =
     {|
     ((id 2)
      (instrs
-      ((0 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+      ((0 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (1 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0))))
        (2 (OutsideContext (var esp) (typ Int)))
        (3 (StoreOp (op Store32) (addr (Ref 2)) (value (Ref 1))))
@@ -951,11 +1323,11 @@ let%expect_test "adc" =
        (24 (DupVar (var edx) (src (Ref 23)) (typ Int))) (25 (Const __i32 -8))
        (26 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 25))))
        (27
-        (SetGlobalOp (global_name __fpuStack__) (value (Ref 26))
-         (global_type Int)))))
+        (SetGlobalOp (value (Ref 26)) (global ((name __fpuStack__) (typ Int)))))))
      (terminator (Goto (Block 6)))
      (roots
-      ((Ref 0) (Ref 2) (Ref 3) (Ref 11) (Ref 15) (Ref 17) (Ref 24) (Ref 27)))) |}]
+      ((Ref 0) (Ref 2) (Ref 3) (Ref 11) (Ref 15) (Ref 17) (Ref 24) (Ref 27))))
+    |}]
 
 let%expect_test "test reflexive jns" =
   test_trans_block 0x0048b8c7;
@@ -963,7 +1335,7 @@ let%expect_test "test reflexive jns" =
     {|
     ((id 1)
      (instrs
-      ((0 (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+      ((0 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (1 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0))))
        (2 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0)) (offset -8)))
        (3 (BiOp (var __fl) (op FloatSub) (lhs (Ref 2)) (rhs (Ref 1))))
@@ -975,11 +1347,11 @@ let%expect_test "test reflexive jns" =
        (8 (Const __i32 -8))
        (9 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 8))))
        (10
-        (SetGlobalOp (global_name __fpuStack__) (value (Ref 9))
-         (global_type Int)))))
+        (SetGlobalOp (value (Ref 9)) (global ((name __fpuStack__) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 3)) (fail (Block 2)) (condition (Ref 6))))
-     (roots ((Ref 0) (Ref 4) (Ref 7) (Ref 10)))) |}]
+     (roots ((Ref 0) (Ref 4) (Ref 7) (Ref 10))))
+    |}]
 
 let%expect_test "fistp" =
   test_trans_block 0x0048b8af;
@@ -998,8 +1370,7 @@ let%expect_test "fistp" =
        (10 (Const __i32 4294967280))
        (11 (BiOp (var __i32) (op And) (lhs (Ref 9)) (rhs (Ref 10))))
        (12 (DupVar (var esp) (src (Ref 11)) (typ Int)))
-       (13
-        (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+       (13 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (14 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 13))))
        (15 (StoreOp (op Store32) (addr (Ref 12)) (value (Ref 14)) (offset 24)))
        (16 (UniOp (var __i64) (op FloatToLong) (operand (Ref 14))))
@@ -1018,13 +1389,13 @@ let%expect_test "fistp" =
        (27 (Const __i32 8))
        (28 (BiOp (var __i32) (op Add) (lhs (Ref 13)) (rhs (Ref 27))))
        (29
-        (SetGlobalOp (global_name __fpuStack__) (value (Ref 28))
-         (global_type Int)))))
+        (SetGlobalOp (value (Ref 28)) (global ((name __fpuStack__) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 4)) (fail (Block 1)) (condition (Ref 24))))
      (roots
       ((Ref 0) (Ref 1) (Ref 2) (Ref 5) (Ref 6) (Ref 12) (Ref 13) (Ref 15)
-       (Ref 17) (Ref 21) (Ref 23) (Ref 25) (Ref 26) (Ref 29)))) |}]
+       (Ref 17) (Ref 21) (Ref 23) (Ref 25) (Ref 26) (Ref 29))))
+    |}]
 
 let%expect_test "dec/dec js" =
   test_trans_block 0x0047d173;
@@ -1120,38 +1491,35 @@ let%expect_test "fsubr" =
        (50 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -12)))
        (51 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -12)))
        (52 (BiOp (var __fl) (op FloatMult) (lhs (Ref 50)) (rhs (Ref 51))))
-       (53 (BiOp (var __fl) (op FloatAdd) (lhs (Ref 52)) (rhs (Ref 49))))
+       (53 (BiOp (var __fl) (op FloatAdd) (lhs (Ref 49)) (rhs (Ref 52))))
        (54 (Const __i32 4)) (55 (OutsideContext (var esp) (typ Int)))
        (56 (BiOp (var esp) (op Subtract) (lhs (Ref 55)) (rhs (Ref 54))))
        (57 (Const __i32 4212587))
        (58 (StoreOp (op Store32) (addr (Ref 56)) (value (Ref 57))))
-       (59
-        (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+       (59 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (60
-        (StoreOp (op FloatStore64) (addr (Ref 59)) (value (Ref 49)) (offset 8)))
-       (61
-        (StoreOp (op FloatStore64) (addr (Ref 59)) (value (Ref 53)) (offset 16)))
-       (62 (Const __i32 16))
-       (63 (BiOp (var __i32) (op Add) (lhs (Ref 59)) (rhs (Ref 62))))
-       (64
-        (SetGlobalOp (global_name __fpuStack__) (value (Ref 63))
-         (global_type Int)))
-       (65 (CallOp (func __func48b8a0__) (args ((Ref 34) (Ref 56) (Ref 41)))))
-       (66 (ReturnedOp (var eax) (typ Int)))
-       (67 (ReturnedOp (var esp) (typ Int)))
-       (68 (ReturnedOp (var edx) (typ Int)))
-       (69 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 66)) (offset -8)))
-       (70 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -8)))
-       (71 (Const __i32 4096))
-       (72
-        (SignedBiOp (var __i32) (op LessThanEqual) (signed true) (lhs (Ref 70))
-         (rhs (Ref 71))))))
+        (StoreOp (op FloatStore64) (addr (Ref 59)) (value (Ref 53)) (offset 8)))
+       (61 (Const __i32 8))
+       (62 (BiOp (var __i32) (op Add) (lhs (Ref 59)) (rhs (Ref 61))))
+       (63
+        (SetGlobalOp (value (Ref 62)) (global ((name __fpuStack__) (typ Int)))))
+       (64 (CallOp (func __func48b8a0__) (args ((Ref 34) (Ref 56) (Ref 41)))))
+       (65 (ReturnedOp (var eax) (typ Int)))
+       (66 (ReturnedOp (var esp) (typ Int)))
+       (67 (ReturnedOp (var edx) (typ Int)))
+       (68 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 65)) (offset -8)))
+       (69 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -8)))
+       (70 (Const __i32 4096))
+       (71
+        (SignedBiOp (var __i32) (op LessThanEqual) (signed true) (lhs (Ref 69))
+         (rhs (Ref 70))))))
      (terminator
-      (Branch (succeed (Block 9)) (fail (Block 8)) (condition (Ref 72))))
+      (Branch (succeed (Block 9)) (fail (Block 8)) (condition (Ref 71))))
      (roots
       ((Ref 0) (Ref 9) (Ref 18) (Ref 25) (Ref 32) (Ref 34) (Ref 39) (Ref 46)
-       (Ref 55) (Ref 58) (Ref 59) (Ref 60) (Ref 61) (Ref 64) (Ref 65) (Ref 66)
-       (Ref 67) (Ref 68) (Ref 69)))) |}]
+       (Ref 55) (Ref 58) (Ref 59) (Ref 60) (Ref 63) (Ref 64) (Ref 65) (Ref 66)
+       (Ref 67) (Ref 68))))
+    |}]
 
 let%expect_test "rep movsd" =
   test_trans_block 0x00403ad5;
@@ -1228,11 +1596,11 @@ let%expect_test "fabs" =
        (23 (Landmine (var eax) (typ Int))) (24 (Const __i32 5))
        (25 (BiOp (var __i32) (op FloatLessThan) (lhs (Ref 20)) (rhs (Ref 22))))
        (26 (UniOp (var __i32) (op EqualsZero) (operand (Ref 25))))
-       (27
-        (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))))
+       (27 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 25)) (fail (Block 24)) (condition (Ref 26))))
-     (roots ((Ref 0) (Ref 7) (Ref 16) (Ref 18) (Ref 19) (Ref 23) (Ref 27)))) |}]
+     (roots ((Ref 0) (Ref 7) (Ref 16) (Ref 18) (Ref 19) (Ref 23) (Ref 27))))
+    |}]
 
 let%expect_test "jae" =
   test_trans_block 0x004027fc;
@@ -1352,15 +1720,13 @@ let%expect_test "fild/fiadd" =
        (29 (BiOp (var esp) (op Subtract) (lhs (Ref 28)) (rhs (Ref 27))))
        (30 (Const __i32 4537877))
        (31 (StoreOp (op Store32) (addr (Ref 29)) (value (Ref 30))))
-       (32
-        (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+       (32 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (33
         (StoreOp (op FloatStore64) (addr (Ref 32)) (value (Ref 26)) (offset 8)))
        (34 (Const __i32 8))
        (35 (BiOp (var __i32) (op Add) (lhs (Ref 32)) (rhs (Ref 34))))
        (36
-        (SetGlobalOp (global_name __fpuStack__) (value (Ref 35))
-         (global_type Int)))
+        (SetGlobalOp (value (Ref 35)) (global ((name __fpuStack__) (typ Int)))))
        (37 (CallOp (func __func48b8a0__) (args ((Ref 22) (Ref 29) (Ref 10)))))
        (38 (ReturnedOp (var eax) (typ Int)))
        (39 (ReturnedOp (var esp) (typ Int)))
@@ -1372,7 +1738,8 @@ let%expect_test "fild/fiadd" =
      (terminator (Goto (Block 513)))
      (roots
       ((Ref 0) (Ref 13) (Ref 22) (Ref 23) (Ref 28) (Ref 31) (Ref 32) (Ref 33)
-       (Ref 36) (Ref 37) (Ref 38) (Ref 39) (Ref 40) (Ref 42) (Ref 44)))) |}]
+       (Ref 36) (Ref 37) (Ref 38) (Ref 39) (Ref 40) (Ref 42) (Ref 44))))
+    |}]
 
 let%expect_test "div" =
   test_trans_block 0x00452f62;
@@ -1441,8 +1808,7 @@ let%expect_test "fdiv" =
        (30 (BiOp (var esp) (op Subtract) (lhs (Ref 25)) (rhs (Ref 29))))
        (31 (Const __i32 4532585))
        (32 (StoreOp (op Store32) (addr (Ref 30)) (value (Ref 31))))
-       (33
-        (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))
+       (33 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
        (34 (CallOp (func __func450c10__) (args ((Ref 28) (Ref 30) (Ref 11)))))
        (35 (ReturnedOp (var eax) (typ Int)))
        (36 (ReturnedOp (var esp) (typ Int)))
@@ -1453,7 +1819,8 @@ let%expect_test "fdiv" =
      (terminator (Goto (Block 481)))
      (roots
       ((Ref 0) (Ref 4) (Ref 6) (Ref 9) (Ref 14) (Ref 18) (Ref 26) (Ref 28)
-       (Ref 32) (Ref 33) (Ref 34) (Ref 35) (Ref 36) (Ref 37) (Ref 39) (Ref 40)))) |}]
+       (Ref 32) (Ref 33) (Ref 34) (Ref 35) (Ref 36) (Ref 37) (Ref 39) (Ref 40))))
+    |}]
 
 let%expect_test "cdq/idiv" =
   test_trans_block 0x004529e3;
@@ -1551,11 +1918,11 @@ let%expect_test "float jp 0x5" =
        (6 (Landmine (var eax) (typ Int))) (7 (Const __i32 5))
        (8 (BiOp (var __i32) (op FloatLessThan) (lhs (Ref 3)) (rhs (Ref 5))))
        (9 (UniOp (var __i32) (op EqualsZero) (operand (Ref 8))))
-       (10
-        (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))))
+       (10 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 150)) (fail (Block 149)) (condition (Ref 9))))
-     (roots ((Ref 0) (Ref 2) (Ref 6) (Ref 10)))) |}]
+     (roots ((Ref 0) (Ref 2) (Ref 6) (Ref 10))))
+    |}]
 
 let%expect_test "jle" =
   test_trans_block 0x004536f0;
@@ -2432,8 +2799,7 @@ let%expect_test _ =
            (BiOp (var __i32) (op FloatLessThanEqual) (lhs (Ref 14))
             (rhs (Ref 16))))
           (20 (UniOp (var __i32) (op EqualsZero) (operand (Ref 19))))
-          (21
-           (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))))
+          (21 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 4)) (fail (Block 1)) (condition (Ref 20))))
         (roots
@@ -2462,8 +2828,7 @@ let%expect_test _ =
            (BiOp (var __i32) (op FloatGreaterThanEqual) (lhs (Ref 13))
             (rhs (Ref 15))))
           (19 (UniOp (var __i32) (op EqualsZero) (operand (Ref 18))))
-          (20
-           (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))))
+          (20 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 3)) (fail (Block 2)) (condition (Ref 19))))
         (roots ((Ref 0) (Ref 4) (Ref 10) (Ref 16) (Ref 20))))
@@ -2488,8 +2853,7 @@ let%expect_test _ =
           (17 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 12)))
           (18 (DupVar (var eax) (src (Ref 17)) (typ Int)))
           (19 (StoreOp (op Store32) (addr (Ref 18)) (value (Ref 16))))
-          (20
-           (GetGlobalOp (var __i32) (global_name __fpuStack__) (global_type Int)))))
+          (20 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
         (terminator (Goto (Block 3)))
         (roots ((Ref 0) (Ref 9) (Ref 10) (Ref 18) (Ref 19) (Ref 20))))
        ((id 3) (instrs ()) (terminator (Goto (Block 5))) (roots ()))
@@ -2522,4 +2886,5 @@ let%expect_test _ =
       ((__ret_addr__ ((name __ret_addr__) (typ Int)))
        (eax ((name eax) (typ Int))) (ebp ((name ebp) (typ Int)))
        (ecx ((name ecx) (typ Int))) (edx ((name edx) (typ Int)))
-       (esp ((name esp) (typ Int)))))) |}]
+       (esp ((name esp) (typ Int))))))
+    |}]

@@ -34,11 +34,11 @@ let x86_segment_reg_of_yojson = function
 
 type mem_operand = {
   size : int;
-  base : X86reg.t option;
-  index : X86reg.t option;
+  base : X86reg.t option;[@sexp.omit_nil]
+  index : X86reg.t option;[@sexp.omit_nil]
   scale : int;
   displacement : int;
-  segment : x86_segment_reg option;
+  segment : x86_segment_reg option; [@sexp.omit_nil]
 }
 [@@deriving sexp, equal]
 
@@ -115,7 +115,7 @@ let opcode_of_basic_opcode (basic : Basic.basic_opcode) =
 
 let opcode_prefix_none = 0
 let opcode_prefix_rep = 1 lsl 1
-let opcode_prefix_repne = 1 lsr 2
+let opcode_prefix_repne = 1 lsl 2
 
 type jump_table_case = { value : int; jump : int }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]

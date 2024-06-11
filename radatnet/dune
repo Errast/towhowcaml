@@ -23,5 +23,5 @@
   (language c)
   (names stubs)
   (flags
-   (:standard -I /usr/include/libr)))
+   (:standard -I /usr/include/libr -I /usr/include/capstone)))
  (c_library_flags (-lr_core -lr_util -lr_arch -lr_anal -lr_io)))

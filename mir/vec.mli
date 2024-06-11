@@ -13,6 +13,6 @@ val copy : 'a t -> 'a t
 val to_perm_array : 'a t -> ('a, [< 'b perms ]) Array.Permissioned.t
 
 include
-  Indexed_container.Generic with type ('a, _) t := 'a t and type 'a elt := 'a
+  Indexed_container.Generic with type ('a, _, _) t := 'a t and type 'a elt := 'a
 
 include Sexpable.S1 with type 'a t := 'a t

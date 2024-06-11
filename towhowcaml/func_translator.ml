@@ -34,15 +34,25 @@ type context = {
   inverted_cfg : int list array;
   raw_blocks : block array;
   trap_block : branch_target option;
+  call_0x483d4e_block : branch_target option;
+  call_0x47dcf0_block : branch_target option;
 }
 [@@deriving sexp_of]
 
 let offset_to_block_id c offset =
-  AP.binary_search c.raw_blocks
-    ~compare:(fun b o -> compare_int b.offset o)
-    `First_equal_to offset
-  |> Option.value_or_thunk ~default:(fun () ->
-         raise_s [%message "offset not found" (offset : int)])
+  match offset with
+  | 0x483d4e ->
+      let[@warning "-8"] (Some (Block id)) = c.call_0x483d4e_block in
+      id
+  | 0x47dcf0 ->
+      let[@warning "-8"] (Some (Block id)) = c.call_0x47dcf0_block in
+      id
+  | _ ->
+      AP.binary_search c.raw_blocks
+        ~compare:(fun b o -> compare_int b.offset o)
+        `First_equal_to offset
+      |> Option.value_or_thunk ~default:(fun () ->
+             raise_s [%message "offset not found" (offset : int)])
 
 let add_block_branches c id (block : block) =
   let add_branch b =
@@ -81,9 +91,12 @@ let translate_block c id block =
     else
       let term_op = AP.last block.ops in
       let block_term = block.terminator in
+      let tail_position =
+        match block_term with Return _ -> true | _ -> false
+      in
       let term_found =
         Instr_translator.translate_terminator c.intrinsics builder state term_op
-          ~tail_position:Poly.(block_term = Return)
+          ~tail_position
       in
       match (term_found, block_term) with
       | Nothing, Goto next_addr ->
@@ -218,26 +231,72 @@ let to_mir_block used_locals b =
   in
   Block.{ id = b.id; terminator = b.terminator; instrs; roots }
 
+let add_opt_block blocks f block =
+  if AP.exists ~f !blocks then (
+    let id = AP.length !blocks in
+    blocks := AP.append !blocks block;
+    Some (Block id))
+  else None
+
 let trap_block_arr =
+  [| { offset = Int.max_value; terminator = Trap; ops = [||] } |]
+
+let call_0x483d4e_block_arr =
   [|
     {
       offset = Int.max_value;
-      terminator = Trap;
-      ops = AP.init 0 ~f:(fun _ -> failwith "");
+      terminator = Return;
+      ops =
+        [|
+          {
+            id = JMP;
+            opex = { operands = [ Immediate { value = 0x483d4e; size = 4 } ] };
+            prefix = 0;
+            address = Int.max_value;
+          };
+        |];
+    };
+  |]
+
+let call_0x47dcf0_block_arr =
+  [|
+    {
+      offset = Int.max_value;
+      terminator = Return;
+      ops =
+        [|
+          {
+            id = JMP;
+            opex = { operands = [ Immediate { value = 0x47dcf0; size = 4 } ] };
+            prefix = 0;
+            address = Int.max_value;
+          };
+        |];
     };
   |]
 
 let translate ~intrinsics ~name ~(blocks : block array) =
-  let trap_block, blocks =
-    if
-      AP.exists
-        ~f:(function { terminator = Switch _; _ } -> true | _ -> false)
-        blocks
-    then
-      let id = AP.length blocks in
-      (Some (Block id), AP.append blocks trap_block_arr)
-    else (None, blocks)
+  let blocks = ref blocks in
+  let trap_block =
+    add_opt_block blocks
+      (function { terminator = Switch _; _ } -> true | _ -> false)
+      trap_block_arr
   in
+  let call_0x483d4e_block =
+    add_opt_block blocks
+      (function
+        | { terminator = Branch { succeed = 0x483d4e; _ }; _ } -> true
+        | _ -> false)
+      call_0x483d4e_block_arr
+  in
+  let call_0x47dcf0_block =
+    add_opt_block blocks
+      (function
+        | { terminator = Branch { succeed = 0x47dcf0; _ }; _ } -> true
+        | _ -> false)
+      call_0x47dcf0_block_arr
+  in
+  let blocks = !blocks in
   let num_blocks = AP.length blocks in
   let inverted_cfg = AP.create ~len:num_blocks [] in
   if
@@ -247,7 +306,16 @@ let translate ~intrinsics ~name ~(blocks : block array) =
          blocks
   then raise_s [%message "blocks not sorted" (name : ident)];
 
-  let c = { inverted_cfg; intrinsics; trap_block; raw_blocks = blocks } in
+  let c =
+    {
+      inverted_cfg;
+      intrinsics;
+      trap_block;
+      call_0x483d4e_block;
+      call_0x47dcf0_block;
+      raw_blocks = blocks;
+    }
+  in
   AP.foldi ~f:(fun i () b -> add_block_branches c i b) ~init:() blocks;
   let block_data = AP.mapi ~f:(translate_block c) c.raw_blocks in
   AP.iter ~f:(add_input_blocks c.inverted_cfg block_data) block_data;

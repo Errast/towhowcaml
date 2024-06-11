@@ -1523,6 +1523,9 @@ type t =
   | XSHA256
   | XSTORE
   | XTEST
+  (* extras *)
+  | FADDP
+  | CMPLTPD
 [@@deriving sexp, hash, compare]
 
 let t_of_int = function
@@ -3049,6 +3052,8 @@ let t_of_int = function
   | 1521 -> XSHA256
   | 1522 -> XSTORE
   | 1523 -> XTEST
+  | 1524 -> FADDP
+  | 1525 -> CMPLTPD
   | num -> failwith @@ "invalid X86_instr id: " ^ string_of_int num
 
 let t_of_yojson = function

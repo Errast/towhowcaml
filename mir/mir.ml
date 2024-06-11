@@ -8,4 +8,5 @@ module Vec = Vec
 module Func = Func
 module Instr_list = Instr_list
 
-let float_size = 8
+let float_size : [ `Single | `Double ] = `Double
+let int_of_float_size = match float_size with `Single -> 4 | `Double -> 8

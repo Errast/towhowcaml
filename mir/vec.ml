@@ -61,7 +61,7 @@ let foldi vec ~init ~f =
 let fold vec ~init ~f = foldi vec ~init ~f:(fun _ acc x -> f acc x)
 
 include Indexed_container.Make_gen (struct
-  type nonrec ('a, _) t = 'a t
+  type nonrec ('a, _, _) t = 'a t
   type 'a elt = 'a
 
   let length = `Custom length

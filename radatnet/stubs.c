@@ -3,6 +3,8 @@
 #include <caml/memory.h>
 #include <caml/custom.h>
 #include <r_core.h>
+#include <x86.h>
+#include <stdint.h>
 
 void radatnet_core_free(value core) {
 	r_core_free(*((void**) Data_custom_val(core)));
@@ -44,14 +46,37 @@ value radatnet_core_cmd_str_at(value core, value address, value string) {
   CAMLreturn(actual_result);
 }
 
+enum x86_insn_extensions {
+	X86_INS_FADDP = 1524,
+  X86_INS_CMPLTPD
+};
+
 value radatnet_core_anal_op(value core, value address) {
   CAMLparam2(core, address);
   CAMLlocal2(opex, op_value);
-  RCore *core_ptr=  *((RCore**) Data_custom_val(core));
-  char buffer[15];
+  RCore *core_ptr =  *((RCore**) Data_custom_val(core));
+  uint8_t buffer[15];
   r_io_read_at(core_ptr->io, Long_val(address), buffer, sizeof(buffer));
   RAnalOp op;
   r_anal_op(core_ptr->anal, &op, Long_val(address), buffer, sizeof(buffer), R_ARCH_OP_MASK_OPEX);
+
+  switch(op.id) {
+  	case X86_INS_FADD:
+  		if(buffer[0] == 0xDE) {
+  			op.id = X86_INS_FADDP;
+  		}
+  		break;
+  	case X86_INS_CMPPS:
+  		if(buffer[0] == 0x66) {
+  			switch(buffer[op.size - 1]) {
+  				case 1:
+  					op.id = X86_INS_CMPLTPD;
+  					break;
+  			}
+  		}
+  		break;
+  }
+   
   opex = caml_alloc_initialized_string(op.opex.len, R_STRBUF_SAFEGET(&op.opex));
   op_value = caml_alloc_small(4,0);
   Field(op_value, 0) = Val_long(op.addr);

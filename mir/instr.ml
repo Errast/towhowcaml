@@ -95,7 +95,7 @@ type bi_op =
   | VecMulAdd16Bit
 [@@deriving sexp]
 
-type vec_lane_bi_op = VecSub | VecShiftLeft | VecLaneEqual | VecAdd | VecMul
+type vec_lane_bi_op = VecSub | VecLaneEqual | VecAdd | VecMul
 [@@deriving sexp]
 
 type signed_bi_op =
@@ -123,7 +123,6 @@ type signed_bi_op =
 [@@deriving sexp]
 
 type signed_vec_lane_bi_op =
-  | VecShiftRight
   | VecMax
   | VecMin
   | VecLessThan
@@ -187,6 +186,20 @@ type t =
       lhs : Ref.t;
       rhs : Ref.t;
     }
+  | VecShiftLeftOp of {
+      var : Variable.t;
+      operand : Ref.t;
+      count : Ref.t;
+      shape : int_vec_lane_shape;
+    }
+  | VecShiftRightOp of {
+      var : Variable.t;
+      operand : Ref.t;
+      count : Ref.t;
+      shape : int_vec_lane_shape;
+      signed : bool;
+    }
+  | VecSplatOp of { var : Variable.t; value : Ref.t; shape : vec_lane_shape }
   | VecExtractLaneOp of {
       var : Variable.t;
       src : Ref.t;
@@ -231,11 +244,7 @@ type t =
   | CallOp of { func : ident; args : Ref.t list }
   | CallIndirectOp of { table_index : Ref.t; args : Ref.t list }
   | ReturnedOp of { var : Variable.t; typ : local_type }
-  | GetGlobalOp of {
-      var : Variable.t;
-      global_name : ident;
-      global_type : local_type;
-    }
+  | GetGlobalOp of { var : Variable.t; global : variable }
   | OutsideContext of { var : Variable.t; typ : local_type }
   | Landmine of { var : Variable.t; typ : local_type }
   | StoreOp of {
@@ -251,11 +260,7 @@ type t =
       lane : int;
       offset : int; [@default 0] [@sexp_drop_default.equal]
     }
-  | SetGlobalOp of {
-      global_name : ident;
-      value : Ref.t;
-      global_type : local_type;
-    }
+  | SetGlobalOp of { value : Ref.t; global : variable }
   | AssertOp of { condition : Ref.t }
   | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
   | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t }
@@ -307,6 +312,7 @@ let value_type = function
       | LongDivide | LongRemainder | LongShiftRight | LongRotateRight -> Long
       | VecNarrow16Bit | VecNarrow32Bit -> Vec)
   | SignedVecLaneBiOp _ -> Vec
+  | VecSplatOp _ | VecShiftLeftOp _ | VecShiftRightOp _ -> Vec
   | VecExtractLaneOp { shape; _ } -> local_type_of_lane_shape shape
   | VecReplaceLaneOp _ -> Vec
   | VecShuffleOp _ -> Vec
@@ -319,7 +325,7 @@ let value_type = function
   | SignedLoadOp { op = Load8 | Load16; _ } -> Int
   | VecLoadLaneOp _ -> Vec
   | ReturnedOp { typ; _ } -> typ
-  | GetGlobalOp { global_type; _ } -> global_type
+  | GetGlobalOp { global; _ } -> global.typ
   | OutsideContext { typ; _ } -> typ
   | Landmine { typ; _ } -> typ
   | _ -> raise @@ Invalid_argument "Instruction doesn't evaluate to a value"
@@ -336,6 +342,9 @@ let replace_var instr var =
   | VecLaneBiOp v -> VecLaneBiOp { v with var }
   | SignedBiOp v -> SignedBiOp { v with var }
   | SignedVecLaneBiOp v -> SignedVecLaneBiOp { v with var }
+  | VecShiftLeftOp v -> VecShiftLeftOp { v with var }
+  | VecShiftRightOp v -> VecShiftRightOp { v with var }
+  | VecSplatOp v -> VecSplatOp { v with var }
   | VecExtractLaneOp v -> VecExtractLaneOp { v with var }
   | VecReplaceLaneOp v -> VecReplaceLaneOp { v with var }
   | VecShuffleOp v -> VecShuffleOp { v with var }
@@ -367,8 +376,14 @@ let replace_instr_ref t ~from ~into =
   | SignedVecLaneBiOp v when v.lhs <> from && v.rhs <> from -> t
   | SignedVecLaneBiOp v ->
       SignedVecLaneBiOp { v with lhs = swap v.lhs; rhs = swap v.rhs }
+  | VecShiftLeftOp v when v.operand <> from && v.count <> from -> t
+  | VecShiftLeftOp v -> VecShiftLeftOp { v with operand = swap v.operand; count = swap v.count }
+  | VecShiftRightOp v when v.operand <> from && v.count <> from -> t
+  | VecShiftRightOp v -> VecShiftRightOp { v with operand = swap v.operand; count = swap v.count }
+  | VecSplatOp v when v.value <> from -> t
+  | VecSplatOp v -> VecSplatOp { v with value = swap v.value }
   | VecExtractLaneOp v when v.src <> from -> t
-  | VecExtractLaneOp v -> VecExtractLaneOp { v with src = into }
+  | VecExtractLaneOp v -> VecExtractLaneOp { v with src = swap v.src }
   | VecReplaceLaneOp v when v.dest <> from && v.lane_value <> from -> t
   | VecReplaceLaneOp v ->
       VecReplaceLaneOp
@@ -415,8 +430,8 @@ let replace_instr_ref t ~from ~into =
 let is_pure = function
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | DupVar _ | UniOp _
   | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _ | LoadOp _
-  | SignedLoadOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _ | VecShuffleOp _
-  | VecLoadLaneOp _ | Landmine _ ->
+  | SignedLoadOp _ | VecShiftLeftOp _ | VecShiftRightOp _  | VecSplatOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _
+  | VecShuffleOp _ | VecLoadLaneOp _ | Landmine _ ->
       true
   | CallOp _ | CallIndirectOp _ | ReturnedOp _ | GetGlobalOp _
   | OutsideContext _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Memset _
@@ -426,9 +441,9 @@ let is_pure = function
 let is_assignment = function
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | DupVar _ | UniOp _
   | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _ | LoadOp _
-  | SignedLoadOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _ | VecShuffleOp _
-  | VecLoadLaneOp _ | ReturnedOp _ | GetGlobalOp _ | OutsideContext _
-  | Landmine _ ->
+  | SignedLoadOp _  | VecShiftLeftOp _ | VecShiftRightOp _ | VecSplatOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _
+  | VecShuffleOp _ | VecLoadLaneOp _ | ReturnedOp _ | GetGlobalOp _
+  | OutsideContext _ | Landmine _ ->
       true
   | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _
   | Unreachable | SetGlobalOp _ | Memset _ | Memcopy _ ->
@@ -445,6 +460,9 @@ let assignment_var = function
   | VecLaneBiOp { var; _ }
   | SignedBiOp { var; _ }
   | SignedVecLaneBiOp { var; _ }
+  | VecShiftLeftOp { var;_}
+  | VecShiftRightOp { var;_}
+  | VecSplatOp { var; _ }
   | VecExtractLaneOp { var; _ }
   | VecReplaceLaneOp { var; _ }
   | VecShuffleOp { var; _ }

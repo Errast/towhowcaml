@@ -92,7 +92,7 @@ type bi_op =
   | VecMulAdd16Bit
 [@@deriving sexp]
 
-type vec_lane_bi_op = VecSub | VecShiftLeft | VecLaneEqual | VecAdd | VecMul
+type vec_lane_bi_op = VecSub | VecLaneEqual | VecAdd | VecMul
 [@@deriving sexp]
 
 type signed_bi_op =
@@ -120,7 +120,6 @@ type signed_bi_op =
 [@@deriving sexp]
 
 type signed_vec_lane_bi_op =
-  | VecShiftRight
   | VecMax
   | VecMin
   | VecLessThan
@@ -184,6 +183,20 @@ type t =
       lhs : Ref.t;
       rhs : Ref.t;
     }
+  | VecShiftLeftOp of {
+      var : Variable.t;
+      operand : Ref.t;
+      count : Ref.t;
+      shape : int_vec_lane_shape;
+    }
+  | VecShiftRightOp of {
+      var : Variable.t;
+      operand : Ref.t;
+      count : Ref.t;
+      shape : int_vec_lane_shape;
+      signed : bool;
+    }
+  | VecSplatOp of { var : Variable.t; value : Ref.t; shape : vec_lane_shape }
   | VecExtractLaneOp of {
       var : Variable.t;
       src : Ref.t;
@@ -223,11 +236,7 @@ type t =
   | CallOp of { func : ident; args : Ref.t list }
   | CallIndirectOp of { table_index : Ref.t; args : Ref.t list }
   | ReturnedOp of { var : Variable.t; typ : local_type }
-  | GetGlobalOp of {
-      var : Variable.t;
-      global_name : ident;
-      global_type : local_type;
-    }
+  | GetGlobalOp of { var : Variable.t; global : variable }
   | OutsideContext of { var : Variable.t; typ : local_type }
   | Landmine of { var : Variable.t; typ : local_type }
   | StoreOp of { op : store_op; addr : Ref.t; value : Ref.t; offset : int }
@@ -238,17 +247,14 @@ type t =
       lane : int;
       offset : int;
     }
-  | SetGlobalOp of {
-      global_name : ident;
-      value : Ref.t;
-      global_type : local_type;
-    }
+  | SetGlobalOp of { value : Ref.t; global : variable }
   | AssertOp of { condition : Ref.t }
   | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
   | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t }
   | Unreachable
 [@@deriving sexp]
 
+val local_type_of_lane_shape : vec_lane_shape -> local_type
 val value_type : t -> local_type
 val replace_var : t -> Variable.t -> t
 val replace_instr_ref : t -> from:Ref.t -> into:Ref.t -> t

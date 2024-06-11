@@ -52,14 +52,22 @@ type signed_bi_op_add =
   signed:bool ->
   Instr.ref
 
-type signed_vec_lane_bi_op_add =
+(* the signed tag does nothing for float shapes *)
+type (_, _) vec_lane_shape_signed =
+  | I8 : ([> `I8 ], signed:bool -> Instr.ref) vec_lane_shape_signed
+  | I16 : ([> `I16 ], signed:bool -> Instr.ref) vec_lane_shape_signed
+  | I32 : ([> `I32 ], signed:bool -> Instr.ref) vec_lane_shape_signed
+  | I64 : ([> `I64 ], signed:bool -> Instr.ref) vec_lane_shape_signed
+  | F32 : ([> `F32 ], Instr.ref) vec_lane_shape_signed
+  | F64 : ([> `F64 ], Instr.ref) vec_lane_shape_signed
+
+type ('r,'s) signed_vec_lane_bi_op_add =
+  shape:('r, 's) vec_lane_shape_signed ->
   ?varName:ident ->
   t ->
   lhs:Instr.ref ->
   rhs:Instr.ref ->
-  signed:bool ->
-  shape:vec_lane_shape ->
-  Instr.ref
+  's
 
 type load_op_add = ?varName:ident -> ?offset:int -> t -> Instr.ref -> Instr.ref
 
@@ -135,7 +143,15 @@ val vec_add : vec_lane_bi_op_add
 val vec_sub : vec_lane_bi_op_add
 val vec_mul : vec_lane_bi_op_add
 val vec_equal : vec_lane_bi_op_add
-val vec_shift_left : vec_lane_bi_op_add
+
+val vec_shift_left :
+  ?varName:ident ->
+  t ->
+  lhs:Instr.ref ->
+  rhs:Instr.ref ->
+  shape:int_vec_lane_shape ->
+  Instr.ref
+
 val div : signed_bi_op_add
 val remainder : signed_bi_op_add
 val shift_right : signed_bi_op_add
@@ -154,12 +170,24 @@ val long_shift_right : signed_bi_op_add
 val long_rotate_right : signed_bi_op_add
 val vec_narrow_16bit : signed_bi_op_add
 val vec_narrow_32bit : signed_bi_op_add
-val vec_shift_right : signed_vec_lane_bi_op_add
-val vec_max : signed_vec_lane_bi_op_add
-val vec_min : signed_vec_lane_bi_op_add
-val vec_less_than : signed_vec_lane_bi_op_add
-val vec_add_sat : signed_vec_lane_bi_op_add
-val vec_sub_sat : signed_vec_lane_bi_op_add
+
+val vec_shift_right :
+  ?varName:ident ->
+  t ->
+  lhs:Instr.ref ->
+  rhs:Instr.ref ->
+  signed:bool ->
+  shape:int_vec_lane_shape ->
+  Instr.ref
+
+val vec_max : ('r,'s) signed_vec_lane_bi_op_add
+val vec_min : ('r,'s) signed_vec_lane_bi_op_add
+val vec_less_than : ('r,'s) signed_vec_lane_bi_op_add
+val vec_add_sat : ([`I8 | `I16],'s) signed_vec_lane_bi_op_add
+val vec_sub_sat : ([`I8 | `I16],'s) signed_vec_lane_bi_op_add
+
+val vec_splat :
+  ?varName:ident -> t -> Instr.ref -> shape:vec_lane_shape -> Instr.ref
 
 val vec_extract :
   ?varName:ident ->
@@ -210,7 +238,7 @@ val vec_load :
 val call : t -> ident -> Instr.ref list -> unit
 val call_indirect : t -> Instr.ref -> Instr.ref list -> unit
 val returned : ?varName:ident -> t -> local_type -> Instr.ref
-val get_global : ?varName:ident -> t -> ident -> local_type -> Instr.ref
+val get_global : ?varName:ident -> t -> variable -> Instr.ref
 val landmine : ?varName:ident -> t -> local_type -> Instr.ref
 val store8 : store_op_add
 val store16 : store_op_add
@@ -229,7 +257,7 @@ val vec_store :
   lane:int ->
   unit
 
-val set_global : t -> ident -> local_type -> Instr.ref -> unit
+val set_global : t -> variable -> Instr.ref -> unit
 val mir_assert : t -> Instr.ref -> unit
 val unreachable : t -> unit -> unit
 val memset : t -> count:Instr.ref -> value:Instr.ref -> dest:Instr.ref -> unit

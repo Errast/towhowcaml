@@ -5,6 +5,6 @@ type t = {
   name : ident;
   signature : func_sig;
   blocks : Block.t array;
-  locals : local Map.M(String).t;
+  locals : variable Map.M(String).t;
 }
 [@@deriving sexp]

@@ -4,7 +4,7 @@ module Func_translator = Func_translator
 module Instr_translator = Instr_translator
 
 let ignroe_funcs =
-  Core.Hash_set.of_list
+  Hash_set.of_list
     (module Core.Int)
     [
       (*  PUSHF, why *)
@@ -13,48 +13,56 @@ let ignroe_funcs =
       0x4857ce;
       0x48BCDD;
       0x48BB0A;
-      0x47D437;
-      0x47DD00;
-      0x46B699;
       0x4674A8;
-      0x478491;
       0x477509;
-      0x47E0D1;
       0x482B7E;
       0x483A4D;
-      0x483C50;
-      0x47F80D;
-      0x47DDD0;
       0x48C32C;
       0x48C133;
-      0x48BB5D;
-      0x48B93D;
-      0x48B93D;
-      0x48BA78;
-      (*  For some reason 0x483d4e isn't a block *)
-      0x48BC0D;
-      0x47ECBD;
       (*  Direction flag *)
       0x0047d4b0;
       (*  Store fpu status word twice *)
       0x484685;
-      (*  FLD after FCOMP before FNSTSW *)
-      0x484220;
       (*  je right after call *)
       0x47f1ad;
       (*  Weird status word stuff + xltab *)
-      0x483B35;
       (*  Actually looks at float status word *)
       0x00483ae7;
-      (* just weird *)
-      4212368;
       (* fnstcw, a lot of references *)
       0x0048bcaa;
       (* ffree  *)
       0x00461aa2;
       (* switch table madness *)
       0x0047d4e0;
+      (* stmxcsr can't be good *)
+      0x0048ba20;
+      (* input condition on first block *)
+      0x0048b93d;
+      4766733;
+      4766557;
+      0x0047ecbd;
     ]
+
+let block_mods :
+    (int, Radatnet.func_block array -> Radatnet.func_block array) Hashtbl.t =
+  let fix_tail index bs =
+    bs.(index) <- { (bs.(index) : Radatnet.func_block) with jump_to = None };
+    bs
+  and slice start stop array = Array.slice array start stop
+  and ( >> ) l r x = r x |> l in
+  Hashtbl.of_alist_exn
+    (module Int)
+    [
+      (0x0048bb5d, fix_tail 5);
+      (0x0048b93d, fix_tail 6);
+      (0x0048bc0d, fix_tail 5);
+      (0x0047d437, fix_tail 0);
+      (0x0047dd00, slice 1 0);
+      (0x0047ddc0, slice 0 1 >> fix_tail 0);
+      (0x0047ee10, slice 0 17 >> fix_tail 0 >> fix_tail 3);
+    ]
+
+let contig_exceptions = [| 0x0047d285; 4724623; 0x0047ea7d|]
 
 let make_intrinsics c =
   let open Core in
@@ -99,6 +107,17 @@ let func_name c addr =
 let translate_func c addr ~intrinsics =
   let module Cmd = Radatnet.Commands in
   let blocks = Cmd.get_func_blocks c addr in
+  let blocks =
+    Hashtbl.find block_mods addr
+    |> Option.value_map ~default:blocks ~f:(fun f -> f blocks)
+  in
+  (* no non-contiguous blocks *)
+  if not @@ Array.mem contig_exceptions addr ~equal:( = ) then
+    Array.fold blocks ~init:blocks.(0).addr ~f:(fun a b ->
+        if b.addr <> a then
+          raise_s [%message "noncontiguous" ~addr:(b.addr : int)];
+        a + b.size)
+    |> ignore;
   let name = func_name c addr in
   let blocks = Array.map ~f:(make_block c) blocks in
   let res = Func_translator.translate ~intrinsics ~blocks ~name in

@@ -12,8 +12,11 @@ type term_trans_result =
   | Return
 [@@deriving sexp_of]
 
+type global_info = { value : Instr.Ref.t; modified : bool; global : variable }
+[@@deriving sexp_of]
+
 type state = {
-  mutable compare_args : (Instr.Ref.t * X86reg.gpr_type) list;
+  mutable compare_args : (Instr.Ref.t * [ X86reg.gpr_type | `sse ]) list;
   mutable compare_instr : X86_instr.t;
   mutable input_condition_opcode : opcode option;
   mutable changed_flags : Status_flags.t;
@@ -22,10 +25,13 @@ type state = {
   mutable float_compare_args : Instr.Ref.t list;
   mutable float_compare_instr : X86_instr.t;
   mutable backward_direction : bool;
-  mutable fpu_stack_pointer : Instr.Ref.t;
-  mutable fpu_stack_pointer_offset : int;
+  (* the height of the local fpu stack. can be negative if it pulls from the global stack  *)
+  mutable local_fpu_stack_height : int;
+  (* the keys here are offsets from the head of the global stack *)
+  (* the stack grows up *)
   fpu_stack_changes : (int, Instr.Ref.t) Hashtbl.t;
   mutable fpu_status_word : Instr.Ref.t;
+  global_usages : (ident, global_info) Hashtbl.t;
 }
 [@@deriving sexp_of]
 
@@ -40,10 +46,10 @@ let initial_state () =
     float_compare_args = [];
     float_compare_instr = INVALID;
     backward_direction = false;
-    fpu_stack_pointer = Instr.Ref.invalid;
-    fpu_stack_pointer_offset = 0;
+    local_fpu_stack_height = 0;
     fpu_stack_changes = Hashtbl.create ~size:0 (module Int);
     fpu_status_word = Instr.Ref.invalid;
+    global_usages = Hashtbl.create ~size:0 (module String);
   }
 
 let backward_direction s = s.backward_direction
@@ -207,11 +213,11 @@ let store_operand c src ~dest =
         displacement;
         size = 4;
       } ->
-      B.set_global c.builder (Util.global_of_tib_offset displacement) Int src
+      B.set_global c.builder (Util.global_of_tib_offset displacement) src
   | _ -> raise_m c [%message "Cannot store into operand" (dest : operand)]
 
 (* Not guarenteed to be zero nor sign extended *)
-let load_operand_typed c src : Instr.ref * X86reg.gpr_type =
+let load_operand_typed c src : Instr.ref * [> X86reg.gpr_type ] =
   match src with
   | Immediate { value; size } ->
       let r_typ =
@@ -246,7 +252,7 @@ let load_operand_typed c src : Instr.ref * X86reg.gpr_type =
         displacement;
         size = 4;
       } ->
-      ( B.get_global c.builder (Util.global_of_tib_offset displacement) Int,
+      ( B.get_global c.builder (Util.global_of_tib_offset displacement),
         `Reg32Bit )
   | _ -> raise_m c [%message "can't load operand" (src : operand)]
 
@@ -280,36 +286,40 @@ let add_float_comparison c args =
   c.state.float_compare_instr <- c.opcode.id;
   c.state.float_compare_args <- args
 
+let cached_set_global state global value =
+  Hashtbl.update state.global_usages global.name ~f:(fun _ ->
+      { value; global; modified = true })
+
+let cached_get_global state builder global =
+  (Hashtbl.find_or_add state.global_usages global.name ~default:(fun () ->
+       { global; modified = false; value = B.get_global builder global }))
+    .value
+
 let get_fpu_stack_pointer ~state ~builder =
-  (* only should be invalid if never previously used, so fpu_stack_pointer_offset should already be 0 *)
-  if Instr.Ref.equal Instr.Ref.invalid state.fpu_stack_pointer then
-    state.fpu_stack_pointer <-
-      B.get_global builder T_Util.fpu_stack_pointer_global Int;
-  state.fpu_stack_pointer
+  cached_get_global state builder Util.fpu_stack_pointer_global
 
 let set_fpu_stack c value index =
   Hashtbl.set c.state.fpu_stack_changes
-    ~key:(c.state.fpu_stack_pointer_offset - index)
+    ~key:(c.state.local_fpu_stack_height - index)
     ~data:value
 
 (* this currently store things to the stack that were read but not modified *)
 (* not a big deal *)
 let get_fpu_stack c index =
-  let offset = c.state.fpu_stack_pointer_offset - index in
+  let offset = c.state.local_fpu_stack_height - index in
   Hashtbl.find_or_add c.state.fpu_stack_changes offset ~default:(fun () ->
       let addr = get_fpu_stack_pointer ~state:c.state ~builder:c.builder in
-      let offset = offset * float_size in
+      let offset = offset * int_of_float_size in
       match float_size with
-      | 4 -> B.float_load32 c.builder addr ~offset
-      | 8 -> B.float_load64 c.builder addr ~offset
-      | _ -> failwith "invalid float size")
+      | `Single -> B.float_load32 c.builder addr ~offset
+      | `Double -> B.float_load64 c.builder addr ~offset)
 
 let fpu_push c value =
-  c.state.fpu_stack_pointer_offset <- c.state.fpu_stack_pointer_offset + 1;
+  c.state.local_fpu_stack_height <- c.state.local_fpu_stack_height + 1;
   set_fpu_stack c value 0
 
 let fpu_pop c =
-  c.state.fpu_stack_pointer_offset <- c.state.fpu_stack_pointer_offset - 1
+  c.state.local_fpu_stack_height <- c.state.local_fpu_stack_height - 1
 
 let fpu_pop_off c =
   let value = get_fpu_stack c 0 in
@@ -327,6 +337,10 @@ let load_operand_f c src =
       match mem.size with
       | 4 -> B.float_load32 c.builder addr ~offset
       | 8 -> B.float_load64 c.builder addr ~offset
+      | 10 ->
+          let addr = load_complete_address c mem in
+          B.call c.builder Util.load_big_float_func [ addr ];
+          B.returned c.builder Float
       | _ -> raise_c c "invalid size")
   | _ -> raise_c c "invalid operand"
 
@@ -339,37 +353,74 @@ let store_operand_f c value ~dest =
       match mem.size with
       | 4 -> B.float_store32 c.builder ~value ~addr ~offset
       | 8 -> B.float_store64 c.builder ~value ~addr ~offset
+      | 10 ->
+          let addr = load_complete_address c mem in
+          B.call c.builder Util.store_big_float_func [ addr; value ]
       | _ -> raise_c c "invalid operand")
   | _ -> raise_c c "invalid operand"
 
+let load_operand_v c src =
+  match src with
+  | Register { reg = #X86reg.sse as reg; _ } ->
+      cached_get_global c.state c.builder (Util.xmm_reg_to_global reg)
+  | Memory ({ segment = None; size = 16; _ } as mem) ->
+      let addr, offset = load_partial_address c mem in
+      B.vec_load128 c.builder addr ~offset
+  | _ -> raise_c c "invalid operand"
+
+let store_operand_v c value ~dest =
+  match dest with
+  | Register { reg = #X86reg.sse as reg; _ } ->
+      cached_set_global c.state (Util.xmm_reg_to_global reg) value
+  | Memory ({ segment = None; size = 16; _ } as mem) ->
+      let addr, offset = load_partial_address c mem in
+      B.vec_store128 c.builder ~addr ~offset ~value
+  | _ -> raise_c c "invalid operand"
+
+let load_operand_l c src =
+  match src with
+  | Memory ({ segment = None; size = 8; _ } as mem) ->
+      let addr, offset = load_partial_address c mem in
+      B.long_load64 c.builder addr ~offset
+  | _ -> raise_c c "invalid operand"
+
+let store_operand_l c value ~dest =
+  match dest with
+  | Memory ({ segment = None; size = 8; _ } as mem) ->
+      let addr, offset = load_partial_address c mem in
+      B.long_store64 c.builder ~addr ~offset ~value
+  | _ -> raise_c c "invalid operand"
+
 let write_fpu_stack_changes ~state ~builder =
-  (* Do this before resetting fpu_stack_pointer_offset *)
+  (* Do this before resetting local_fpu_stack_height *)
+  let stack_head = state.local_fpu_stack_height in
   if not @@ Hashtbl.is_empty state.fpu_stack_changes then (
-    let ptr_offset = state.fpu_stack_pointer_offset in
     let addr = get_fpu_stack_pointer ~state ~builder in
-    Hashtbl.iteri state.fpu_stack_changes ~f:(fun ~key ~data ->
-        if key <= ptr_offset then
+    Hashtbl.iteri state.fpu_stack_changes ~f:(fun ~key:index ~data:value ->
+        if index <= stack_head then
           match float_size with
-          | 4 ->
-              B.float_store32 builder ~addr ~value:data
-                ~offset:(key * float_size)
-          | 8 ->
-              B.float_store64 builder ~addr ~value:data
-                ~offset:(key * float_size)
-          | _ -> failwith "invalid float size");
+          | `Single ->
+              B.float_store32 builder ~addr ~value
+                ~offset:(index * int_of_float_size)
+          | `Double ->
+              B.float_store64 builder ~addr ~value
+                ~offset:(index * int_of_float_size));
     Hashtbl.clear state.fpu_stack_changes;
 
-    if state.fpu_stack_pointer_offset <> 0 then
-      B.set_global builder Util.fpu_stack_pointer_global Int
-      @@ B.add builder ~lhs:state.fpu_stack_pointer
-           ~rhs:
-             (B.const builder @@ (state.fpu_stack_pointer_offset * float_size)))
+    if stack_head <> 0 then
+      cached_set_global state Util.fpu_stack_pointer_global
+      @@ B.add builder
+           ~lhs:(cached_get_global state builder Util.fpu_stack_pointer_global)
+           ~rhs:(B.const builder @@ (stack_head * int_of_float_size)))
 
-let write_globals c = write_fpu_stack_changes ~state:c.state ~builder:c.builder
+let write_globals state builder =
+  write_fpu_stack_changes ~state ~builder;
+  Hashtbl.iter state.global_usages ~f:(fun g ->
+      if g.modified then B.set_global builder g.global g.value)
 
 let read_globals c =
-  c.state.fpu_stack_pointer <- Instr.Ref.invalid;
-  c.state.fpu_stack_pointer_offset <- 0
+  Hashtbl.clear c.state.global_usages;
+  c.state.local_fpu_stack_height <- 0
 
 let translate_mov c =
   match operands c with
@@ -451,6 +502,7 @@ let translate_xor c =
       add_comparison c []
   | _ -> translate_bi_op c B.xor `Result
 
+(* TODO do the mask *)
 let translate_shift_left c =
   match operands c with
   | [ dest; Immediate { value; _ } ] when value < operand_size dest * 8 ->
@@ -510,9 +562,8 @@ let translate_lea c =
 
 let translate_float_load c =
   match operands c with
-  | [ arg ] ->
-      load_operand_f c arg |> fpu_push c;
-      add_float_comparison c []
+  | [ arg ] -> load_operand_f c arg |> fpu_push c
+  (*add_float_comparison c []*)
   | _ -> raise_ops c
 
 let translate_float_comparison c ~after_pop =
@@ -563,7 +614,7 @@ let translate_call_start c ~push_addr =
          ~varName:(X86reg.to_ident `esp)
      in
      B.store32 c.builder ~addr:esp ~value:(B.const c.builder c.opcode.address));
-  write_globals c
+  write_globals c.state c.builder
 
 let translate_call_end c = read_globals c
 
@@ -630,7 +681,7 @@ let translate_input_cond c =
 let translate_float_test_comparison c constant =
   assert_c c
     (match c.state.fpu_status_word_instr with
-    | FCOM | FCOMP -> true
+    | FCOM | FCOMP | FCOMPP -> true
     | _ -> false)
     ~msg:"must use fcom";
   let lhs, rhs =
@@ -690,6 +741,8 @@ let translate_reflexive_test_comparison c arg =
   | JNS | SETNS ->
       B.greater_than_equal c.builder ~rhs:(B.const c.builder 0)
         ~lhs:(extend_signed c arg) ~signed:true
+  | JBE -> B.equals_zero c.builder ~operand:(extend_either c arg)
+  | JAE -> B.const c.builder 0
   | _ -> raise_comp_ops c
 
 let translate_test_comparison c ~lhs ~rhs =
@@ -766,6 +819,8 @@ let translate_dec_comparison c ~result =
   | JS | SETS ->
       B.less_than ~rhs:(B.const c.builder 0) ~lhs:(extend_signed c result)
         ~signed:true c.builder
+  | JE -> B.equals_zero c.builder ~operand:(extend_either c result)
+  | JNE -> extend_either c result
   | _ -> raise_comp_ops c
 
 let translate_add_comparison c ~lhs ~result =
@@ -784,19 +839,22 @@ let translate_sub_comparison c ~lhs ~result =
       B.greater_than c.builder ~rhs:(extend_unsigned c lhs)
         ~lhs:(extend_unsigned c result) ~signed:false
   | JNE -> extend_either c result
+  | JE -> B.equals_zero c.builder ~operand:(extend_either c result)
   | _ -> raise_comp_ops c
 
 let translate_inc_comparison c ~result =
   (* slightly different from add *)
   match c.opcode.id with JNE -> extend_either c result | _ -> raise_comp_ops c
 
-let translate_result_comparison c ~result =
+let translate_result_comparison c ~result ~cf_zero =
   match c.opcode.id with
   | JE -> B.equals_zero c.builder ~operand:(extend_either c result)
   | JNE -> extend_either c result
   | JNS ->
       B.greater_than_equal c.builder ~rhs:(B.const c.builder 0)
         ~lhs:(extend_signed c result) ~signed:true
+  | JBE when cf_zero ->
+      B.equals_zero c.builder ~operand:(extend_either c result)
   | _ -> raise_comp_ops c
 
 let translate_shr_comparison c ~lhs ~rhs ~result =
@@ -808,19 +866,26 @@ let translate_shr_comparison c ~lhs ~rhs ~result =
       let rhs = extend_either c rhs in
       B.mir_assert c.builder rhs;
       B.shift_left c.builder ~rhs:(B.sub c.builder ~lhs:thirty_two ~rhs) ~lhs
-  | _ -> translate_result_comparison c ~result
+  | _ -> translate_result_comparison c ~result ~cf_zero:false
 
 let translate_sahf_comparison c =
-  assert_c c
-    (match c.state.fpu_status_word_instr with
-    | FCOM | FCOMP -> true
-    | _ -> false)
-    ~msg:"must use fcom";
-  match (c.opcode.id, c.state.fpu_status_word_args) with
-  | JAE, [ lhs; rhs ] -> B.float_greater_than c.builder ~lhs ~rhs
-  | JBE, [ lhs; rhs ] ->
+  match
+    (c.state.fpu_status_word_instr, c.opcode.id, c.state.fpu_status_word_args)
+  with
+  | (FCOM | FCOMP | FCOMPP), JAE, [ lhs; rhs ] ->
+      B.float_greater_than c.builder ~lhs ~rhs
+  | (FCOM | FCOMP | FCOMPP), JBE, [ lhs; rhs ] ->
       B.equals_zero c.builder
         ~operand:(B.float_greater_than c.builder ~lhs ~rhs)
+  | (FCOM | FCOMP | FCOMPP), JP, [ lhs; rhs ] ->
+      B.int_or c.builder
+        ~rhs:(B.float_not_equal c.builder ~rhs ~lhs:rhs)
+        ~lhs:(B.float_not_equal c.builder ~lhs ~rhs:lhs)
+  | (FPTAN | FSIN | FCOS), JP, [ arg ] ->
+      let norm = B.float_abs c.builder ~operand:arg in
+      let const = B.float_const c.builder @@ Float.int_pow 2. 63 in
+      B.float_less_than c.builder ~lhs:norm ~rhs:const
+  | FPREM1, JP, [] -> B.const c.builder 0
   | _ -> raise_comp_ops c
 
 let translate_neg_comparison c ~result =
@@ -828,6 +893,15 @@ let translate_neg_comparison c ~result =
   | SBB | ADC ->
       B.equals_zero c.builder
         ~operand:(B.equals_zero c.builder ~operand:(extend_either c result))
+  | _ -> raise_comp_ops c
+
+let translate_ucomisd_comparison c ~lhs ~rhs =
+  match c.opcode.id with
+  | JNP ->
+      B.vec_and c.builder
+        ~rhs:(B.vec_equal c.builder ~shape:`F64 ~lhs:rhs ~rhs)
+        ~lhs:(B.vec_equal c.builder ~shape:`F64 ~rhs:lhs ~lhs)
+      |> B.vec_extract c.builder ~shape:`I32 ~lane:0
   | _ -> raise_comp_ops c
 
 let translate_condition c =
@@ -838,18 +912,32 @@ let translate_condition c =
     ~msg:"Flag has been modified";
   B.set_check_var_is_latest c.builder false;
   let result =
+    let open X86reg in
     match (c.state.compare_instr, c.state.compare_args) with
-    | TEST, [ lhs; rhs ] -> translate_test_comparison c ~lhs ~rhs
-    | (CMP | CMPSD), [ lhs; rhs ] -> translate_cmp_comparison c ~lhs ~rhs
+    | TEST, [ ((_, #gpr_type) as lhs); ((_, #gpr_type) as rhs) ] ->
+        translate_test_comparison c ~lhs ~rhs
+    | (CMP | CMPSD), [ ((_, #gpr_type) as lhs); ((_, #gpr_type) as rhs) ] ->
+        translate_cmp_comparison c ~lhs ~rhs
     | INVALID, [] -> translate_input_cond c
-    | DEC, [ result ] -> translate_dec_comparison c ~result
-    | (ADD | ADC), [ lhs; _; result ] -> translate_add_comparison c ~lhs ~result
-    | (SUB | SBB), [ lhs; _; result ] -> translate_sub_comparison c ~lhs ~result
-    | INC, [ result ] -> translate_inc_comparison c ~result
-    | (OR | AND), [ result ] -> translate_result_comparison c ~result
-    | SHR, [ lhs; rhs; result ] -> translate_shr_comparison c ~lhs ~rhs ~result
+    | DEC, [ ((_, #gpr_type) as result) ] -> translate_dec_comparison c ~result
+    | (ADD | ADC), [ ((_, #gpr_type) as lhs); _; ((_, #gpr_type) as result) ] ->
+        translate_add_comparison c ~lhs ~result
+    | (SUB | SBB), [ ((_, #gpr_type) as lhs); _; ((_, #gpr_type) as result) ] ->
+        translate_sub_comparison c ~lhs ~result
+    | INC, [ ((_, #gpr_type) as result) ] -> translate_inc_comparison c ~result
+    | (OR | AND), [ ((_, #gpr_type) as result) ] ->
+        translate_result_comparison c ~result ~cf_zero:true
+    | ( SHR,
+        [
+          ((_, #gpr_type) as lhs);
+          ((_, #gpr_type) as rhs);
+          ((_, #gpr_type) as result);
+        ] ) ->
+        translate_shr_comparison c ~lhs ~rhs ~result
     | SAHF, [] -> translate_sahf_comparison c
-    | NEG, [ result ] -> translate_neg_comparison c ~result
+    | NEG, [ ((_, #gpr_type) as result) ] -> translate_neg_comparison c ~result
+    | UCOMISD, [ (lhs, `sse); (rhs, `sse) ] ->
+        translate_ucomisd_comparison c ~lhs ~rhs
     | _ -> raise_c c "Invalid comparison"
   in
   B.set_check_var_is_latest c.builder true;
@@ -876,10 +964,10 @@ let translate_leave c =
 let translate_float_bi_op c (op : B.bi_op_add)
     (cond : [ `PopAfter | `IntArg | `None ]) =
   (match (cond, operands c) with
-  (* | `None, [ lhs; rhs ] -> *)
-  (*     let lhs_arg = load_operand_f c lhs in *)
-  (*     let rhs_arg = load_operand_f c rhs in *)
-  (*     store_operand_f c ~dest:lhs @@ op c.builder ~lhs:lhs_arg ~rhs:rhs_arg *)
+  | `None, [ lhs; rhs ] ->
+      let lhs_arg = load_operand_f c lhs in
+      let rhs_arg = load_operand_f c rhs in
+      store_operand_f c ~dest:lhs @@ op c.builder ~lhs:lhs_arg ~rhs:rhs_arg
   | `IntArg, [ (Memory _ as arg) ] ->
       (* tecnically supposed to work with long too *)
       set_fpu_stack c
@@ -903,10 +991,10 @@ let translate_float_bi_op c (op : B.bi_op_add)
 let translate_float_bi_op_r c (op : B.bi_op_add)
     (cond : [ `PopAfter | `IntArg | `None ]) =
   (match (cond, operands c) with
-  (* | `None, [ lhs; rhs ] -> *)
-  (*     let lhs_arg = load_operand_f c lhs in *)
-  (*     let rhs_arg = load_operand_f c rhs in *)
-  (*     store_operand_f c ~dest:lhs @@ op c.builder ~lhs:lhs_arg ~rhs:rhs_arg *)
+  | `None, [ dest; src ] ->
+      let lhs = load_operand_f c src in
+      let rhs = load_operand_f c dest in
+      store_operand_f c ~dest @@ op c.builder ~lhs ~rhs
   | `IntArg, [ arg ] ->
       (* tecnically supposed to work with long too *)
       set_fpu_stack c
@@ -1067,7 +1155,7 @@ let translate_rep_stos c =
             B.memset c.builder ~count ~dest:(newest_var c `edi)
               ~value:(B.const c.builder 0)
           else
-            B.call c.builder Util.dword_memset_func
+            B.call c.builder Util.int_memset_func
               [ newest_var c `edi; newest_var c `eax; newest_var c `ecx ]
       | 1 ->
           B.memset c.builder ~dest:(newest_var c `edi)
@@ -1123,7 +1211,7 @@ let translate_repe_cmpsd c =
         scale = 1;
         index = None;
         segment = None;
-        size = 4;
+        size = size1;
       } as arg1);
    (Memory
       {
@@ -1132,13 +1220,20 @@ let translate_repe_cmpsd c =
         scale = 1;
         index = None;
         segment = Some Es;
-        size = 4;
+        size = size2;
       } as arg2);
-  ] ->
+  ]
+    when size1 = size2 ->
       let esi = newest_var c `esi in
       let edi = newest_var c `edi in
       let ecx = newest_var c `ecx in
-      B.call c.builder Util.dword_diff_func [ esi; edi; ecx ];
+      let func =
+        match size1 with
+        | 1 -> Util.byte_diff_func
+        | 4 -> Util.int_diff_func
+        | _ -> raise_ops c
+      in
+      B.call c.builder func [ esi; edi; ecx ];
       B.returned c.builder ~varName:(X86reg.to_ident `esi) Int |> ignore;
       B.returned c.builder ~varName:(X86reg.to_ident `edi) Int |> ignore;
       B.returned c.builder ~varName:(X86reg.to_ident `ecx) Int |> ignore;
@@ -1371,6 +1466,165 @@ let translate_not c =
            ~lhs:(load_operand c arg)
   | _ -> raise_ops c
 
+let translate_repne_scas c =
+  match operands c with
+  | [
+   (Register { reg = `al; _ } as needle);
+   Memory
+     {
+       base = Some `edi;
+       segment = Some Es;
+       index = None;
+       scale = 1;
+       displacement = 0;
+       size = 1;
+     };
+  ] ->
+      let needle = load_operand_u c needle in
+      let haystack = newest_var c `edi in
+      let length = newest_var c `ecx in
+      B.call c.builder Util.find_byte_func [ needle; haystack; length ];
+      B.returned c.builder ~varName:(X86reg.to_ident `ecx) Int |> ignore;
+      add_comparison c []
+  | _ -> raise_ops c
+
+let translate_shift_left_two c =
+  match operands c with
+  | [
+   (Register { size = 4; _ } as dest);
+   (Register { size = 4; _ } as src);
+   Immediate { value = count; _ };
+  ]
+    when count < 32 ->
+      let low_part =
+        B.shift_left c.builder ~rhs:(B.const c.builder count)
+          ~lhs:(load_operand_u c dest)
+      in
+      let high_part =
+        B.shift_right c.builder
+          ~rhs:(B.const c.builder @@ (32 - count))
+          ~lhs:(load_operand_u c src) ~signed:false
+      in
+      store_operand c ~dest @@ B.int_or c.builder ~rhs:high_part ~lhs:low_part;
+      add_comparison c []
+  | _ -> raise_ops c
+
+let translate_float_round c =
+  assert_c c (List.is_empty @@ operands c);
+  set_fpu_stack c (B.float_round c.builder ~operand:(get_fpu_stack c 0)) 0;
+  add_float_comparison c []
+
+let translate_store_fpu_cw c =
+  match operands c with
+  | [ dest ] when operand_size dest = 2 ->
+      store_operand c ~dest @@ B.const c.builder 0x27f
+  | _ -> raise_ops c
+
+let translate_store_mxcsr c =
+  match operands c with
+  | [ dest ] when operand_size dest = 4 ->
+      store_operand c ~dest @@ B.const c.builder 0x00001F80
+  | _ -> raise_ops c
+
+let translate_partial_tan c =
+  assert_c c (List.is_empty @@ operands c);
+  let st0 = get_fpu_stack c 0 in
+  B.call c.builder Util.float_tan_func [ st0 ];
+  set_fpu_stack c (B.returned c.builder Float) 0;
+  translate_float_load_constant c 1.0;
+  add_float_comparison c [ st0 ]
+
+let translate_float_remainder c =
+  assert_c c (List.is_empty @@ operands c);
+  let st0 = get_fpu_stack c 0 in
+  let st1 = get_fpu_stack c 1 in
+  let quotient =
+    B.float_round c.builder ~operand:(B.float_div c.builder ~lhs:st0 ~rhs:st1)
+  in
+  let remainder =
+    B.float_sub c.builder
+      ~rhs:(B.float_mul c.builder ~lhs:quotient ~rhs:st1)
+      ~lhs:st0
+  in
+  set_fpu_stack c remainder 0;
+  add_float_comparison c []
+
+let translate_float_sin c =
+  assert_c c (List.is_empty @@ operands c);
+  let arg = get_fpu_stack c 0 in
+  B.call c.builder Util.float_sine_func [ arg ];
+  set_fpu_stack c (B.returned c.builder Float) 0;
+  add_float_comparison c [ arg ]
+
+let translate_float_cos c =
+  assert_c c (List.is_empty @@ operands c);
+  let arg = get_fpu_stack c 0 in
+  B.call c.builder Util.float_cosine_func [ arg ];
+  set_fpu_stack c (B.returned c.builder Float) 0;
+  add_float_comparison c [ arg ]
+
+let translate_movq c =
+  match operands c with
+  | [ dest; src ] -> (
+      match (operand_size dest, operand_size src) with
+      | 8, 16 ->
+          store_operand_l c ~dest
+          @@ B.vec_extract c.builder ~shape:`I64 ~lane:0
+          @@ load_operand_v c src
+      | 16, 8 ->
+          let zero = B.vec_const c.builder ~l:0L ~h:0L in
+          let src_value = load_operand_l c src in
+          store_operand_v c ~dest
+          @@ B.vec_replace c.builder ~dest:zero ~value:src_value ~shape:`I64
+               ~lane:0
+      | _ -> raise_ops c)
+  | _ -> raise_ops c
+
+let translate_movapd c =
+  match operands c with
+  | [ dest; src ] -> store_operand_v c ~dest @@ load_operand_v c src
+  | _ -> raise_ops c
+
+let translate_vector_shift_64 c (f : B.bi_op_add) =
+  let dest, count, dest_value =
+    match operands c with
+    | [ dest; src ] when operand_size src = 16 ->
+        ( dest,
+          B.vec_extract c.builder ~shape:`I32 ~lane:0 @@ load_operand_v c src,
+          load_operand_v c dest )
+    | [ dest; Immediate { size = 1; value } ] ->
+        (dest, B.const c.builder value, load_operand_v c dest)
+    | _ -> raise_ops c
+  in
+  let result = f c.builder ~lhs:dest_value ~rhs:count in
+  store_operand_v c ~dest result
+
+let translate_movd c =
+  match operands c with
+  | [ dest; src ] -> (
+      match (operand_size dest, operand_size src) with
+      | 4, 16 ->
+          store_operand c ~dest
+          @@ B.vec_extract c.builder ~shape:`I32 ~lane:0
+          @@ load_operand_v c src
+      | _ -> raise_ops c)
+  | _ -> raise_ops c
+
+let translate_vec_bi_op c (f : B.bi_op_add) =
+  match operands c with
+  | [ dest; src ] ->
+      store_operand_v c ~dest
+      @@ f c.builder ~rhs:(load_operand_v c src) ~lhs:(load_operand_v c dest)
+  | _ -> raise_ops c
+
+let translate_ucomisd c =
+  match operands c with
+  | [ lhs; rhs ] ->
+      let lhs = load_operand_v c lhs in
+      let rhs = load_operand_v c rhs in
+      add_comparison c [ (lhs, `sse); (rhs, `sse) ]
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   match c.opcode.id with
@@ -1403,6 +1657,7 @@ let translate_no_prefix c =
   (*TODO: there is currently no way to tell FADD from FADDP
     https://github.com/capstone-engine/capstone/issues/1456 *)
   | FADD -> translate_float_bi_op c B.float_add `None
+  | FADDP -> translate_float_bi_op c B.float_add `PopAfter
   | FSUB -> translate_float_bi_op c B.float_sub `None
   | FSUBR -> translate_float_bi_op_r c B.float_sub `None
   | FSUBP -> translate_float_bi_op c B.float_sub `PopAfter
@@ -1434,6 +1689,8 @@ let translate_no_prefix c =
   | FSQRT -> translate_float_sqrt c
   | FLDZ -> translate_float_load_constant c 0.0
   | FSINCOS -> translate_float_sin_cos c
+  | FSIN -> translate_float_sin c
+  | FCOS -> translate_float_cos c
   | FCHS -> translate_float_negate c
   | FLD1 -> translate_float_load_constant c 1.0
   | NEG -> translate_negate c
@@ -1451,16 +1708,38 @@ let translate_no_prefix c =
   | MUL -> translate_mul c
   | RCR -> translate_rotate_cl_right c
   | NOT -> translate_not c
+  | SHLD -> translate_shift_left_two c
+  | FRNDINT -> translate_float_round c
+  | FNSTCW -> translate_store_fpu_cw c
+  | FPTAN -> translate_partial_tan c
+  | FPREM1 -> translate_float_remainder c
+  | STMXCSR -> translate_store_mxcsr c
+  | MOVQ -> translate_movq c
+  | MOVAPD -> translate_movapd c
+  | PSLLQ -> translate_vector_shift_64 c (B.vec_shift_left ~shape:`I64)
+  | PSRLQ ->
+      translate_vector_shift_64 c (B.vec_shift_right ~shape:`I64 ~signed:false)
+  | MOVD -> translate_movd c
+  | ANDPD -> translate_vec_bi_op c B.vec_and
+  | PSUBD -> translate_vec_bi_op c (B.vec_add ~shape:`I32)
+  | UCOMISD -> translate_ucomisd c
+  (* the signed doesn't do anything cause the lane is a float. gadts would fix this *)
+  | CMPLTPD -> translate_vec_bi_op c (B.vec_less_than ~shape:F64)
+  | SUBSD -> translate_vec_bi_op c (B.vec_sub ~shape:`F64)
+  | ORPD -> translate_vec_bi_op c B.vec_or
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c =
   match c.opcode.id with
   | MOVSD | MOVSW | MOVSB -> translate_rep_movs c
   | STOSD | STOSB -> translate_rep_stos c
-  | CMPSD -> translate_repe_cmpsd c
+  | CMPSD | CMPSB -> translate_repe_cmpsd c
   | _ -> raise_c c "Invalid instruction"
 
-let translate_repne_prefix c = raise_c c "repne prefix"
+let translate_repne_prefix c =
+  match c.opcode.id with
+  | SCASB -> translate_repne_scas c
+  | _ -> raise_c c "Invalid instruction"
 
 let translate intrinsics builder state opcode =
   let c = { builder; opcode; state; intrinsics } in
@@ -1559,20 +1838,32 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
      _;
     }
       when not tail_position ->
+        let condition =
+          translate_condition { intrinsics; builder; state; opcode }
+        in
+
         (* would it be better to write_fpu_stack_changes first here? *)
+        Conditional { target = value; condition }
+    | {
+     id = JECXZ;
+     prefix = 0;
+     opex = { operands = [ Immediate { value; _ } ] };
+     _;
+    }
+      when not tail_position ->
         Conditional
           {
             target = value;
             condition =
-              translate_condition { intrinsics; builder; state; opcode };
+              B.equals_zero builder
+                ~operand:(B.newest_var builder @@ X86reg.to_ident `ecx);
           }
     | _ ->
         translate intrinsics builder state opcode;
         Nothing
   in
   (* maybe this is not the right way to do this *)
-  (* too much work to keep track of fpu stack offset cross-block *)
-  write_fpu_stack_changes ~state ~builder;
+  write_globals state builder;
   result
 
 let translate_output_condition builder state condition_opcode =
