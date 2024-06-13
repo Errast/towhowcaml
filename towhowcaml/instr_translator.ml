@@ -1117,17 +1117,16 @@ let translate_float_int_load c =
   | _ -> raise_ops c
 
 let translate_float_int_store c ~pop_after =
-  match operands c with
-  | [ dest ] ->
-      let value = B.float_to_long c.builder ~operand:(get_fpu_stack c 0) in
-      (match dest with
-      (* TODO if i ever make a store_operand_l, replace this *)
-      | Memory ({ size = 8; _ } as dest) ->
-          let addr, offset = load_partial_address c dest in
-          B.long_store64 c.builder ~addr ~offset ~value
-      | _ -> store_operand c ~dest value);
-      if pop_after then fpu_pop c
-  | _ -> raise_ops c
+  (match operands c with
+  | [ (Memory { size = 8; _ } as dest) ] ->
+      B.float_to_long c.builder ~operand:(get_fpu_stack c 0)
+      |> store_operand_l c ~dest
+  | [ (Memory { size = 4; _ } as dest) ] ->
+      B.float_to_int32 c.builder ~operand:(get_fpu_stack c 0)
+      |> store_operand c ~dest
+  | _ -> raise_ops c);
+
+  if pop_after then fpu_pop c
 
 let translate_rep_stos c =
   match operands c with
@@ -1661,6 +1660,7 @@ let translate_no_prefix c =
   | FSUB -> translate_float_bi_op c B.float_sub `None
   | FSUBR -> translate_float_bi_op_r c B.float_sub `None
   | FSUBP -> translate_float_bi_op c B.float_sub `PopAfter
+  | FSUBRP -> translate_float_bi_op_r c B.float_sub `PopAfter
   | FISUB -> translate_float_bi_op c B.float_sub `IntArg
   | FMUL -> translate_float_bi_op c B.float_mul `None
   | FMULP -> translate_float_bi_op c B.float_mul `PopAfter

@@ -59,10 +59,9 @@ let block_mods :
       (0x0047d437, fix_tail 0);
       (0x0047dd00, slice 1 0);
       (0x0047ddc0, slice 0 1 >> fix_tail 0);
-      (0x0047ee10, slice 0 17 >> fix_tail 0 >> fix_tail 3);
     ]
 
-let contig_exceptions = [| 0x0047d285; 4724623; 0x0047ea7d|]
+let contig_exceptions = [| 0x0047d285; 4724623; 0x0047ea7d; 0x0047ee10|]
 
 let make_intrinsics c =
   let open Core in

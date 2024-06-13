@@ -92,7 +92,7 @@ let translate_block c id block =
       let term_op = AP.last block.ops in
       let block_term = block.terminator in
       let tail_position =
-        match block_term with Return _ -> true | _ -> false
+        match block_term with Return  -> true | _ -> false
       in
       let term_found =
         Instr_translator.translate_terminator c.intrinsics builder state term_op
@@ -135,18 +135,25 @@ let translate_block c id block =
       | Switch { switch_on; table_addr }, Switch { offset; cases }
         when table_addr > 0 && term_op.address = offset ->
           let default_case = Option.value_exn c.trap_block in
+          let first = (List.hd_exn cases).value in
           let cases =
             List.mapi
               ~f:(fun i case ->
-                if i <> case.value then
+                if i <> case.value - first then
                   raise_s
                     [%message
-                      "jump cases not sequential from 0"
+                      "jump cases not sequential"
                         (i : int)
                         (term_op : opcode)
                         (block_term : terminator)];
                 Block (offset_to_block_id c case.jump))
               cases
+          in
+          let switch_on =
+            if first <> 0 then
+              Builder.sub builder ~lhs:switch_on
+                ~rhs:(Builder.const builder first)
+            else switch_on
           in
           Switch { cases; default = default_case; switch_on }
       | Return, Return -> Return

@@ -24,10 +24,110 @@ let test_trans_block addr =
   print_s @@ Mir.Block.sexp_of_t
   @@ (Func_translator.translate ~blocks ~name ~intrinsics).blocks.(index)
 
-let%expect_test "psrlq, andpd, psubd" = 
- test_trans_block 
-0x0047ee50;
- [%expect {|
+ let%expect_test "nonzero switch" = 
+  test_trans_block 0x0046af8f;
+  [%expect {|
+    ((id 5)
+     (instrs
+      ((0 (OutsideContext (var eax) (typ Int))) (1 (Const __i32 20))
+       (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))))
+     (terminator
+      (Switch
+       (cases
+        ((Block 6) (Block 8) (Block 10) (Block 12) (Block 14) (Block 16)
+         (Block 18) (Block 20) (Block 22) (Block 24) (Block 26)))
+       (default (Block 84)) (switch_on (Ref 2))))
+     (roots ((Ref 0))))
+    |}]
+
+let%expect_test "fistp dword" =
+  test_trans_block 0x00465929;
+  [%expect {|
+    ((id 3)
+     (instrs
+      ((0 (OutsideContext (var ebp) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -4)))
+       (2 (DupVar (var eax) (src (Ref 1)) (typ Int)))
+       (3 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -32)))
+       (4 (Const __i32 0))
+       (5 (BiOp (var __i32) (op And) (lhs (Ref 3)) (rhs (Ref 4))))
+       (6 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 5)) (offset -32)))
+       (7 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 2)) (offset -36)))
+       (8 (LoadOp (var __i64) (op LongLoad64) (addr (Ref 0)) (offset -36)))
+       (9 (UniOp (var __fl) (op Int64ToFloatSigned) (operand (Ref 8))))
+       (10 (OutsideContext (var ecx) (typ Int)))
+       (11 (OutsideContext (var esp) (typ Int))) (12 (Const __i32 4))
+       (13 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 12))))
+       (14 (StoreOp (op Store32) (addr (Ref 13)) (value (Ref 10))))
+       (15 (Const __i32 4))
+       (16 (BiOp (var esp) (op Subtract) (lhs (Ref 13)) (rhs (Ref 15))))
+       (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 10))))
+       (18 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)))
+       (19 (BiOp (var __fl) (op FloatMult) (lhs (Ref 9)) (rhs (Ref 18))))
+       (20 (Const __i32 4819536))
+       (21 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 20))))
+       (22 (BiOp (var __fl) (op FloatSub) (lhs (Ref 19)) (rhs (Ref 21))))
+       (23 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 22)) (offset -8)))
+       (24 (StoreOp (op FloatStore64) (addr (Ref 16)) (value (Ref 22))))
+       (25 (Const __i32 4))
+       (26 (BiOp (var esp) (op Subtract) (lhs (Ref 16)) (rhs (Ref 25))))
+       (27 (Const __i32 4610332))
+       (28 (StoreOp (op Store32) (addr (Ref 26)) (value (Ref 27))))
+       (29 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
+       (30 (OutsideContext (var edx) (typ Int)))
+       (31 (CallOp (func __func47ee10__) (args ((Ref 10) (Ref 26) (Ref 30)))))
+       (32 (ReturnedOp (var eax) (typ Int)))
+       (33 (ReturnedOp (var esp) (typ Int)))
+       (34 (ReturnedOp (var edx) (typ Int)))
+       (35 (LoadOp (var __i32) (op Load32) (addr (Ref 33)))) (36 (Const __i32 4))
+       (37 (BiOp (var esp) (op Add) (lhs (Ref 33)) (rhs (Ref 36))))
+       (38 (DupVar (var ecx) (src (Ref 35)) (typ Int)))
+       (39 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
+       (40 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 39))))
+       (41 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 40)) (offset -12)))
+       (42 (LoadOp (var __i32) (op Load32) (addr (Ref 37)))) (43 (Const __i32 4))
+       (44 (BiOp (var esp) (op Add) (lhs (Ref 37)) (rhs (Ref 43))))
+       (45 (DupVar (var ecx) (src (Ref 42)) (typ Int)))
+       (46 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -12)))
+       (47 (UniOp (var __i32) (op FloatToInt32) (operand (Ref 46))))
+       (48 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 47)) (offset -20)))
+       (49 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -20)))
+       (50 (DupVar (var eax) (src (Ref 49)) (typ Int))) (51 (Const __i32 1))
+       (52 (BiOp (var __i32) (op Add) (lhs (Ref 50)) (rhs (Ref 51))))
+       (53 (DupVar (var ecx) (src (Ref 52)) (typ Int))) (54 (Const __i32 0))
+       (55
+        (SignedBiOp (var __i32) (op GreaterThanEqual) (signed true)
+         (lhs (Ref 50)) (rhs (Ref 54))))
+       (56 (Const __i32 -8))
+       (57 (BiOp (var __i32) (op Add) (lhs (Ref 39)) (rhs (Ref 56))))
+       (58
+        (SetGlobalOp (value (Ref 57)) (global ((name __fpuStack__) (typ Int)))))))
+     (terminator
+      (Branch (succeed (Block 5)) (fail (Block 4)) (condition (Ref 55))))
+     (roots
+      ((Ref 0) (Ref 6) (Ref 7) (Ref 10) (Ref 11) (Ref 14) (Ref 17) (Ref 23)
+       (Ref 24) (Ref 28) (Ref 29) (Ref 30) (Ref 31) (Ref 32) (Ref 33) (Ref 34)
+       (Ref 39) (Ref 41) (Ref 44) (Ref 48) (Ref 50) (Ref 53) (Ref 58))))
+    |}]
+
+let%expect_test "fsubrp" =
+  test_trans_block 0x0046336d;
+  [%expect
+    {|
+    ((id 37)
+     (instrs
+      ((0 (FloatConst __fl 1))
+       (1 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
+       (2 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 1))))
+       (3 (BiOp (var __fl) (op FloatSub) (lhs (Ref 0)) (rhs (Ref 2))))
+       (4 (StoreOp (op FloatStore64) (addr (Ref 1)) (value (Ref 3))))))
+     (terminator (Goto (Block 38))) (roots ((Ref 1) (Ref 4))))
+    |}]
+
+let%expect_test "psrlq, andpd, psubd" =
+  test_trans_block 0x0047ee50;
+  [%expect
+    {|
    ((id 5)
     (instrs
      ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
@@ -70,9 +170,11 @@ let%expect_test "psrlq, andpd, psubd" =
      (Branch (succeed (Block 12)) (fail (Block 6)) (condition (Ref 17))))
     (roots ((Ref 1) (Ref 9) (Ref 18) (Ref 19) (Ref 20) (Ref 21))))
    |}]
+
 let%expect_test "movq, psllq, cmpltpd" =
   test_trans_block 0x0047eed2;
-  [%expect {|
+  [%expect
+    {|
     ((id 12)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
@@ -107,7 +209,8 @@ let%expect_test "movq, psllq, cmpltpd" =
 
 let%expect_test "branch return" =
   test_trans_block 0x0047ee10;
-  [%expect {|
+  [%expect
+    {|
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
