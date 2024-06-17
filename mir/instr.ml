@@ -220,6 +220,13 @@ type t =
       control_lower_bits : Int64.t;
       control_upper_bits : Int64.t;
     }
+  | VecExtend of {
+      var : Variable.t;
+      signed : bool;
+      shape : [ `I8 | `I16 | `I32 ];
+      half_used : [ `HighOrder | `LowOrder ];
+      operand : Ref.t;
+    }
   | LoadOp of {
       var : Variable.t;
       op : load_op;
@@ -290,6 +297,7 @@ let value_type = function
           Float
       | FloatToLong | Int32ToLongSigned | Int32ToLongUnsigned -> Long
       | VecConvertLow32BitsToFloatsSigned -> Vec)
+  | VecExtend _ -> Vec
   | BiOp { op; _ } -> (
       match op with
       | Add | Subtract | Multiply | Equal | NotEqual | And | Or | Xor
@@ -338,6 +346,7 @@ let replace_var instr var =
   | VecConst v -> VecConst { v with var }
   | DupVar v -> DupVar { v with var }
   | UniOp v -> UniOp { v with var }
+  | VecExtend v -> VecExtend { v with var }
   | BiOp v -> BiOp { v with var }
   | VecLaneBiOp v -> VecLaneBiOp { v with var }
   | SignedBiOp v -> SignedBiOp { v with var }
@@ -367,6 +376,8 @@ let replace_instr_ref t ~from ~into =
   | DupVar v -> DupVar { v with src = into }
   | UniOp v when v.operand <> from -> t
   | UniOp v -> UniOp { v with operand = into }
+  | VecExtend v when v.operand <> from -> t
+  | VecExtend v -> VecExtend { v with operand = into }
   | BiOp v when v.lhs <> from && v.rhs <> from -> t
   | BiOp v -> BiOp { v with lhs = swap v.lhs; rhs = swap v.rhs }
   | VecLaneBiOp v when v.lhs <> from && v.rhs <> from -> t
@@ -377,9 +388,11 @@ let replace_instr_ref t ~from ~into =
   | SignedVecLaneBiOp v ->
       SignedVecLaneBiOp { v with lhs = swap v.lhs; rhs = swap v.rhs }
   | VecShiftLeftOp v when v.operand <> from && v.count <> from -> t
-  | VecShiftLeftOp v -> VecShiftLeftOp { v with operand = swap v.operand; count = swap v.count }
+  | VecShiftLeftOp v ->
+      VecShiftLeftOp { v with operand = swap v.operand; count = swap v.count }
   | VecShiftRightOp v when v.operand <> from && v.count <> from -> t
-  | VecShiftRightOp v -> VecShiftRightOp { v with operand = swap v.operand; count = swap v.count }
+  | VecShiftRightOp v ->
+      VecShiftRightOp { v with operand = swap v.operand; count = swap v.count }
   | VecSplatOp v when v.value <> from -> t
   | VecSplatOp v -> VecSplatOp { v with value = swap v.value }
   | VecExtractLaneOp v when v.src <> from -> t
@@ -429,9 +442,10 @@ let replace_instr_ref t ~from ~into =
 (* This is only used for dead code elimination, as we currently don't reorder instructions *)
 let is_pure = function
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | DupVar _ | UniOp _
-  | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _ | LoadOp _
-  | SignedLoadOp _ | VecShiftLeftOp _ | VecShiftRightOp _  | VecSplatOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _
-  | VecShuffleOp _ | VecLoadLaneOp _ | Landmine _ ->
+  | VecExtend _ | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _
+  | LoadOp _ | SignedLoadOp _ | VecShiftLeftOp _ | VecShiftRightOp _
+  | VecSplatOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _ | VecShuffleOp _
+  | VecLoadLaneOp _ | Landmine _ ->
       true
   | CallOp _ | CallIndirectOp _ | ReturnedOp _ | GetGlobalOp _
   | OutsideContext _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Memset _
@@ -440,10 +454,11 @@ let is_pure = function
 
 let is_assignment = function
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | DupVar _ | UniOp _
-  | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _ | LoadOp _
-  | SignedLoadOp _  | VecShiftLeftOp _ | VecShiftRightOp _ | VecSplatOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _
-  | VecShuffleOp _ | VecLoadLaneOp _ | ReturnedOp _ | GetGlobalOp _
-  | OutsideContext _ | Landmine _ ->
+  | VecExtend _ | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _
+  | LoadOp _ | SignedLoadOp _ | VecShiftLeftOp _ | VecShiftRightOp _
+  | VecSplatOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _ | VecShuffleOp _
+  | VecLoadLaneOp _ | ReturnedOp _ | GetGlobalOp _ | OutsideContext _
+  | Landmine _ ->
       true
   | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _
   | Unreachable | SetGlobalOp _ | Memset _ | Memcopy _ ->
@@ -455,13 +470,14 @@ let assignment_var = function
   | LongConst (var, _)
   | VecConst { var; _ }
   | DupVar { var; _ }
+  | VecExtend { var; _ }
   | UniOp { var; _ }
   | BiOp { var; _ }
   | VecLaneBiOp { var; _ }
   | SignedBiOp { var; _ }
   | SignedVecLaneBiOp { var; _ }
-  | VecShiftLeftOp { var;_}
-  | VecShiftRightOp { var;_}
+  | VecShiftLeftOp { var; _ }
+  | VecShiftRightOp { var; _ }
   | VecSplatOp { var; _ }
   | VecExtractLaneOp { var; _ }
   | VecReplaceLaneOp { var; _ }

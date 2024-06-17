@@ -349,6 +349,18 @@ let float_to_long = uni_op Float Instr.FloatToLong Long
 let vec_convert_low_32bits_to_float_signed =
   uni_op Vec Instr.VecConvertLow32BitsToFloatsSigned Vec
 
+let vec_extend ?varName b ~shape ~signed ~half_used  operand =
+  verify_var operand Vec b;
+  add_instr b
+  @@ VecExtend
+       {
+         var = new_var b varName Vec;
+         shape;
+         signed;
+         operand;
+         half_used;
+       }
+
 let add = bi_op Int Instr.Add Int
 let sub = bi_op Int Instr.Subtract Int
 let mul = bi_op Int Instr.Multiply Int

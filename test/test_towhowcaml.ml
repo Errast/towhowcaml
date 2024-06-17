@@ -24,6 +24,361 @@ let test_trans_block addr =
   print_s @@ Mir.Block.sexp_of_t
   @@ (Func_translator.translate ~blocks ~name ~intrinsics).blocks.(index)
 
+ let%expect_test "mmx stuff" = 
+  test_trans_block 0x00476bce;
+  [%expect {|
+    ((id 1)
+     (instrs
+      ((0 (OutsideContext (var eax) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))
+       (2 (UniOp (var __i64) (op Int32ToLongUnsigned) (operand (Ref 1))))
+       (3 (VecSplatOp (var __vec) (value (Ref 2)) (shape I64)))
+       (4 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
+       (5 (OutsideContext (var ebx) (typ Int)))
+       (6 (LoadOp (var __i32) (op Load32) (addr (Ref 5))))
+       (7 (UniOp (var __i64) (op Int32ToLongUnsigned) (operand (Ref 6))))
+       (8 (VecSplatOp (var __vec) (value (Ref 7)) (shape I64)))
+       (9
+        (VecExtend (var __vec) (signed false) (shape I8) (half_used LowOrder)
+         (operand (Ref 3))))
+       (10 (OutsideContext (var ecx) (typ Int)))
+       (11 (LoadOp (var __i32) (op Load32) (addr (Ref 10))))
+       (12 (UniOp (var __i64) (op Int32ToLongUnsigned) (operand (Ref 11))))
+       (13 (VecSplatOp (var __vec) (value (Ref 12)) (shape I64)))
+       (14
+        (VecExtend (var __vec) (signed false) (shape I8) (half_used LowOrder)
+         (operand (Ref 8))))
+       (15 (Const __i32 4835064))
+       (16 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 15))))
+       (17
+        (SignedVecLaneBiOp (var __vec) (op VecSubSaturating) (signed true)
+         (shape I16) (lhs (Ref 14)) (rhs (Ref 16))))
+       (18
+        (VecExtend (var __vec) (signed false) (shape I8) (half_used LowOrder)
+         (operand (Ref 13))))
+       (19 (Const __i32 4835064))
+       (20 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 19))))
+       (21
+        (SignedVecLaneBiOp (var __vec) (op VecSubSaturating) (signed true)
+         (shape I16) (lhs (Ref 18)) (rhs (Ref 20))))
+       (22
+        (VecShuffleOp (var __vec) (arg1 (Ref 17)) (arg2 (Ref 21))
+         (control_lower_bits 1374164143712502016) (control_upper_bits 0)))
+       (23 (Const __i32 4835072))
+       (24 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 23))))
+       (25 (BiOp (var __vec) (op VecMulAdd16Bit) (lhs (Ref 22)) (rhs (Ref 24))))
+       (26 (Const __i32 8))
+       (27
+        (VecShiftLeftOp (var __vec) (operand (Ref 9)) (count (Ref 26))
+         (shape I16)))
+       (28
+        (VecExtend (var __vec) (signed false) (shape I16) (half_used LowOrder)
+         (operand (Ref 27))))
+       (29
+        (VecShuffleOp (var __vec) (arg1 (Ref 27)) (arg2 (Ref 4))
+         (control_lower_bits 1663524835064808708) (control_upper_bits 0)))
+       (30
+        (VecShuffleOp (var __vec) (arg1 (Ref 17)) (arg2 (Ref 21))
+         (control_lower_bits 1663524835064808708) (control_upper_bits 0)))
+       (31
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape I32) (lhs (Ref 25))
+         (rhs (Ref 28))))
+       (32 (Const __i32 4835072))
+       (33 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 32))))
+       (34 (BiOp (var __vec) (op VecMulAdd16Bit) (lhs (Ref 30)) (rhs (Ref 33))))
+       (35
+        (VecShuffleOp (var __vec) (arg1 (Ref 21)) (arg2 (Ref 9))
+         (control_lower_bits 1374164143712502016) (control_upper_bits 0)))
+       (36 (Const __i32 4835080))
+       (37 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 36))))
+       (38 (BiOp (var __vec) (op VecMulAdd16Bit) (lhs (Ref 35)) (rhs (Ref 37))))
+       (39 (Const __i32 8))
+       (40
+        (VecShiftRightOp (var __vec) (operand (Ref 31)) (count (Ref 39))
+         (shape I64) (signed true)))
+       (41
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape I32) (lhs (Ref 34))
+         (rhs (Ref 29))))
+       (42
+        (VecShuffleOp (var __vec) (arg1 (Ref 17)) (arg2 (Ref 9))
+         (control_lower_bits 1374164143712502016) (control_upper_bits 0)))
+       (43 (Const __i32 4835088))
+       (44 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 43))))
+       (45 (BiOp (var __vec) (op VecMulAdd16Bit) (lhs (Ref 42)) (rhs (Ref 44))))
+       (46 (Const __i32 8))
+       (47
+        (VecShiftRightOp (var __vec) (operand (Ref 41)) (count (Ref 46))
+         (shape I64) (signed true)))
+       (48 (Const __i32 8))
+       (49
+        (VecShiftRightOp (var __vec) (operand (Ref 38)) (count (Ref 48))
+         (shape I64) (signed true)))
+       (50
+        (VecShuffleOp (var __vec) (arg1 (Ref 17)) (arg2 (Ref 9))
+         (control_lower_bits 1663524835064808708) (control_upper_bits 0)))
+       (51 (Const __i32 8))
+       (52
+        (VecShiftRightOp (var __vec) (operand (Ref 45)) (count (Ref 51))
+         (shape I64) (signed true)))
+       (53 (Const __i32 4835088))
+       (54 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 53))))
+       (55 (BiOp (var __vec) (op VecMulAdd16Bit) (lhs (Ref 50)) (rhs (Ref 54))))
+       (56
+        (VecShuffleOp (var __vec) (arg1 (Ref 21)) (arg2 (Ref 9))
+         (control_lower_bits 1663524835064808708) (control_upper_bits 0)))
+       (57 (Const __i32 4835080))
+       (58 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 57))))
+       (59 (BiOp (var __vec) (op VecMulAdd16Bit) (lhs (Ref 56)) (rhs (Ref 58))))
+       (60
+        (VecShuffleOp (var __vec) (arg1 (Ref 49)) (arg2 (Ref 40))
+         (control_lower_bits 1374179596769034496) (control_upper_bits 0)))
+       (61
+        (VecShuffleOp (var __vec) (arg1 (Ref 49)) (arg2 (Ref 40))
+         (control_lower_bits 1663540288121341188) (control_upper_bits 0)))
+       (62 (Const __i32 8))
+       (63
+        (VecShiftRightOp (var __vec) (operand (Ref 55)) (count (Ref 62))
+         (shape I64) (signed true)))
+       (64 (Const __i32 4847464))
+       (65 (LoadOp (var __i32) (op Load32) (addr (Ref 64))))
+       (66 (VecSplatOp (var __vec) (value (Ref 65)) (shape I32)))
+       (67
+        (VecShuffleOp (var __vec) (arg1 (Ref 52)) (arg2 (Ref 66))
+         (control_lower_bits 1374179596769034496) (control_upper_bits 0)))
+       (68 (Const __i32 4847464))
+       (69 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 68))))
+       (70
+        (VecShuffleOp (var __vec) (arg1 (Ref 52)) (arg2 (Ref 69))
+         (control_lower_bits 1663540288121341188) (control_upper_bits 0)))
+       (71 (Const __i32 8))
+       (72
+        (VecShiftRightOp (var __vec) (operand (Ref 59)) (count (Ref 71))
+         (shape I64) (signed true)))
+       (73
+        (SignedBiOp (var __i64) (op VecNarrow32Bit) (signed true) (lhs (Ref 60))
+         (rhs (Ref 67))))
+       (74
+        (SignedBiOp (var __i64) (op VecNarrow32Bit) (signed true) (lhs (Ref 61))
+         (rhs (Ref 70))))
+       (75
+        (SignedBiOp (var __i64) (op VecNarrow16Bit) (signed false) (lhs (Ref 73))
+         (rhs (Ref 74))))
+       (76
+        (VecShuffleOp (var __vec) (arg1 (Ref 72)) (arg2 (Ref 47))
+         (control_lower_bits 1374179596769034496) (control_upper_bits 0)))
+       (77
+        (VecShuffleOp (var __vec) (arg1 (Ref 72)) (arg2 (Ref 47))
+         (control_lower_bits 1663540288121341188) (control_upper_bits 0)))
+       (78 (Const __i32 4847464))
+       (79 (LoadOp (var __i32) (op Load32) (addr (Ref 78))))
+       (80 (VecSplatOp (var __vec) (value (Ref 79)) (shape I32)))
+       (81
+        (VecShuffleOp (var __vec) (arg1 (Ref 63)) (arg2 (Ref 80))
+         (control_lower_bits 1374179596769034496) (control_upper_bits 0)))
+       (82 (Const __i32 4847464))
+       (83 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 82))))
+       (84
+        (VecShuffleOp (var __vec) (arg1 (Ref 63)) (arg2 (Ref 83))
+         (control_lower_bits 1663540288121341188) (control_upper_bits 0)))
+       (85
+        (SignedBiOp (var __i64) (op VecNarrow32Bit) (signed true) (lhs (Ref 76))
+         (rhs (Ref 81))))
+       (86 (Const __i32 4835096))
+       (87 (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 86))))
+       (88 (BiOp (var __vec) (op VecAnd) (lhs (Ref 75)) (rhs (Ref 87))))
+       (89
+        (SignedBiOp (var __i64) (op VecNarrow32Bit) (signed true) (lhs (Ref 77))
+         (rhs (Ref 84))))
+       (90 (Const __i32 8))
+       (91
+        (VecShiftRightOp (var __vec) (operand (Ref 88)) (count (Ref 90))
+         (shape I64) (signed false)))
+       (92 (OutsideContext (var edx) (typ Int))) (93 (Const __i32 12))
+       (94 (BiOp (var __i32) (op Add) (lhs (Ref 92)) (rhs (Ref 93))))
+       (95 (DupVar (var edx) (src (Ref 94)) (typ Int)))
+       (96 (BiOp (var __vec) (op VecOr) (lhs (Ref 75)) (rhs (Ref 91))))
+       (97
+        (SignedBiOp (var __i64) (op VecNarrow16Bit) (signed false) (lhs (Ref 85))
+         (rhs (Ref 89))))
+       (98 (Const __i32 32))
+       (99
+        (VecShiftRightOp (var __vec) (operand (Ref 91)) (count (Ref 98))
+         (shape I64) (signed false)))
+       (100 (Const __i32 4))
+       (101 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 100))))
+       (102 (DupVar (var eax) (src (Ref 101)) (typ Int)))
+       (103 (VecExtractLaneOp (var __vec) (src (Ref 96)) (shape I32) (lane 0)))
+       (104
+        (StoreOp (op Store32) (addr (Ref 95)) (value (Ref 103)) (offset -12)))
+       (105
+        (VecShuffleOp (var __vec) (arg1 (Ref 99)) (arg2 (Ref 97))
+         (control_lower_bits 1374164143712502016) (control_upper_bits 0)))
+       (106 (Const __i32 24))
+       (107
+        (VecShiftRightOp (var __vec) (operand (Ref 97)) (count (Ref 106))
+         (shape I64) (signed false)))
+       (108 (Const __i32 4))
+       (109 (BiOp (var __i32) (op Add) (lhs (Ref 10)) (rhs (Ref 108))))
+       (110 (DupVar (var ecx) (src (Ref 109)) (typ Int)))
+       (111 (VecExtractLaneOp (var __vec) (src (Ref 105)) (shape I32) (lane 0)))
+       (112 (StoreOp (op Store32) (addr (Ref 95)) (value (Ref 111)) (offset -8)))
+       (113 (Const __i32 48))
+       (114
+        (VecShiftRightOp (var __vec) (operand (Ref 105)) (count (Ref 113))
+         (shape I64) (signed false)))
+       (115 (BiOp (var __vec) (op VecOr) (lhs (Ref 107)) (rhs (Ref 114))))
+       (116 (Const __i32 4))
+       (117 (BiOp (var __i32) (op Add) (lhs (Ref 5)) (rhs (Ref 116))))
+       (118 (DupVar (var ebx) (src (Ref 117)) (typ Int)))
+       (119 (VecExtractLaneOp (var __vec) (src (Ref 115)) (shape I32) (lane 0)))
+       (120 (StoreOp (op Store32) (addr (Ref 95)) (value (Ref 119)) (offset -4)))
+       (121 (Const __i32 1)) (122 (OutsideContext (var edi) (typ Int)))
+       (123 (BiOp (var __i32) (op Subtract) (lhs (Ref 122)) (rhs (Ref 121))))
+       (124 (DupVar (var edi) (src (Ref 123)) (typ Int)))
+       (125
+        (SetGlobalOp (value (Ref 89)) (global ((name __mm1_global__) (typ Vec)))))
+       (126
+        (SetGlobalOp (value (Ref 84)) (global ((name __mm4_global__) (typ Vec)))))
+       (127
+        (SetGlobalOp (value (Ref 47)) (global ((name __mm5_global__) (typ Vec)))))
+       (128
+        (SetGlobalOp (value (Ref 114))
+         (global ((name __mm3_global__) (typ Vec)))))
+       (129
+        (SetGlobalOp (value (Ref 81)) (global ((name __mm7_global__) (typ Vec)))))
+       (130
+        (SetGlobalOp (value (Ref 96)) (global ((name __mm0_global__) (typ Vec)))))
+       (131
+        (SetGlobalOp (value (Ref 74)) (global ((name __mm6_global__) (typ Vec)))))
+       (132
+        (SetGlobalOp (value (Ref 115))
+         (global ((name __mm2_global__) (typ Vec)))))))
+     (terminator
+      (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 123))))
+     (roots
+      ((Ref 0) (Ref 5) (Ref 10) (Ref 92) (Ref 95) (Ref 102) (Ref 104) (Ref 110)
+       (Ref 112) (Ref 118) (Ref 120) (Ref 122) (Ref 124) (Ref 125) (Ref 126)
+       (Ref 127) (Ref 128) (Ref 129) (Ref 130) (Ref 131) (Ref 132))))
+    |}]
+
+let%expect_test "xor je" = 
+ test_trans_block 0x0046fcb3;
+ [%expect {|
+   ((id 6)
+    (instrs
+     ((0 (OutsideContext (var eax) (typ Int)))
+      (1 (OutsideContext (var esi) (typ Int)))
+      (2 (BiOp (var __i32) (op Xor) (lhs (Ref 0)) (rhs (Ref 1))))
+      (3 (DupVar (var eax) (src (Ref 2)) (typ Int)))
+      (4 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))))
+    (terminator
+     (Branch (succeed (Block 11)) (fail (Block 7)) (condition (Ref 4))))
+    (roots ((Ref 0) (Ref 1) (Ref 3))))
+   |}]
+
+let%expect_test "imul byte" =
+ test_trans_block 0x0046e208;
+ [%expect {|
+   ((id 32)
+    (instrs
+     ((0 (OutsideContext (var ecx) (typ Int)))
+      (1
+       (SignedLoadOp (var __i32) (op Load8) (addr (Ref 0)) (signed false)
+        (offset 24)))
+      (2 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 1))))
+      (3 (OutsideContext (var eax) (typ Int)))
+      (4 (BiOp (var eax) (op MergeTruncLow8) (lhs (Ref 2)) (rhs (Ref 3))))
+      (5
+       (SignedLoadOp (var __i32) (op Load8) (addr (Ref 0)) (signed false)
+        (offset 29)))
+      (6 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 5))))
+      (7 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 4))))
+      (8 (BiOp (var __i32) (op Multiply) (lhs (Ref 7)) (rhs (Ref 6))))
+      (9 (BiOp (var eax) (op MergeTrunc16) (lhs (Ref 8)) (rhs (Ref 4))))
+      (10 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 9))))
+      (11 (StoreOp (op Store8) (addr (Ref 0)) (value (Ref 10)) (offset 30)))
+      (12 (UniOp (var __i32) (op ZeroExtendLow8) (operand (Ref 9))))
+      (13 (DupVar (var eax) (src (Ref 12)) (typ Int)))
+      (14 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))
+      (15 (BiOp (var __i32) (op Multiply) (lhs (Ref 13)) (rhs (Ref 14))))
+      (16 (DupVar (var eax) (src (Ref 15)) (typ Int))) (17 (Const __i32 7))
+      (18 (BiOp (var __i32) (op Add) (lhs (Ref 16)) (rhs (Ref 17))))
+      (19 (DupVar (var eax) (src (Ref 18)) (typ Int))) (20 (Const __i32 3))
+      (21 (UniOp (var __i32) (op ZeroExtendLow8) (operand (Ref 20))))
+      (22
+       (SignedBiOp (var __i32) (op ShiftRight) (signed false) (lhs (Ref 19))
+        (rhs (Ref 21))))
+      (23 (DupVar (var eax) (src (Ref 22)) (typ Int)))
+      (24 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 23)) (offset 12)))
+      (25 (OutsideContext (var esp) (typ Int)))
+      (26 (LoadOp (var __i32) (op Load32) (addr (Ref 25)))) (27 (Const __i32 4))
+      (28 (BiOp (var esp) (op Add) (lhs (Ref 25)) (rhs (Ref 27))))
+      (29 (DupVar (var ebx) (src (Ref 26)) (typ Int)))
+      (30 (LoadOp (var __i32) (op Load32) (addr (Ref 28))))
+      (31 (OutsideContext (var __ret_addr__) (typ Int)))
+      (32 (BiOp (var __i32) (op Equal) (lhs (Ref 30)) (rhs (Ref 31))))
+      (33 (AssertOp (condition (Ref 32))))))
+    (terminator Return)
+    (roots
+     ((Ref 0) (Ref 3) (Ref 11) (Ref 23) (Ref 24) (Ref 25) (Ref 28) (Ref 29)
+      (Ref 31) (Ref 33))))
+   |}]
+
+let%expect_test "tail indirect call" = 
+ test_trans_block 0x0047efac;
+ [%expect {|
+   ((id 8)
+    (instrs
+     ((0 (Const __i32 0)) (1 (OutsideContext (var esp) (typ Int)))
+      (2 (Const __i32 4))
+      (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+      (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+      (5 (OutsideContext (var ebx) (typ Int)))
+      (6 (LoadOp (var __i32) (op Load32) (addr (Ref 5)) (offset 20)))
+      (7 (DupVar (var eax) (src (Ref 6)) (typ Int))) (8 (Const __i32 4))
+      (9 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 8))))
+      (10 (Const __i32 4714417))
+      (11 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 10))))
+      (12 (OutsideContext (var ecx) (typ Int)))
+      (13 (OutsideContext (var edx) (typ Int)))
+      (14 (CallOp (func __func47f816__) (args ((Ref 12) (Ref 9) (Ref 13)))))
+      (15 (ReturnedOp (var eax) (typ Int)))
+      (16 (ReturnedOp (var esp) (typ Int)))
+      (17 (ReturnedOp (var edx) (typ Int)))
+      (18 (DupVar (var edx) (src (Ref 5)) (typ Int)))
+      (19 (LoadOp (var __i32) (op Load32) (addr (Ref 18)) (offset 4)))
+      (20 (DupVar (var ebx) (src (Ref 19)) (typ Int)))
+      (21 (LoadOp (var __i32) (op Load32) (addr (Ref 18)) (offset 8)))
+      (22 (DupVar (var edi) (src (Ref 21)) (typ Int)))
+      (23 (LoadOp (var __i32) (op Load32) (addr (Ref 18)) (offset 12)))
+      (24 (DupVar (var esi) (src (Ref 23)) (typ Int)))
+      (25 (LoadOp (var __i32) (op Load32) (addr (Ref 16)) (offset 8)))
+      (26 (DupVar (var eax) (src (Ref 25)) (typ Int))) (27 (Const __i32 1))
+      (28 (Const __i32 0))
+      (29
+       (SignedBiOp (var __i32) (op LessThan) (signed false) (lhs (Ref 26))
+        (rhs (Ref 27))))
+      (30 (BiOp (var __i32) (op Add) (lhs (Ref 29)) (rhs (Ref 28))))
+      (31 (BiOp (var __i32) (op Add) (lhs (Ref 30)) (rhs (Ref 26))))
+      (32 (DupVar (var eax) (src (Ref 31)) (typ Int)))
+      (33 (LoadOp (var __i32) (op Load32) (addr (Ref 18)) (offset 16)))
+      (34 (DupVar (var esp) (src (Ref 33)) (typ Int))) (35 (Const __i32 4))
+      (36 (BiOp (var __i32) (op Add) (lhs (Ref 34)) (rhs (Ref 35))))
+      (37 (DupVar (var esp) (src (Ref 36)) (typ Int)))
+      (38 (LoadOp (var __i32) (op Load32) (addr (Ref 18)) (offset 20)))
+      (39
+       (CallIndirectOp (table_index (Ref 38))
+        (args ((Ref 12) (Ref 37) (Ref 18)))))
+      (40 (ReturnedOp (var eax) (typ Int)))
+      (41 (ReturnedOp (var esp) (typ Int)))
+      (42 (ReturnedOp (var edx) (typ Int)))))
+    (terminator Return)
+    (roots
+     ((Ref 1) (Ref 4) (Ref 5) (Ref 11) (Ref 12) (Ref 13) (Ref 14) (Ref 15)
+      (Ref 16) (Ref 17) (Ref 20) (Ref 22) (Ref 24) (Ref 39) (Ref 40) (Ref 41)
+      (Ref 42))))
+   |}]
+
  let%expect_test "nonzero switch" = 
   test_trans_block 0x0046af8f;
   [%expect {|

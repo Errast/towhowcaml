@@ -134,6 +134,12 @@ let rec instr_value c ref =
 let instr_is_zeroed c ref =
   instr_value c ref |> Option.value_map ~default:false ~f:(equal_int 0)
 
+let rec instr_is_vec_zeroed c ref =
+  match B.get_instr c.builder ref with
+  | VecConst { lower_bits = 0L; upper_bits = 0L; _ } -> true
+  | DupVar { src; _ } -> instr_is_vec_zeroed c src
+  | _ -> false
+
 let reg_type_of_size = function
   | 4 -> `Reg32Bit
   | 2 -> `Reg16Bit
@@ -359,9 +365,10 @@ let store_operand_f c value ~dest =
       | _ -> raise_c c "invalid operand")
   | _ -> raise_c c "invalid operand"
 
+(* merging mm and xmm here is probably fine *)
 let load_operand_v c src =
   match src with
-  | Register { reg = #X86reg.sse as reg; _ } ->
+  | Register { size = 16; reg = #X86reg.sse as reg } ->
       cached_get_global c.state c.builder (Util.xmm_reg_to_global reg)
   | Memory ({ segment = None; size = 16; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
@@ -370,7 +377,7 @@ let load_operand_v c src =
 
 let store_operand_v c value ~dest =
   match dest with
-  | Register { reg = #X86reg.sse as reg; _ } ->
+  | Register { size = 16; reg = #X86reg.sse as reg } ->
       cached_set_global c.state (Util.xmm_reg_to_global reg) value
   | Memory ({ segment = None; size = 16; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
@@ -389,6 +396,24 @@ let store_operand_l c value ~dest =
   | Memory ({ segment = None; size = 8; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.long_store64 c.builder ~addr ~offset ~value
+  | _ -> raise_c c "invalid operand"
+
+let load_operand_mmx c src =
+  match src with
+  | Register { size = 8; reg = #X86reg.mmx as reg } ->
+      cached_get_global c.state c.builder (Util.mm_reg_to_global reg)
+  | Memory ({ segment = None; size = 8; _ } as mem) ->
+      let addr, offset = load_partial_address c mem in
+      B.vec_load64_zero_extend c.builder addr ~offset
+  | _ -> raise_c c "invalid operand"
+
+let store_operand_mmx c value ~dest =
+  match dest with
+  | Register { size = 8; reg = #X86reg.mmx as reg } ->
+      cached_set_global c.state (Util.mm_reg_to_global reg) value
+  | Memory ({ segment = None; size = 8; _ } as mem) ->
+      let addr, offset = load_partial_address c mem in
+      B.vec_store c.builder ~addr ~offset ~vec:value ~shape:`I64 ~lane:0
   | _ -> raise_c c "invalid operand"
 
 let write_fpu_stack_changes ~state ~builder =
@@ -819,6 +844,9 @@ let translate_dec_comparison c ~result =
   | JS | SETS ->
       B.less_than ~rhs:(B.const c.builder 0) ~lhs:(extend_signed c result)
         ~signed:true c.builder
+  | JNS ->
+      B.greater_than_equal ~rhs:(B.const c.builder 0)
+        ~lhs:(extend_signed c result) ~signed:true c.builder
   | JE -> B.equals_zero c.builder ~operand:(extend_either c result)
   | JNE -> extend_either c result
   | _ -> raise_comp_ops c
@@ -846,14 +874,16 @@ let translate_inc_comparison c ~result =
   (* slightly different from add *)
   match c.opcode.id with JNE -> extend_either c result | _ -> raise_comp_ops c
 
-let translate_result_comparison c ~result ~cf_zero =
+type flag_use = Valid | Zero | Undef [@@deriving equal]
+
+let translate_result_comparison c ~result ~c_f ~o_f:_ =
   match c.opcode.id with
   | JE -> B.equals_zero c.builder ~operand:(extend_either c result)
   | JNE -> extend_either c result
   | JNS ->
       B.greater_than_equal c.builder ~rhs:(B.const c.builder 0)
         ~lhs:(extend_signed c result) ~signed:true
-  | JBE when cf_zero ->
+  | JBE when equal_flag_use c_f Zero ->
       B.equals_zero c.builder ~operand:(extend_either c result)
   | _ -> raise_comp_ops c
 
@@ -866,7 +896,7 @@ let translate_shr_comparison c ~lhs ~rhs ~result =
       let rhs = extend_either c rhs in
       B.mir_assert c.builder rhs;
       B.shift_left c.builder ~rhs:(B.sub c.builder ~lhs:thirty_two ~rhs) ~lhs
-  | _ -> translate_result_comparison c ~result ~cf_zero:false
+  | _ -> translate_result_comparison c ~result ~c_f:Zero ~o_f:Undef
 
 let translate_sahf_comparison c =
   match
@@ -916,7 +946,8 @@ let translate_condition c =
     match (c.state.compare_instr, c.state.compare_args) with
     | TEST, [ ((_, #gpr_type) as lhs); ((_, #gpr_type) as rhs) ] ->
         translate_test_comparison c ~lhs ~rhs
-    | (CMP | CMPSD), [ ((_, #gpr_type) as lhs); ((_, #gpr_type) as rhs) ] ->
+    | ( (CMP | CMPSD | CMPSB),
+        [ ((_, #gpr_type) as lhs); ((_, #gpr_type) as rhs) ] ) ->
         translate_cmp_comparison c ~lhs ~rhs
     | INVALID, [] -> translate_input_cond c
     | DEC, [ ((_, #gpr_type) as result) ] -> translate_dec_comparison c ~result
@@ -926,7 +957,7 @@ let translate_condition c =
         translate_sub_comparison c ~lhs ~result
     | INC, [ ((_, #gpr_type) as result) ] -> translate_inc_comparison c ~result
     | (OR | AND), [ ((_, #gpr_type) as result) ] ->
-        translate_result_comparison c ~result ~cf_zero:true
+        translate_result_comparison c ~result ~c_f:Zero ~o_f:Zero
     | ( SHR,
         [
           ((_, #gpr_type) as lhs);
@@ -938,6 +969,8 @@ let translate_condition c =
     | NEG, [ ((_, #gpr_type) as result) ] -> translate_neg_comparison c ~result
     | UCOMISD, [ (lhs, `sse); (rhs, `sse) ] ->
         translate_ucomisd_comparison c ~lhs ~rhs
+    | XOR, [ ((_, #gpr_type) as result) ] ->
+        translate_result_comparison c ~result ~c_f:Zero ~o_f:Zero
     | _ -> raise_c c "Invalid comparison"
   in
   B.set_check_var_is_latest c.builder true;
@@ -1016,6 +1049,11 @@ let translate_float_bi_op_r c (op : B.bi_op_add)
 
 let translate_imul c =
   match operands c with
+  | [ rhs ] when operand_size rhs = 1 ->
+      let lhs = Register { reg = `al; size = 1 } in
+      let dest = Register { reg = `ax; size = 2 } in
+      B.mul c.builder ~rhs:(load_operand_s c rhs) ~lhs:(load_operand_s c lhs)
+      |> store_operand c ~dest
   | [ dest; lhs; rhs ] | [ (lhs as dest); rhs ] ->
       let lhs = load_operand_s c lhs in
       let rhs = load_operand_s c rhs in
@@ -1236,6 +1274,8 @@ let translate_repe_cmpsd c =
       B.returned c.builder ~varName:(X86reg.to_ident `esi) Int |> ignore;
       B.returned c.builder ~varName:(X86reg.to_ident `edi) Int |> ignore;
       B.returned c.builder ~varName:(X86reg.to_ident `ecx) Int |> ignore;
+      (* make the comparison values the last value*)
+      (* will get deleted by opts anyway *)
       let arg1 = load_operand_typed c arg1 in
       let arg2 = load_operand_typed c arg2 in
       add_comparison c [ arg1; arg2 ]
@@ -1576,6 +1616,7 @@ let translate_movq c =
           store_operand_v c ~dest
           @@ B.vec_replace c.builder ~dest:zero ~value:src_value ~shape:`I64
                ~lane:0
+      | 8, 8 -> load_operand_mmx c src |> store_operand_mmx c ~dest
       | _ -> raise_ops c)
   | _ -> raise_ops c
 
@@ -1584,19 +1625,22 @@ let translate_movapd c =
   | [ dest; src ] -> store_operand_v c ~dest @@ load_operand_v c src
   | _ -> raise_ops c
 
-let translate_vector_shift_64 c (f : B.bi_op_add) =
-  let dest, count, dest_value =
-    match operands c with
-    | [ dest; src ] when operand_size src = 16 ->
-        ( dest,
-          B.vec_extract c.builder ~shape:`I32 ~lane:0 @@ load_operand_v c src,
-          load_operand_v c dest )
-    | [ dest; Immediate { size = 1; value } ] ->
-        (dest, B.const c.builder value, load_operand_v c dest)
-    | _ -> raise_ops c
-  in
-  let result = f c.builder ~lhs:dest_value ~rhs:count in
-  store_operand_v c ~dest result
+let translate_vec_shift_64 c (f : B.bi_op_add) =
+  match operands c with
+  | [ dest; src ] when operand_size src = 16 ->
+      let lhs = load_operand_v c dest in
+      f c.builder ~lhs
+        ~rhs:
+          (B.vec_extract c.builder ~shape:`I32 ~lane:0 @@ load_operand_v c src)
+      |> store_operand_v c ~dest
+  | [ dest; Immediate { size = 1; value } ] when operand_size dest = 16 ->
+      let lhs = load_operand_v c dest in
+      f c.builder ~rhs:(B.const c.builder value) ~lhs |> store_operand_v c ~dest
+  | [ dest; Immediate { size = 1; value } ] when operand_size dest = 8 ->
+      let lhs = load_operand_mmx c dest in
+      f c.builder ~rhs:(B.const c.builder value) ~lhs
+      |> store_operand_mmx c ~dest
+  | _ -> raise_ops c
 
 let translate_movd c =
   match operands c with
@@ -1606,14 +1650,30 @@ let translate_movd c =
           store_operand c ~dest
           @@ B.vec_extract c.builder ~shape:`I32 ~lane:0
           @@ load_operand_v c src
+      | 8, 4 ->
+          B.int32_to_long c.builder ~operand:(load_operand c src) ~signed:false
+          |> B.vec_splat c.builder ~shape:`I64
+          |> store_operand_mmx c ~dest
+      | 4, 8 ->
+          load_operand_mmx c src
+          |> B.vec_extract c.builder ~lane:0 ~shape:`I32
+          |> store_operand c ~dest
       | _ -> raise_ops c)
   | _ -> raise_ops c
 
 let translate_vec_bi_op c (f : B.bi_op_add) =
   match operands c with
-  | [ dest; src ] ->
-      store_operand_v c ~dest
-      @@ f c.builder ~rhs:(load_operand_v c src) ~lhs:(load_operand_v c dest)
+  | [ dest; src ] -> (
+      match (operand_size dest, operand_size src) with
+      | 16, 16 ->
+          store_operand_v c ~dest
+          @@ f c.builder ~rhs:(load_operand_v c src)
+               ~lhs:(load_operand_v c dest)
+      | 8, 8 ->
+          f c.builder ~rhs:(load_operand_mmx c src)
+            ~lhs:(load_operand_mmx c dest)
+          |> store_operand_mmx c ~dest
+      | _ -> raise_ops c)
   | _ -> raise_ops c
 
 let translate_ucomisd c =
@@ -1622,6 +1682,46 @@ let translate_ucomisd c =
       let lhs = load_operand_v c lhs in
       let rhs = load_operand_v c rhs in
       add_comparison c [ (lhs, `sse); (rhs, `sse) ]
+  | _ -> raise_ops c
+
+let translate_pxor c =
+  match operands c with
+  | [ lhs; rhs ] when equal_operand lhs rhs -> (
+      match operand_size lhs with
+      | 16 -> B.vec_const c.builder ~l:0L ~h:0L |> store_operand_v c ~dest:lhs
+      | 8 -> B.vec_const c.builder ~l:0L ~h:0L |> store_operand_mmx c ~dest:lhs
+      | _ -> raise_ops c)
+  | _ -> translate_vec_bi_op c B.vec_xor
+
+(* works for mm stuff as long as ctrl_l doesn't reference bytes >7 *)
+let translate_punpack c ?mm ?vec2_zeroed ctrl =
+  match operands c with
+  | [ lhs; rhs ] when operand_size lhs = 8 -> (
+      let vec1 = load_operand_mmx c lhs in
+      let vec2 =
+        match rhs with
+        | Memory { size = 4; _ } ->
+            (* gotta hit both the low and high order parts *)
+            load_operand c rhs |> B.vec_splat c.builder ~shape:`I32
+        | _ -> load_operand_mmx c rhs
+      in
+      match vec2_zeroed with
+      | Some f when instr_is_vec_zeroed c vec2 ->
+          f c.builder vec1 |> store_operand_mmx c ~dest:lhs
+      | _ ->
+          let ctrl_l = Option.value mm ~default:(snd ctrl) in
+          B.vec_shuffle c.builder ~vec1 ~vec2 ~ctrl_l ~ctrl_h:0L
+          |> store_operand_mmx c ~dest:lhs)
+  | [ lhs; rhs ] when operand_size lhs = 16 -> (
+      let vec1 = load_operand_v c lhs in
+      let vec2 = load_operand_v c rhs in
+      match vec2_zeroed with
+      | Some f when instr_is_vec_zeroed c vec2 ->
+          f c.builder vec1 |> store_operand_v c ~dest:lhs
+      | _ ->
+          let ctrl_h, ctrl_l = ctrl in
+          B.vec_shuffle c.builder ~vec1 ~vec2 ~ctrl_l ~ctrl_h
+          |> store_operand_v c ~dest:lhs)
   | _ -> raise_ops c
 
 let translate_no_prefix c =
@@ -1716,17 +1816,49 @@ let translate_no_prefix c =
   | STMXCSR -> translate_store_mxcsr c
   | MOVQ -> translate_movq c
   | MOVAPD -> translate_movapd c
-  | PSLLQ -> translate_vector_shift_64 c (B.vec_shift_left ~shape:`I64)
+  | PSLLQ -> translate_vec_shift_64 c (B.vec_shift_left ~shape:`I64)
   | PSRLQ ->
-      translate_vector_shift_64 c (B.vec_shift_right ~shape:`I64 ~signed:false)
+      translate_vec_shift_64 c (B.vec_shift_right ~shape:`I64 ~signed:false)
   | MOVD -> translate_movd c
-  | ANDPD -> translate_vec_bi_op c B.vec_and
+  | PAND | ANDPD -> translate_vec_bi_op c B.vec_and
   | PSUBD -> translate_vec_bi_op c (B.vec_add ~shape:`I32)
   | UCOMISD -> translate_ucomisd c
   (* the signed doesn't do anything cause the lane is a float. gadts would fix this *)
   | CMPLTPD -> translate_vec_bi_op c (B.vec_less_than ~shape:F64)
   | SUBSD -> translate_vec_bi_op c (B.vec_sub ~shape:`F64)
-  | ORPD -> translate_vec_bi_op c B.vec_or
+  | POR | ORPD -> translate_vec_bi_op c B.vec_or
+  | PXOR -> translate_pxor c
+  | PUNPCKLBW ->
+      translate_punpack c
+        (0x13_03_12_02_11_01_10_00L, 0x17_07_16_06_15_05_14_04L)
+        ~vec2_zeroed:
+          (B.vec_extend ~shape:`I8 ~signed:false ~half_used:`LowOrder)
+  | PUNPCKLWD ->
+      translate_punpack c
+        (0x17_16_07_06_15_14_05_04L, 0x13_12_03_02_11_10_01_00L)
+        ~vec2_zeroed:
+          (B.vec_extend ~shape:`I16 ~signed:false ~half_used:`LowOrder)
+  | PSUBSW -> translate_vec_bi_op c (B.vec_sub_sat ~shape:I16 ~signed:true)
+  | PMADDWD -> translate_vec_bi_op c B.vec_mul_add_16bit
+  | PSLLW -> translate_vec_shift_64 c (B.vec_shift_left ~shape:`I16)
+  | PUNPCKHWD ->
+      translate_punpack c
+        (0x1F_1E_0F_0E_1D_1C_0D_0CL, 0x1B_1A_0B_0A_19_18_09_08L)
+        ~mm:0x17_16_07_06_15_14_05_04L
+  | PADDD -> translate_vec_bi_op c (B.vec_add ~shape:`I32)
+  | PSRAD ->
+      translate_vec_shift_64 c (B.vec_shift_right ~signed:true ~shape:`I64)
+  | PUNPCKLDQ ->
+      translate_punpack c
+        (0x17_16_15_14_07_06_05_04L, 0x13_12_11_10_03_02_01_00L)
+        ~vec2_zeroed:
+          (B.vec_extend ~shape:`I32 ~signed:false ~half_used:`LowOrder)
+  | PUNPCKHDQ ->
+      translate_punpack c
+        (0x1F_1E_1D_1C_0F_0E_0D_0CL, 0x1B_1A_19_18_0B_0A_09_08L)
+        ~mm:0x17_16_15_14_07_06_05_04L
+  | PACKSSDW -> translate_vec_bi_op c (B.vec_narrow_32bit ~signed:true)
+  | PACKUSWB -> translate_vec_bi_op c (B.vec_narrow_16bit ~signed:false)
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c =
@@ -1814,6 +1946,13 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
         translate_direct_call
           { intrinsics; builder; state; opcode }
           intrinisc.name intrinisc.signature ~push_addr:false;
+        Return
+    | { id = JMP; prefix = 0; opex = { operands = [ addr ] }; _ }
+      when tail_position ->
+        let context = { intrinsics; builder; state; opcode } in
+        translate_indirect_call context
+          ~addr:(load_operand context addr)
+          Util.fast_call ~push_addr:false;
         Return
     | { id = RET; prefix = 0; opex = { operands }; _ } when tail_position ->
         let esp = X86reg.to_ident `esp in

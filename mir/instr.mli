@@ -217,6 +217,13 @@ type t =
       control_lower_bits : Int64.t;
       control_upper_bits : Int64.t;
     }
+  | VecExtend of {
+      var : Variable.t;
+      signed : bool;
+      shape : [ `I8 | `I16 | `I32 ];
+      half_used : [ `HighOrder | `LowOrder ];
+      operand : Ref.t;
+    }
   | LoadOp of { var : Variable.t; op : load_op; addr : Ref.t; offset : int }
   | SignedLoadOp of {
       var : Variable.t;

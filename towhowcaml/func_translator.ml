@@ -91,9 +91,7 @@ let translate_block c id block =
     else
       let term_op = AP.last block.ops in
       let block_term = block.terminator in
-      let tail_position =
-        match block_term with Return  -> true | _ -> false
-      in
+      let tail_position = match block_term with Return -> true | _ -> false in
       let term_found =
         Instr_translator.translate_terminator c.intrinsics builder state term_op
           ~tail_position

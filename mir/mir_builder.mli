@@ -61,7 +61,7 @@ type (_, _) vec_lane_shape_signed =
   | F32 : ([> `F32 ], Instr.ref) vec_lane_shape_signed
   | F64 : ([> `F64 ], Instr.ref) vec_lane_shape_signed
 
-type ('r,'s) signed_vec_lane_bi_op_add =
+type ('r, 's) signed_vec_lane_bi_op_add =
   shape:('r, 's) vec_lane_shape_signed ->
   ?varName:ident ->
   t ->
@@ -101,6 +101,16 @@ val int32_to_long : uni_op_add_signed
 val float_to_long : uni_op_add
 val int64_to_float : uni_op_add_signed
 val vec_convert_low_32bits_to_float_signed : uni_op_add
+
+val vec_extend :
+  ?varName:ident ->
+  t ->
+  shape:[ `I8 | `I16 | `I32 ] ->
+  signed:bool ->
+  half_used:[ `HighOrder | `LowOrder ] ->
+  Instr.ref ->
+  Instr.ref
+
 val add : bi_op_add
 val sub : bi_op_add
 val mul : bi_op_add
@@ -180,11 +190,11 @@ val vec_shift_right :
   shape:int_vec_lane_shape ->
   Instr.ref
 
-val vec_max : ('r,'s) signed_vec_lane_bi_op_add
-val vec_min : ('r,'s) signed_vec_lane_bi_op_add
-val vec_less_than : ('r,'s) signed_vec_lane_bi_op_add
-val vec_add_sat : ([`I8 | `I16],'s) signed_vec_lane_bi_op_add
-val vec_sub_sat : ([`I8 | `I16],'s) signed_vec_lane_bi_op_add
+val vec_max : ('r, 's) signed_vec_lane_bi_op_add
+val vec_min : ('r, 's) signed_vec_lane_bi_op_add
+val vec_less_than : ('r, 's) signed_vec_lane_bi_op_add
+val vec_add_sat : ([ `I8 | `I16 ], 's) signed_vec_lane_bi_op_add
+val vec_sub_sat : ([ `I8 | `I16 ], 's) signed_vec_lane_bi_op_add
 
 val vec_splat :
   ?varName:ident -> t -> Instr.ref -> shape:vec_lane_shape -> Instr.ref
