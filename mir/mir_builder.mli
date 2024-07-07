@@ -28,10 +28,10 @@ val long_const : ?varName:ident -> t -> int64 -> Instr.ref
 val vec_const : ?varName:ident -> t -> l:int64 -> h:int64 -> Instr.ref
 val dup_var : ?varName:ident -> t -> local_type -> Instr.ref -> Instr.ref
 
-type uni_op_add = ?varName:ident -> t -> operand:Instr.ref -> Instr.ref
+type uni_op_add = ?varName:ident -> t -> Instr.ref -> Instr.ref
 
 type uni_op_add_signed =
-  ?varName:ident -> t -> operand:Instr.ref -> signed:bool -> Instr.ref
+  ?varName:ident -> t -> Instr.ref -> signed:bool -> Instr.ref
 
 type bi_op_add =
   ?varName:ident -> t -> lhs:Instr.ref -> rhs:Instr.ref -> Instr.ref
@@ -101,6 +101,7 @@ val int32_to_long : uni_op_add_signed
 val float_to_long : uni_op_add
 val int64_to_float : uni_op_add_signed
 val vec_convert_low_32bits_to_float_signed : uni_op_add
+val vec_int8_sign_bitmask : uni_op_add
 
 val vec_extend :
   ?varName:ident ->
@@ -153,6 +154,7 @@ val vec_add : vec_lane_bi_op_add
 val vec_sub : vec_lane_bi_op_add
 val vec_mul : vec_lane_bi_op_add
 val vec_equal : vec_lane_bi_op_add
+val vec_not_equal : vec_lane_bi_op_add
 
 val vec_shift_left :
   ?varName:ident ->
@@ -190,11 +192,15 @@ val vec_shift_right :
   shape:int_vec_lane_shape ->
   Instr.ref
 
-val vec_max : ('r, 's) signed_vec_lane_bi_op_add
-val vec_min : ('r, 's) signed_vec_lane_bi_op_add
-val vec_less_than : ('r, 's) signed_vec_lane_bi_op_add
-val vec_add_sat : ([ `I8 | `I16 ], 's) signed_vec_lane_bi_op_add
-val vec_sub_sat : ([ `I8 | `I16 ], 's) signed_vec_lane_bi_op_add
+val vec_max : (_, _) signed_vec_lane_bi_op_add
+val vec_min : (_, _) signed_vec_lane_bi_op_add
+val vec_less_than : (_, _) signed_vec_lane_bi_op_add
+val vec_less_than_equal : (_, _) signed_vec_lane_bi_op_add
+val vec_greater_than : (_, _) signed_vec_lane_bi_op_add
+val vec_greater_than_equal : (_, _) signed_vec_lane_bi_op_add
+val vec_add_sat : ([ `I8 | `I16 ], _) signed_vec_lane_bi_op_add
+val vec_sub_sat : ([ `I8 | `I16 ], _) signed_vec_lane_bi_op_add
+val vec_div : (_, _) signed_vec_lane_bi_op_add
 
 val vec_splat :
   ?varName:ident -> t -> Instr.ref -> shape:vec_lane_shape -> Instr.ref

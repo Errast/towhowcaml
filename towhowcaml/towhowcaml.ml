@@ -41,15 +41,29 @@ let ignroe_funcs =
       4766733;
       4766557;
       0x0047ecbd;
+      (* calls ExitProcess as terminator *)
+      0x0047f84f;
+      (* kinda weird *)
+      0x0047ddd0;
+      (* actually uses status word *)
+      0x00484646;
+      0x00484653;
+      0x00484653;
+      0x00484653;
+      0x00489216;
+      0x004894ce;
+      (* conditional tail call *)
+      4766328;
     ]
 
 let block_mods :
     (int, Radatnet.func_block array -> Radatnet.func_block array) Hashtbl.t =
   let fix_tail index bs =
+    let index = if index < 0 then Array.length bs + index else index in
     bs.(index) <- { (bs.(index) : Radatnet.func_block) with jump_to = None };
     bs
   and slice start stop array = Array.slice array start stop
-  and ( >> ) l r x = r x |> l in
+  and ( >> ) l r x = l x |> r in
   Hashtbl.of_alist_exn
     (module Int)
     [
@@ -62,9 +76,48 @@ let block_mods :
       (0x0046b699, fix_tail 0);
       (0x0047f150, slice 0 6 >> fix_tail 4);
       (0x00478491, fix_tail 14);
+      (0x00482b8c, slice 0 4 >> fix_tail 3);
+      (0x00483c50, fix_tail 0);
+      (0x0047f80d, fix_tail 0);
+      (0x00483f7b, fix_tail (-1));
+      (0x00485be0, slice 0 1 >> fix_tail 0);
+      (0x0048ba78, fix_tail 4 >> fix_tail 5 >> fix_tail 11);
     ]
 
-let contig_exceptions = [| 0x0047d285; 4724623; 0x0047ea7d; 0x0047ee10 |]
+let contig_exceptions =
+  Set.of_list
+    (module Int)
+    [
+      0x0047d285;
+      4724623;
+      0x0047ea7d;
+      0x0047ee10;
+      4717065;
+      0x00480400;
+      0x0047e311;
+      0x0047e0d1;
+      0x00487ea8;
+      0x00482b8c;
+      0x00483560;
+      0x00484acf;
+      0x00482bc1;
+      0x00486370;
+      0x004865c0;
+      0x00486a58;
+      0x0047d820;
+      0x00486ae3;
+      0x004870f0;
+      0x00487a96;
+      0x00484972;
+      0x00485ab0;
+      0x00489b4f;
+      0x00489c76;
+      0x0048a07b;
+      0x0048a20d;
+      0x0048acaf;
+      0x0048aded;
+      0x0048b721;
+    ]
 
 let make_intrinsics c =
   let open Core in
@@ -114,7 +167,7 @@ let translate_func c addr ~intrinsics =
     |> Option.value_map ~default:blocks ~f:(fun f -> f blocks)
   in
   (* no non-contiguous blocks *)
-  if not @@ Array.mem contig_exceptions addr ~equal:( = ) then
+  if not @@ Set.mem contig_exceptions addr then
     Array.fold blocks ~init:blocks.(0).addr ~f:(fun a b ->
         if b.addr <> a then
           raise_s [%message "noncontiguous" ~addr:(b.addr : int)];

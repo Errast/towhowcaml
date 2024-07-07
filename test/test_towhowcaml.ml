@@ -24,9 +24,554 @@ let test_trans_block addr =
   print_s @@ Mir.Block.sexp_of_t
   @@ (Func_translator.translate ~blocks ~name ~intrinsics).blocks.(index)
 
- let%expect_test "mmx stuff" = 
-  test_trans_block 0x00476bce;
+let%expect_test "shufpd" = 
+  test_trans_block 0x0048be1e ;
   [%expect {|
+    ((id 4)
+     (instrs
+      ((0 (GetGlobalOp (var __vec) (global ((name __xmm2_global__) (typ Vec)))))
+       (1
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 0))
+         (rhs (Ref 0))))
+       (2
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 1))
+         (rhs (Ref 1))))
+       (3 (Const __i32 4820576))
+       (4 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 3))))
+       (5
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 4))
+         (rhs (Ref 2))))
+       (6 (Const __i32 4820560))
+       (7 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 6))))
+       (8
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 5))
+         (rhs (Ref 7))))
+       (9
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 8))
+         (rhs (Ref 2))))
+       (10 (Const __i32 4820544))
+       (11 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 10))))
+       (12
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 9))
+         (rhs (Ref 11))))
+       (13
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 12))
+         (rhs (Ref 2))))
+       (14 (Const __i32 4820528))
+       (15 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 14))))
+       (16
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 13))
+         (rhs (Ref 15))))
+       (17
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 16))
+         (rhs (Ref 1))))
+       (18 (VecExtractLaneOp (var __i64) (src (Ref 17)) (shape I64) (lane 0)))
+       (19
+        (VecReplaceLaneOp (var __vec) (dest (Ref 16)) (lane_value (Ref 18))
+         (shape I64) (lane 0)))
+       (20
+        (VecShuffleOp (var __vec) (arg1 (Ref 19)) (arg2 (Ref 19))
+         (control_lower_bits 1084818905618843912)
+         (control_upper_bits 1663540288323457296)))
+       (21
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 19))
+         (rhs (Ref 20))))
+       (22 (VecExtractLaneOp (var __i64) (src (Ref 21)) (shape I64) (lane 0)))
+       (23
+        (VecReplaceLaneOp (var __vec) (dest (Ref 19)) (lane_value (Ref 22))
+         (shape I64) (lane 0)))
+       (24 (GetGlobalOp (var __vec) (global ((name __xmm7_global__) (typ Vec)))))
+       (25
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 23))
+         (rhs (Ref 24))))
+       (26 (VecExtractLaneOp (var __i64) (src (Ref 25)) (shape I64) (lane 0)))
+       (27
+        (VecReplaceLaneOp (var __vec) (dest (Ref 23)) (lane_value (Ref 26))
+         (shape I64) (lane 0)))
+       (28
+        (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 24))
+         (rhs (Ref 27))))
+       (29 (VecExtractLaneOp (var __i64) (src (Ref 28)) (shape I64) (lane 0)))
+       (30
+        (VecReplaceLaneOp (var __vec) (dest (Ref 24)) (lane_value (Ref 29))
+         (shape I64) (lane 0)))
+       (31 (VecExtractLaneOp (var __i64) (src (Ref 30)) (shape I64) (lane 0)))
+       (32 (OutsideContext (var esp) (typ Int)))
+       (33
+        (StoreOp (op LongStore64) (addr (Ref 32)) (value (Ref 31)) (offset 4)))
+       (34 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 32)) (offset 4)))
+       (35 (LoadOp (var __i32) (op Load32) (addr (Ref 32))))
+       (36 (OutsideContext (var __ret_addr__) (typ Int)))
+       (37 (BiOp (var __i32) (op Equal) (lhs (Ref 35)) (rhs (Ref 36))))
+       (38 (AssertOp (condition (Ref 37))))
+       (39 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
+       (40
+        (StoreOp (op FloatStore64) (addr (Ref 39)) (value (Ref 34)) (offset 8)))
+       (41 (Const __i32 8))
+       (42 (BiOp (var __i32) (op Add) (lhs (Ref 39)) (rhs (Ref 41))))
+       (43
+        (SetGlobalOp (value (Ref 20))
+         (global ((name __xmm3_global__) (typ Vec)))))
+       (44
+        (SetGlobalOp (value (Ref 27))
+         (global ((name __xmm5_global__) (typ Vec)))))
+       (45
+        (SetGlobalOp (value (Ref 1)) (global ((name __xmm1_global__) (typ Vec)))))
+       (46
+        (SetGlobalOp (value (Ref 42)) (global ((name __fpuStack__) (typ Int)))))
+       (47
+        (SetGlobalOp (value (Ref 30))
+         (global ((name __xmm7_global__) (typ Vec)))))))
+     (terminator Return)
+     (roots
+      ((Ref 0) (Ref 24) (Ref 32) (Ref 33) (Ref 36) (Ref 38) (Ref 39) (Ref 40)
+       (Ref 43) (Ref 44) (Ref 45) (Ref 46) (Ref 47))))
+    |}]
+
+let%expect_test "movq, comisd jae" = 
+ test_trans_block 0x0048bed8;
+ [%expect {|
+   ((id 7)
+    (instrs
+     ((0 (GetGlobalOp (var __vec) (global ((name __xmm7_global__) (typ Vec)))))
+      (1 (VecExtractLaneOp (var __fl) (src (Ref 0)) (shape F64) (lane 0)))
+      (2 (GetGlobalOp (var __vec) (global ((name __xmm6_global__) (typ Vec)))))
+      (3
+       (VecReplaceLaneOp (var __vec) (dest (Ref 2)) (lane_value (Ref 1))
+        (shape F64) (lane 0)))
+      (4 (GetGlobalOp (var __vec) (global ((name __xmm2_global__) (typ Vec)))))
+      (5 (BiOp (var __vec) (op VecXor) (lhs (Ref 3)) (rhs (Ref 4))))
+      (6 (Const __i32 4820656))
+      (7 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 6))))
+      (8
+       (SignedVecLaneBiOp (var __vec) (op VecGreaterThan) (signed true)
+        (shape F64) (lhs (Ref 4)) (rhs (Ref 7))))
+      (9 (VecExtractLaneOp (var __i32) (src (Ref 8)) (shape I32) (lane 0)))
+      (10
+       (SetGlobalOp (value (Ref 5)) (global ((name __xmm6_global__) (typ Vec)))))))
+    (terminator
+     (Branch (succeed (Block 9)) (fail (Block 8)) (condition (Ref 9))))
+    (roots ((Ref 0) (Ref 2) (Ref 4) (Ref 10))))
+   |}]
+
+let%expect_test "comisd jp" = 
+ test_trans_block 0x0048bdb6;
+ [%expect {|
+   ((id 0)
+    (instrs
+     ((0 (OutsideContext (var esp) (typ Int)))
+      (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
+      (2 (GetGlobalOp (var __vec) (global ((name __xmm7_global__) (typ Vec)))))
+      (3
+       (VecShuffleOp (var __vec) (arg1 (Ref 2)) (arg2 (Ref 2))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 1663540288323457296)))
+      (4 (Const __i32 4820352))
+      (5 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 4))))
+      (6 (BiOp (var __vec) (op VecAnd) (lhs (Ref 3)) (rhs (Ref 5))))
+      (7 (Const __i32 4820720))
+      (8 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 7))))
+      (9
+       (VecLaneBiOp (var __vec) (op VecNotEqual) (shape F64) (lhs (Ref 8))
+        (rhs (Ref 8))))
+      (10
+       (VecLaneBiOp (var __vec) (op VecNotEqual) (shape F64) (lhs (Ref 6))
+        (rhs (Ref 6))))
+      (11 (BiOp (var __vec) (op VecOr) (lhs (Ref 10)) (rhs (Ref 9))))
+      (12 (VecExtractLaneOp (var __i32) (src (Ref 11)) (shape I32) (lane 0)))
+      (13
+       (SetGlobalOp (value (Ref 6)) (global ((name __xmm2_global__) (typ Vec)))))
+      (14
+       (SetGlobalOp (value (Ref 3)) (global ((name __xmm7_global__) (typ Vec)))))
+      (15
+       (SignedVecLaneBiOp (var __vec) (op VecGreaterThan) (signed true)
+        (shape F64) (lhs (Ref 6)) (rhs (Ref 8))))
+      (16 (VecExtractLaneOp (var __i32) (src (Ref 15)) (shape I32) (lane 0)))
+      (17 (DupVar (var __input_compare_arg__) (src (Ref 16)) (typ Int)))))
+    (terminator
+     (Branch (succeed (Block 18)) (fail (Block 1)) (condition (Ref 12))))
+    (roots ((Ref 0) (Ref 1) (Ref 2) (Ref 13) (Ref 14) (Ref 17))))
+   |}]
+
+let%expect_test "fprem" =
+  test_trans_block 0x004892f4;
+  [%expect {|
+    ((id 9)
+     (instrs
+      ((0 (OutsideContext (var esp) (typ Int))) (1 (Const __i32 40))
+       (2 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 1))))
+       (3 (CallOp (func __load_big_float__) (args ((Ref 2)))))
+       (4 (ReturnedOp (var __fl) (typ Float)))
+       (5 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 24)))
+       (6 (DupVar (var eax) (src (Ref 5)) (typ Int)))
+       (7 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 48)))
+       (8 (DupVar (var ebx) (src (Ref 7)) (typ Int))) (9 (Const __i32 32767))
+       (10 (BiOp (var __i32) (op And) (lhs (Ref 8)) (rhs (Ref 9))))
+       (11 (DupVar (var ebx) (src (Ref 10)) (typ Int)))
+       (12 (DupVar (var ecx) (src (Ref 11)) (typ Int)))
+       (13 (BiOp (var __i32) (op Subtract) (lhs (Ref 11)) (rhs (Ref 6))))
+       (14 (DupVar (var ebx) (src (Ref 13)) (typ Int))) (15 (Const __i32 7))
+       (16 (BiOp (var __i32) (op And) (lhs (Ref 14)) (rhs (Ref 15))))
+       (17 (DupVar (var ebx) (src (Ref 16)) (typ Int))) (18 (Const __i32 4))
+       (19 (BiOp (var __i32) (op Or) (lhs (Ref 17)) (rhs (Ref 18))))
+       (20 (DupVar (var ebx) (src (Ref 19)) (typ Int)))
+       (21 (BiOp (var __i32) (op Subtract) (lhs (Ref 12)) (rhs (Ref 20))))
+       (22 (DupVar (var ecx) (src (Ref 21)) (typ Int)))
+       (23 (DupVar (var ebx) (src (Ref 6)) (typ Int))) (24 (Const __i32 32768))
+       (25 (BiOp (var __i32) (op And) (lhs (Ref 23)) (rhs (Ref 24))))
+       (26 (DupVar (var ebx) (src (Ref 25)) (typ Int)))
+       (27 (BiOp (var __i32) (op Or) (lhs (Ref 22)) (rhs (Ref 26))))
+       (28 (DupVar (var ecx) (src (Ref 27)) (typ Int)))
+       (29 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 28)) (offset 24)))
+       (30 (Const __i32 16))
+       (31 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 30))))
+       (32 (CallOp (func __load_big_float__) (args ((Ref 31)))))
+       (33 (ReturnedOp (var __fl) (typ Float)))
+       (34 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 6)) (offset 24)))
+       (35 (CallOp (func __float_mod__) (args ((Ref 4) (Ref 33)))))
+       (36 (ReturnedOp (var __fl) (typ Float))) (37 (Const __i32 40))
+       (38 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 37))))
+       (39 (CallOp (func __store_big_float__) (args ((Ref 38) (Ref 36)))))
+       (40 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))))
+     (terminator (Goto (Block 8)))
+     (roots
+      ((Ref 0) (Ref 3) (Ref 4) (Ref 6) (Ref 26) (Ref 28) (Ref 29) (Ref 32)
+       (Ref 33) (Ref 34) (Ref 35) (Ref 36) (Ref 39) (Ref 40))))
+    |}]
+
+let%expect_test "sub ja" =
+  test_trans_block 0x0048929e;
+  [%expect {|
+    ((id 7)
+     (instrs
+      ((0 (OutsideContext (var esp) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 24)))
+       (2 (DupVar (var eax) (src (Ref 1)) (typ Int))) (3 (Const __i32 32767))
+       (4 (BiOp (var __i32) (op And) (lhs (Ref 2)) (rhs (Ref 3))))
+       (5 (DupVar (var eax) (src (Ref 4)) (typ Int))) (6 (Const __i32 63))
+       (7 (BiOp (var __i32) (op Add) (lhs (Ref 5)) (rhs (Ref 6))))
+       (8 (DupVar (var eax) (src (Ref 7)) (typ Int)))
+       (9 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 48)))
+       (10 (DupVar (var ebx) (src (Ref 9)) (typ Int))) (11 (Const __i32 32767))
+       (12 (BiOp (var __i32) (op And) (lhs (Ref 10)) (rhs (Ref 11))))
+       (13 (DupVar (var ebx) (src (Ref 12)) (typ Int)))
+       (14 (BiOp (var __i32) (op Subtract) (lhs (Ref 13)) (rhs (Ref 8))))
+       (15 (DupVar (var ebx) (src (Ref 14)) (typ Int)))
+       (16
+        (SignedBiOp (var __i32) (op GreaterThan) (signed false) (lhs (Ref 13))
+         (rhs (Ref 8))))))
+     (terminator
+      (Branch (succeed (Block 10)) (fail (Block 8)) (condition (Ref 16))))
+     (roots ((Ref 0) (Ref 8) (Ref 15))))
+    |}]
+
+let%expect_test "sahf je" =
+  test_trans_block 0x0048582f;
+  [%expect {|
+    ((id 1)
+     (instrs
+      ((0 (GetGlobalOp (var __i32) (global ((name __fpuStack__) (typ Int)))))
+       (1 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0))))
+       (2 (Const __i32 4841890))
+       (3 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 2))))
+       (4 (BiOp (var __fl) (op FloatMult) (lhs (Ref 1)) (rhs (Ref 3))))
+       (5 (UniOp (var __fl) (op FloatRound) (operand (Ref 4))))
+       (6 (Landmine (var eax) (typ Int)))
+       (7 (BiOp (var __i32) (op FloatLessThanEqual) (lhs (Ref 5)) (rhs (Ref 4))))
+       (8
+        (BiOp (var __i32) (op FloatGreaterThanEqual) (lhs (Ref 5)) (rhs (Ref 4))))
+       (9 (BiOp (var __i32) (op Equal) (lhs (Ref 8)) (rhs (Ref 7))))
+       (10 (StoreOp (op FloatStore64) (addr (Ref 0)) (value (Ref 1))))
+       (11 (StoreOp (op FloatStore64) (addr (Ref 0)) (value (Ref 4)) (offset 8)))
+       (12 (Const __i32 8))
+       (13 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 12))))
+       (14
+        (SetGlobalOp (value (Ref 13)) (global ((name __fpuStack__) (typ Int)))))))
+     (terminator
+      (Branch (succeed (Block 5)) (fail (Block 2)) (condition (Ref 9))))
+     (roots ((Ref 0) (Ref 6) (Ref 10) (Ref 11) (Ref 14))))
+    |}]
+
+let%expect_test "add jae" =
+  test_trans_block 0x00488a1e;
+  [%expect {|
+    ((id 1)
+     (instrs
+      ((0 (OutsideContext (var esp) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 8)))
+       (2 (DupVar (var eax) (src (Ref 1)) (typ Int)))
+       (3 (BiOp (var __i32) (op Add) (lhs (Ref 2)) (rhs (Ref 2))))
+       (4 (DupVar (var eax) (src (Ref 3)) (typ Int)))
+       (5
+        (SignedBiOp (var __i32) (op GreaterThanEqual) (signed false)
+         (lhs (Ref 3)) (rhs (Ref 2))))))
+     (terminator
+      (Branch (succeed (Block 11)) (fail (Block 2)) (condition (Ref 5))))
+     (roots ((Ref 0) (Ref 4))))
+    |}]
+
+let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
+  test_trans_block 0x00484ef1;
+  [%expect {|
+    ((id 9)
+     (instrs
+      ((0 (OutsideContext (var edx) (typ Int))) (1 (Const __i32 0))
+       (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 1)) (rhs (Ref 0))))
+       (3 (DupVar (var edx) (src (Ref 2)) (typ Int))) (4 (Const __i32 32751))
+       (5 (BiOp (var __i32) (op Add) (lhs (Ref 3)) (rhs (Ref 4))))
+       (6 (DupVar (var edx) (src (Ref 5)) (typ Int)))
+       (7 (GetGlobalOp (var __vec) (global ((name __xmm3_global__) (typ Vec)))))
+       (8 (Const __i32 52))
+       (9
+        (VecShiftLeftOp (var __vec) (operand (Ref 7)) (count (Ref 8))
+         (shape I64)))
+       (10 (GetGlobalOp (var __vec) (global ((name __xmm2_global__) (typ Vec)))))
+       (11 (BiOp (var __vec) (op VecOr) (lhs (Ref 10)) (rhs (Ref 9))))
+       (12 (Const __i32 1011)) (13 (DupVar (var ecx) (src (Ref 12)) (typ Int)))
+       (14
+        (VecReplaceLaneOp (var __vec) (dest (Ref 9)) (lane_value (Ref 13))
+         (shape I32) (lane 0)))
+       (15 (GetGlobalOp (var __vec) (global ((name __xmm1_global__) (typ Vec)))))
+       (16 (Const __i32 20))
+       (17
+        (VecShiftRightOp (var __vec) (operand (Ref 15)) (count (Ref 16))
+         (shape I64) (signed false)))
+       (18
+        (VecLaneBiOp (var __vec) (op VecSub) (shape I32) (lhs (Ref 17))
+         (rhs (Ref 14))))
+       (19 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
+       (20
+        (SignedVecLaneBiOp (var __vec) (op VecMax) (signed true) (shape I16)
+         (lhs (Ref 18)) (rhs (Ref 19))))
+       (21 (VecExtractLaneOp (var __i32) (src (Ref 20)) (shape I32) (lane 0)))
+       (22
+        (VecShiftLeftOp (var __vec) (operand (Ref 11)) (count (Ref 21))
+         (shape I64)))
+       (23
+        (VecLaneBiOp (var __vec) (op VecEqual) (shape I32) (lhs (Ref 22))
+         (rhs (Ref 19))))
+       (24 (UniOp (var __i32) (op VecInt8SignBitmask) (operand (Ref 23))))
+       (25 (DupVar (var eax) (src (Ref 24)) (typ Int)))
+       (26 (DupVar (var ecx) (src (Ref 6)) (typ Int))) (27 (Const __i32 32767))
+       (28 (BiOp (var __i32) (op And) (lhs (Ref 6)) (rhs (Ref 27))))
+       (29 (DupVar (var edx) (src (Ref 28)) (typ Int))) (30 (Const __i32 32752))
+       (31
+        (SignedBiOp (var __i32) (op GreaterThanEqual) (signed false)
+         (lhs (Ref 29)) (rhs (Ref 30))))
+       (32
+        (SetGlobalOp (value (Ref 19))
+         (global ((name __xmm3_global__) (typ Vec)))))
+       (33
+        (SetGlobalOp (value (Ref 23))
+         (global ((name __xmm2_global__) (typ Vec)))))
+       (34
+        (SetGlobalOp (value (Ref 20))
+         (global ((name __xmm1_global__) (typ Vec)))))))
+     (terminator
+      (Branch (succeed (Block 25)) (fail (Block 10)) (condition (Ref 31))))
+     (roots
+      ((Ref 0) (Ref 7) (Ref 10) (Ref 15) (Ref 25) (Ref 26) (Ref 29) (Ref 32)
+       (Ref 33) (Ref 34))))
+    |}]
+
+let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
+  test_trans_block 0x00484fd8;
+  [%expect {|
+    ((id 18)
+     (instrs
+      ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
+       (1 (Const __i32 17392)) (2 (DupVar (var eax) (src (Ref 1)) (typ Int)))
+       (3
+        (VecReplaceLaneOp (var __vec) (dest (Ref 0)) (lane_value (Ref 2))
+         (shape I16) (lane 3)))
+       (4 (GetGlobalOp (var __vec) (global ((name __xmm7_global__) (typ Vec)))))
+       (5 (Const __i32 4803568))
+       (6
+        (VecLoadLaneOp (var __vec) (dest_vec (Ref 4)) (addr (Ref 5)) (shape I64)
+         (lane 0)))
+       (7 (GetGlobalOp (var __vec) (global ((name __xmm2_global__) (typ Vec)))))
+       (8 (Const __i32 4803584))
+       (9
+        (VecLoadLaneOp (var __vec) (dest_vec (Ref 7)) (addr (Ref 8)) (shape I64)
+         (lane 0)))
+       (10 (GetGlobalOp (var __vec) (global ((name __xmm4_global__) (typ Vec)))))
+       (11
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 3))
+         (rhs (Ref 10))))
+       (12 (VecExtractLaneOp (var __i64) (src (Ref 11)) (shape I64) (lane 0)))
+       (13
+        (VecReplaceLaneOp (var __vec) (dest (Ref 3)) (lane_value (Ref 12))
+         (shape I64) (lane 0)))
+       (14 (VecExtractLaneOp (var __i32) (src (Ref 10)) (shape I32) (lane 0)))
+       (15 (DupVar (var edx) (src (Ref 14)) (typ Int))) (16 (Const __i32 32))
+       (17
+        (VecShiftRightOp (var __vec) (operand (Ref 10)) (count (Ref 16))
+         (shape I64) (signed false)))
+       (18 (VecExtractLaneOp (var __i32) (src (Ref 17)) (shape I32) (lane 0)))
+       (19 (DupVar (var eax) (src (Ref 18)) (typ Int))) (20 (Const __i32 0))
+       (21 (BiOp (var __i32) (op Equal) (lhs (Ref 15)) (rhs (Ref 20))))
+       (22
+        (SetGlobalOp (value (Ref 17))
+         (global ((name __xmm4_global__) (typ Vec)))))
+       (23
+        (SetGlobalOp (value (Ref 13))
+         (global ((name __xmm0_global__) (typ Vec)))))
+       (24
+        (SetGlobalOp (value (Ref 9)) (global ((name __xmm2_global__) (typ Vec)))))
+       (25
+        (SetGlobalOp (value (Ref 6)) (global ((name __xmm7_global__) (typ Vec)))))))
+     (terminator
+      (Branch (succeed (Block 20)) (fail (Block 19)) (condition (Ref 21))))
+     (roots
+      ((Ref 4) (Ref 7) (Ref 10) (Ref 15) (Ref 19) (Ref 22) (Ref 23) (Ref 24)
+       (Ref 25))))
+    |}]
+
+let%expect_test "pextrw, mulsd" =
+  test_trans_block 0x00485561;
+  [%expect {|
+    ((id 69)
+     (instrs
+      ((0 (OutsideContext (var esp) (typ Int)))
+       (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)))) (2 (Const __i32 4))
+       (3 (BiOp (var esp) (op Add) (lhs (Ref 0)) (rhs (Ref 2))))
+       (4 (DupVar (var esi) (src (Ref 1)) (typ Int)))
+       (5 (GetGlobalOp (var __vec) (global ((name __xmm0_global__) (typ Vec)))))
+       (6 (GetGlobalOp (var __vec) (global ((name __xmm1_global__) (typ Vec)))))
+       (7
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 5))
+         (rhs (Ref 6))))
+       (8 (VecExtractLaneOp (var __i64) (src (Ref 7)) (shape I64) (lane 0)))
+       (9
+        (VecReplaceLaneOp (var __vec) (dest (Ref 5)) (lane_value (Ref 8))
+         (shape I64) (lane 0)))
+       (10 (GetGlobalOp (var __vec) (global ((name __xmm7_global__) (typ Vec)))))
+       (11
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 9))
+         (rhs (Ref 10))))
+       (12 (VecExtractLaneOp (var __i64) (src (Ref 11)) (shape I64) (lane 0)))
+       (13
+        (VecReplaceLaneOp (var __vec) (dest (Ref 9)) (lane_value (Ref 12))
+         (shape I64) (lane 0)))
+       (14 (GetGlobalOp (var __vec) (global ((name __xmm6_global__) (typ Vec)))))
+       (15
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 14))
+         (rhs (Ref 13))))
+       (16 (VecExtractLaneOp (var __i64) (src (Ref 15)) (shape I64) (lane 0)))
+       (17
+        (VecReplaceLaneOp (var __vec) (dest (Ref 14)) (lane_value (Ref 16))
+         (shape I64) (lane 0)))
+       (18
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 13))
+         (rhs (Ref 17))))
+       (19 (VecExtractLaneOp (var __i64) (src (Ref 18)) (shape I64) (lane 0)))
+       (20
+        (VecReplaceLaneOp (var __vec) (dest (Ref 13)) (lane_value (Ref 19))
+         (shape I64) (lane 0)))
+       (21 (VecExtractLaneOp (var __i32) (src (Ref 20)) (shape I16) (lane 3)))
+       (22 (DupVar (var eax) (src (Ref 21)) (typ Int))) (23 (Const __i32 32752))
+       (24 (BiOp (var __i32) (op And) (lhs (Ref 22)) (rhs (Ref 23))))
+       (25 (DupVar (var eax) (src (Ref 24)) (typ Int))) (26 (Const __i32 24))
+       (27 (DupVar (var edx) (src (Ref 26)) (typ Int))) (28 (Const __i32 32752))
+       (29 (BiOp (var __i32) (op Equal) (lhs (Ref 25)) (rhs (Ref 28))))
+       (30
+        (SetGlobalOp (value (Ref 20))
+         (global ((name __xmm0_global__) (typ Vec)))))
+       (31
+        (SetGlobalOp (value (Ref 17))
+         (global ((name __xmm6_global__) (typ Vec)))))))
+     (terminator
+      (Branch (succeed (Block 59)) (fail (Block 70)) (condition (Ref 29))))
+     (roots
+      ((Ref 0) (Ref 3) (Ref 4) (Ref 5) (Ref 6) (Ref 10) (Ref 14) (Ref 25)
+       (Ref 27) (Ref 30) (Ref 31))))
+    |}]
+
+let%expect_test "movsd" =
+  test_trans_block 0x004852c9;
+  [%expect {|
+    ((id 52)
+     (instrs
+      ((0 (GetGlobalOp (var __vec) (global ((name __xmm2_global__) (typ Vec)))))
+       (1
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 0))
+         (rhs (Ref 0))))
+       (2 (VecExtractLaneOp (var __i64) (src (Ref 1)) (shape I64) (lane 0)))
+       (3
+        (VecReplaceLaneOp (var __vec) (dest (Ref 0)) (lane_value (Ref 2))
+         (shape I64) (lane 0)))
+       (4 (GetGlobalOp (var __vec) (global ((name __xmm0_global__) (typ Vec)))))
+       (5 (VecExtractLaneOp (var __i64) (src (Ref 3)) (shape I64) (lane 0)))
+       (6
+        (VecReplaceLaneOp (var __vec) (dest (Ref 4)) (lane_value (Ref 5))
+         (shape I64) (lane 0)))
+       (7 (Const __i32 1006)) (8 (DupVar (var edx) (src (Ref 7)) (typ Int)))
+       (9
+        (SetGlobalOp (value (Ref 3)) (global ((name __xmm2_global__) (typ Vec)))))
+       (10
+        (SetGlobalOp (value (Ref 6)) (global ((name __xmm0_global__) (typ Vec)))))))
+     (terminator (Goto (Block 59)))
+     (roots ((Ref 0) (Ref 4) (Ref 8) (Ref 9) (Ref 10))))
+    |}]
+
+let%expect_test "backward direction" =
+  test_trans_block 0x0047d9d7;
+  [%expect
+    {|
+   ((id 23)
+    (instrs
+     ((0 (OutsideContext (var ecx) (typ Int))) (1 (Const __i32 2))
+      (2 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 0)) (rhs (Ref 1))))
+      (3 (Const __i32 1))
+      (4 (BiOp (var __i32) (op Subtract) (lhs (Ref 2)) (rhs (Ref 3))))
+      (5 (OutsideContext (var esi) (typ Int)))
+      (6 (BiOp (var esi) (op Subtract) (lhs (Ref 5)) (rhs (Ref 4))))
+      (7 (OutsideContext (var edi) (typ Int)))
+      (8 (BiOp (var edi) (op Subtract) (lhs (Ref 7)) (rhs (Ref 4))))
+      (9 (Memcopy (count (Ref 2)) (src (Ref 6)) (dest (Ref 8))))
+      (10 (Const __i32 1))
+      (11 (BiOp (var esi) (op Subtract) (lhs (Ref 6)) (rhs (Ref 10))))
+      (12 (Const __i32 1))
+      (13 (BiOp (var edi) (op Subtract) (lhs (Ref 8)) (rhs (Ref 12))))
+      (14 (Const ecx 0)) (15 (OutsideContext (var edx) (typ Int)))))
+    (terminator
+     (Switch (cases ((Block 29) (Block 30) (Block 31) (Block 32)))
+      (default (Block 33)) (switch_on (Ref 15))))
+    (roots
+     ((Ref 0) (Ref 5) (Ref 7) (Ref 9) (Ref 11) (Ref 13) (Ref 14) (Ref 15))))
+   |}]
+
+let%expect_test "int3" =
+  test_trans_block 0x00487ff1;
+  [%expect
+    {|
+   ((id 10)
+    (instrs
+     ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
+      (2 (Const __i32 4))
+      (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+      (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+      (5 (Const __i32 4))
+      (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+      (7 (Const __i32 4751340))
+      (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+      (9 (OutsideContext (var ecx) (typ Int)))
+      (10 (OutsideContext (var edx) (typ Int)))
+      (11 (CallOp (func __func47f9da__) (args ((Ref 9) (Ref 6) (Ref 10)))))
+      (12 (ReturnedOp (var eax) (typ Int)))
+      (13 (ReturnedOp (var esp) (typ Int)))
+      (14 (ReturnedOp (var edx) (typ Int)))))
+    (terminator Return)
+    (roots
+     ((Ref 1) (Ref 4) (Ref 8) (Ref 9) (Ref 10) (Ref 11) (Ref 12) (Ref 13)
+      (Ref 14))))
+   |}]
+
+(* check this *)
+let%expect_test "mmx stuff" =
+  test_trans_block 0x00476bce;
+  [%expect
+    {|
     ((id 1)
      (instrs
       ((0 (OutsideContext (var eax) (typ Int)))
@@ -207,7 +752,7 @@ let test_trans_block addr =
        (100 (Const __i32 4))
        (101 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 100))))
        (102 (DupVar (var eax) (src (Ref 101)) (typ Int)))
-       (103 (VecExtractLaneOp (var __vec) (src (Ref 96)) (shape I32) (lane 0)))
+       (103 (VecExtractLaneOp (var __i32) (src (Ref 96)) (shape I32) (lane 0)))
        (104
         (StoreOp (op Store32) (addr (Ref 95)) (value (Ref 103)) (offset -12)))
        (105
@@ -220,7 +765,7 @@ let test_trans_block addr =
        (108 (Const __i32 4))
        (109 (BiOp (var __i32) (op Add) (lhs (Ref 10)) (rhs (Ref 108))))
        (110 (DupVar (var ecx) (src (Ref 109)) (typ Int)))
-       (111 (VecExtractLaneOp (var __vec) (src (Ref 105)) (shape I32) (lane 0)))
+       (111 (VecExtractLaneOp (var __i32) (src (Ref 105)) (shape I32) (lane 0)))
        (112 (StoreOp (op Store32) (addr (Ref 95)) (value (Ref 111)) (offset -8)))
        (113 (Const __i32 48))
        (114
@@ -230,7 +775,7 @@ let test_trans_block addr =
        (116 (Const __i32 4))
        (117 (BiOp (var __i32) (op Add) (lhs (Ref 5)) (rhs (Ref 116))))
        (118 (DupVar (var ebx) (src (Ref 117)) (typ Int)))
-       (119 (VecExtractLaneOp (var __vec) (src (Ref 115)) (shape I32) (lane 0)))
+       (119 (VecExtractLaneOp (var __i32) (src (Ref 115)) (shape I32) (lane 0)))
        (120 (StoreOp (op Store32) (addr (Ref 95)) (value (Ref 119)) (offset -4)))
        (121 (Const __i32 1)) (122 (OutsideContext (var edi) (typ Int)))
        (123 (BiOp (var __i32) (op Subtract) (lhs (Ref 122)) (rhs (Ref 121))))
@@ -261,9 +806,10 @@ let test_trans_block addr =
        (Ref 127) (Ref 128) (Ref 129) (Ref 130) (Ref 131) (Ref 132))))
     |}]
 
-let%expect_test "xor je" = 
- test_trans_block 0x0046fcb3;
- [%expect {|
+let%expect_test "xor je" =
+  test_trans_block 0x0046fcb3;
+  [%expect
+    {|
    ((id 6)
     (instrs
      ((0 (OutsideContext (var eax) (typ Int)))
@@ -277,8 +823,9 @@ let%expect_test "xor je" =
    |}]
 
 let%expect_test "imul byte" =
- test_trans_block 0x0046e208;
- [%expect {|
+  test_trans_block 0x0046e208;
+  [%expect
+    {|
    ((id 32)
     (instrs
      ((0 (OutsideContext (var ecx) (typ Int)))
@@ -324,9 +871,10 @@ let%expect_test "imul byte" =
       (Ref 31) (Ref 33))))
    |}]
 
-let%expect_test "tail indirect call" = 
- test_trans_block 0x0047efac;
- [%expect {|
+let%expect_test "tail indirect call" =
+  test_trans_block 0x0047efac;
+  [%expect
+    {|
    ((id 8)
     (instrs
      ((0 (Const __i32 0)) (1 (OutsideContext (var esp) (typ Int)))
@@ -379,9 +927,10 @@ let%expect_test "tail indirect call" =
       (Ref 42))))
    |}]
 
- let%expect_test "nonzero switch" = 
+let%expect_test "nonzero switch" =
   test_trans_block 0x0046af8f;
-  [%expect {|
+  [%expect
+    {|
     ((id 5)
      (instrs
       ((0 (OutsideContext (var eax) (typ Int))) (1 (Const __i32 20))
@@ -397,7 +946,8 @@ let%expect_test "tail indirect call" =
 
 let%expect_test "fistp dword" =
   test_trans_block 0x00465929;
-  [%expect {|
+  [%expect
+    {|
     ((id 3)
      (instrs
       ((0 (OutsideContext (var ebp) (typ Int)))
@@ -483,48 +1033,48 @@ let%expect_test "psrlq, andpd, psubd" =
   test_trans_block 0x0047ee50;
   [%expect
     {|
-   ((id 5)
-    (instrs
-     ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
-      (1 (OutsideContext (var esp) (typ Int)))
-      (2 (LoadOp (var __i64) (op LongLoad64) (addr (Ref 1)) (offset 4)))
-      (3
-       (VecReplaceLaneOp (var __vec) (dest (Ref 0)) (lane_value (Ref 2))
-        (shape I64) (lane 0)))
-      (4 (Const __i32 4785856))
-      (5 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 4))))
-      (6 (Const __i32 52))
-      (7
-       (VecShiftRightOp (var __vec) (operand (Ref 3)) (count (Ref 6))
-        (shape I64) (signed false)))
-      (8 (VecExtractLaneOp (var __vec) (src (Ref 7)) (shape I32) (lane 0)))
-      (9 (DupVar (var eax) (src (Ref 8)) (typ Int))) (10 (Const __i32 4785904))
-      (11 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 10))))
-      (12 (BiOp (var __vec) (op VecAnd) (lhs (Ref 7)) (rhs (Ref 11))))
-      (13
-       (VecLaneBiOp (var __vec) (op VecAdd) (shape I32) (lhs (Ref 5))
-        (rhs (Ref 12))))
-      (14 (VecExtractLaneOp (var __vec) (src (Ref 13)) (shape I32) (lane 0)))
-      (15
-       (VecShiftRightOp (var __vec) (operand (Ref 3)) (count (Ref 14))
-        (shape I64) (signed false)))
-      (16 (Const __i32 2048))
-      (17 (BiOp (var __i32) (op And) (lhs (Ref 9)) (rhs (Ref 16))))
-      (18
-       (SetGlobalOp (value (Ref 12))
-        (global ((name __xmm0_global__) (typ Vec)))))
-      (19
-       (SetGlobalOp (value (Ref 13))
-        (global ((name __xmm2_global__) (typ Vec)))))
-      (20
-       (SetGlobalOp (value (Ref 3)) (global ((name __xmm7_global__) (typ Vec)))))
-      (21
-       (SetGlobalOp (value (Ref 15))
-        (global ((name __xmm1_global__) (typ Vec)))))))
-    (terminator
-     (Branch (succeed (Block 12)) (fail (Block 6)) (condition (Ref 17))))
-    (roots ((Ref 1) (Ref 9) (Ref 18) (Ref 19) (Ref 20) (Ref 21))))
-   |}]
+    ((id 5)
+     (instrs
+      ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
+       (1 (OutsideContext (var esp) (typ Int)))
+       (2 (LoadOp (var __i64) (op LongLoad64) (addr (Ref 1)) (offset 4)))
+       (3
+        (VecReplaceLaneOp (var __vec) (dest (Ref 0)) (lane_value (Ref 2))
+         (shape I64) (lane 0)))
+       (4 (Const __i32 4785856))
+       (5 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 4))))
+       (6 (Const __i32 52))
+       (7
+        (VecShiftRightOp (var __vec) (operand (Ref 3)) (count (Ref 6))
+         (shape I64) (signed false)))
+       (8 (VecExtractLaneOp (var __i32) (src (Ref 7)) (shape I32) (lane 0)))
+       (9 (DupVar (var eax) (src (Ref 8)) (typ Int))) (10 (Const __i32 4785904))
+       (11 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 10))))
+       (12 (BiOp (var __vec) (op VecAnd) (lhs (Ref 7)) (rhs (Ref 11))))
+       (13
+        (VecLaneBiOp (var __vec) (op VecSub) (shape I32) (lhs (Ref 5))
+         (rhs (Ref 12))))
+       (14 (VecExtractLaneOp (var __i32) (src (Ref 13)) (shape I32) (lane 0)))
+       (15
+        (VecShiftRightOp (var __vec) (operand (Ref 3)) (count (Ref 14))
+         (shape I64) (signed false)))
+       (16 (Const __i32 2048))
+       (17 (BiOp (var __i32) (op And) (lhs (Ref 9)) (rhs (Ref 16))))
+       (18
+        (SetGlobalOp (value (Ref 12))
+         (global ((name __xmm0_global__) (typ Vec)))))
+       (19
+        (SetGlobalOp (value (Ref 13))
+         (global ((name __xmm2_global__) (typ Vec)))))
+       (20
+        (SetGlobalOp (value (Ref 3)) (global ((name __xmm7_global__) (typ Vec)))))
+       (21
+        (SetGlobalOp (value (Ref 15))
+         (global ((name __xmm1_global__) (typ Vec)))))))
+     (terminator
+      (Branch (succeed (Block 12)) (fail (Block 6)) (condition (Ref 17))))
+     (roots ((Ref 1) (Ref 9) (Ref 18) (Ref 19) (Ref 20) (Ref 21))))
+    |}]
 
 let%expect_test "movq, psllq, cmpltpd" =
   test_trans_block 0x0047eed2;
@@ -540,7 +1090,7 @@ let%expect_test "movq, psllq, cmpltpd" =
          (shape I64) (lane 0)))
        (4 (GetGlobalOp (var __vec) (global ((name __xmm1_global__) (typ Vec)))))
        (5 (GetGlobalOp (var __vec) (global ((name __xmm2_global__) (typ Vec)))))
-       (6 (VecExtractLaneOp (var __vec) (src (Ref 5)) (shape I32) (lane 0)))
+       (6 (VecExtractLaneOp (var __i32) (src (Ref 5)) (shape I32) (lane 0)))
        (7
         (VecShiftLeftOp (var __vec) (operand (Ref 4)) (count (Ref 6))
          (shape I64)))
@@ -1252,29 +1802,34 @@ let%expect_test "rep movsb" =
        (36 (DupVar (var ecx) (src (Ref 35)) (typ Int))) (37 (Const __i32 2))
        (38 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 36)) (rhs (Ref 37))))
        (39 (Memcopy (count (Ref 38)) (src (Ref 23)) (dest (Ref 31))))
-       (40 (Const ecx 0)) (41 (DupVar (var ecx) (src (Ref 32)) (typ Int)))
-       (42 (Const __i32 3))
-       (43 (BiOp (var __i32) (op And) (lhs (Ref 41)) (rhs (Ref 42))))
-       (44 (DupVar (var ecx) (src (Ref 43)) (typ Int)))
-       (45 (Memcopy (count (Ref 44)) (src (Ref 23)) (dest (Ref 31))))
-       (46 (Const ecx 0))
-       (47 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -4)))
-       (48 (DupVar (var ecx) (src (Ref 47)) (typ Int)))
-       (49 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -272)))
-       (50 (DupVar (var edx) (src (Ref 49)) (typ Int))) (51 (Const __i32 4))
-       (52 (BiOp (var __i32) (op Multiply) (lhs (Ref 48)) (rhs (Ref 51))))
-       (53 (BiOp (var __i32) (op Add) (lhs (Ref 52)) (rhs (Ref 0))))
-       (54 (StoreOp (op Store32) (addr (Ref 53)) (value (Ref 50)) (offset -208)))
-       (55 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -272)))
-       (56 (DupVar (var eax) (src (Ref 55)) (typ Int)))
-       (57 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -24)))
-       (58 (BiOp (var __i32) (op Add) (lhs (Ref 56)) (rhs (Ref 57))))
-       (59 (DupVar (var eax) (src (Ref 58)) (typ Int)))
-       (60 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 59)) (offset -272)))))
+       (40 (BiOp (var esi) (op Add) (lhs (Ref 23)) (rhs (Ref 38))))
+       (41 (BiOp (var edi) (op Add) (lhs (Ref 31)) (rhs (Ref 38))))
+       (42 (Const ecx 0)) (43 (DupVar (var ecx) (src (Ref 32)) (typ Int)))
+       (44 (Const __i32 3))
+       (45 (BiOp (var __i32) (op And) (lhs (Ref 43)) (rhs (Ref 44))))
+       (46 (DupVar (var ecx) (src (Ref 45)) (typ Int)))
+       (47 (Memcopy (count (Ref 46)) (src (Ref 40)) (dest (Ref 41))))
+       (48 (BiOp (var esi) (op Add) (lhs (Ref 40)) (rhs (Ref 46))))
+       (49 (BiOp (var edi) (op Add) (lhs (Ref 41)) (rhs (Ref 46))))
+       (50 (Const ecx 0))
+       (51 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -4)))
+       (52 (DupVar (var ecx) (src (Ref 51)) (typ Int)))
+       (53 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -272)))
+       (54 (DupVar (var edx) (src (Ref 53)) (typ Int))) (55 (Const __i32 4))
+       (56 (BiOp (var __i32) (op Multiply) (lhs (Ref 52)) (rhs (Ref 55))))
+       (57 (BiOp (var __i32) (op Add) (lhs (Ref 56)) (rhs (Ref 0))))
+       (58 (StoreOp (op Store32) (addr (Ref 57)) (value (Ref 54)) (offset -208)))
+       (59 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -272)))
+       (60 (DupVar (var eax) (src (Ref 59)) (typ Int)))
+       (61 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -24)))
+       (62 (BiOp (var __i32) (op Add) (lhs (Ref 60)) (rhs (Ref 61))))
+       (63 (DupVar (var eax) (src (Ref 62)) (typ Int)))
+       (64 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 63)) (offset -272)))))
      (terminator (Goto (Block 21)))
      (roots
-      ((Ref 0) (Ref 10) (Ref 23) (Ref 31) (Ref 39) (Ref 45) (Ref 48) (Ref 50)
-       (Ref 54) (Ref 59) (Ref 60)))) |}]
+      ((Ref 0) (Ref 10) (Ref 39) (Ref 47) (Ref 48) (Ref 49) (Ref 52) (Ref 54)
+       (Ref 58) (Ref 63) (Ref 64))))
+    |}]
 
 let%expect_test "repe cmpsd" =
   test_trans_block 0x00444521;
@@ -1995,33 +2550,36 @@ let%expect_test "rep movsd" =
        (10 (DupVar (var edi) (src (Ref 9)) (typ Int))) (11 (Const __i32 2))
        (12 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 7)) (rhs (Ref 11))))
        (13 (Memcopy (count (Ref 12)) (src (Ref 5)) (dest (Ref 10))))
-       (14 (Const ecx 0))
-       (15 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -152)))
-       (16 (DupVar (var eax) (src (Ref 15)) (typ Int))) (17 (Const __i32 4096))
-       (18 (BiOp (var __i32) (op Or) (lhs (Ref 16)) (rhs (Ref 17))))
-       (19 (DupVar (var eax) (src (Ref 18)) (typ Int)))
-       (20 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 19)) (offset -152)))
-       (21 (Const __i32 -600))
-       (22 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 21))))
-       (23 (DupVar (var ecx) (src (Ref 22)) (typ Int)))
-       (24 (OutsideContext (var esp) (typ Int))) (25 (Const __i32 4))
-       (26 (BiOp (var esp) (op Subtract) (lhs (Ref 24)) (rhs (Ref 25))))
-       (27 (StoreOp (op Store32) (addr (Ref 26)) (value (Ref 23))))
-       (28 (Const __i32 4955716))
-       (29 (LoadOp (var __i32) (op Load32) (addr (Ref 28))))
-       (30 (DupVar (var ecx) (src (Ref 29)) (typ Int))) (31 (Const __i32 4))
-       (32 (BiOp (var esp) (op Subtract) (lhs (Ref 26)) (rhs (Ref 31))))
-       (33 (Const __i32 4209397))
-       (34 (StoreOp (op Store32) (addr (Ref 32)) (value (Ref 33))))
-       (35 (OutsideContext (var edx) (typ Int)))
-       (36 (CallOp (func __func44f770__) (args ((Ref 30) (Ref 32) (Ref 35)))))
-       (37 (ReturnedOp (var eax) (typ Int)))
-       (38 (ReturnedOp (var esp) (typ Int)))
-       (39 (ReturnedOp (var edx) (typ Int)))))
+       (14 (BiOp (var esi) (op Add) (lhs (Ref 5)) (rhs (Ref 12))))
+       (15 (BiOp (var edi) (op Add) (lhs (Ref 10)) (rhs (Ref 12))))
+       (16 (Const ecx 0))
+       (17 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -152)))
+       (18 (DupVar (var eax) (src (Ref 17)) (typ Int))) (19 (Const __i32 4096))
+       (20 (BiOp (var __i32) (op Or) (lhs (Ref 18)) (rhs (Ref 19))))
+       (21 (DupVar (var eax) (src (Ref 20)) (typ Int)))
+       (22 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 21)) (offset -152)))
+       (23 (Const __i32 -600))
+       (24 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 23))))
+       (25 (DupVar (var ecx) (src (Ref 24)) (typ Int)))
+       (26 (OutsideContext (var esp) (typ Int))) (27 (Const __i32 4))
+       (28 (BiOp (var esp) (op Subtract) (lhs (Ref 26)) (rhs (Ref 27))))
+       (29 (StoreOp (op Store32) (addr (Ref 28)) (value (Ref 25))))
+       (30 (Const __i32 4955716))
+       (31 (LoadOp (var __i32) (op Load32) (addr (Ref 30))))
+       (32 (DupVar (var ecx) (src (Ref 31)) (typ Int))) (33 (Const __i32 4))
+       (34 (BiOp (var esp) (op Subtract) (lhs (Ref 28)) (rhs (Ref 33))))
+       (35 (Const __i32 4209397))
+       (36 (StoreOp (op Store32) (addr (Ref 34)) (value (Ref 35))))
+       (37 (OutsideContext (var edx) (typ Int)))
+       (38 (CallOp (func __func44f770__) (args ((Ref 32) (Ref 34) (Ref 37)))))
+       (39 (ReturnedOp (var eax) (typ Int)))
+       (40 (ReturnedOp (var esp) (typ Int)))
+       (41 (ReturnedOp (var edx) (typ Int)))))
      (terminator (Goto (Block 4)))
      (roots
-      ((Ref 0) (Ref 5) (Ref 10) (Ref 13) (Ref 20) (Ref 24) (Ref 27) (Ref 30)
-       (Ref 34) (Ref 35) (Ref 36) (Ref 37) (Ref 38) (Ref 39)))) |}]
+      ((Ref 0) (Ref 13) (Ref 14) (Ref 15) (Ref 22) (Ref 26) (Ref 29) (Ref 32)
+       (Ref 36) (Ref 37) (Ref 38) (Ref 39) (Ref 40) (Ref 41))))
+    |}]
 
 let%expect_test "fabs" =
   test_trans_block 0x004023c9;

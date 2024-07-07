@@ -11,3 +11,4 @@ let parity = 16
 let ( %| ) l r = l lor r
 let ( %& ) set value = set land value
 let all = sign %| overflow %| carry %| zero %| parity
+let contains elem set = not @@ equal (elem %& set) none

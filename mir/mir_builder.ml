@@ -177,10 +177,10 @@ let dup_var ?varName t typ src =
   verify_var src typ t;
   add_instr t @@ Instr.DupVar { var = new_var t varName typ; src; typ }
 
-type uni_op_add = ?varName:ident -> t -> operand:Instr.ref -> Instr.ref
+type uni_op_add = ?varName:ident -> t -> Instr.ref -> Instr.ref
 
 type uni_op_add_signed =
-  ?varName:ident -> t -> operand:Instr.ref -> signed:bool -> Instr.ref
+  ?varName:ident -> t -> Instr.ref -> signed:bool -> Instr.ref
 
 type bi_op_add =
   ?varName:ident -> t -> lhs:Instr.ref -> rhs:Instr.ref -> Instr.ref
@@ -209,12 +209,12 @@ type sign_load_op_add =
 type store_op_add =
   ?offset:int -> t -> value:Instr.ref -> addr:Instr.ref -> unit
 
-let uni_op operand_typ op res_typ ?varName t ~operand =
+let uni_op operand_typ op res_typ ?varName t operand =
   verify_var operand operand_typ t;
   add_instr t @@ Instr.UniOp { var = new_var t varName res_typ; operand; op }
 
-let uni_op_signed operand_typ ~op_s ~op_u res_typ ?varName t ~operand ~signed =
-  uni_op operand_typ (if signed then op_s else op_u) res_typ t ~operand ?varName
+let uni_op_signed operand_typ ~op_s ~op_u res_typ ?varName t operand ~signed =
+  uni_op operand_typ (if signed then op_s else op_u) res_typ t operand ?varName
 
 let bi_op typ op res_typ ?varName t ~lhs ~rhs =
   verify_var lhs typ t;
@@ -321,8 +321,6 @@ let sign_extend_16 = uni_op Int Instr.SignExtend16 Int
 let float_to_int32 = uni_op Float Instr.FloatToInt32 Int
 let long_to_int32 = uni_op Long Instr.LongToInt32 Int
 let count_ones = uni_op Int Instr.CountOnes Int
-(* let vec_int8_sign_bitmask = uni_op  *)
-
 let float_neg = uni_op Float Instr.FloatNeg Float
 let float_abs = uni_op Float Instr.FloatAbs Float
 let float_round = uni_op Float Instr.FloatRound Float
@@ -349,17 +347,13 @@ let float_to_long = uni_op Float Instr.FloatToLong Long
 let vec_convert_low_32bits_to_float_signed =
   uni_op Vec Instr.VecConvertLow32BitsToFloatsSigned Vec
 
-let vec_extend ?varName b ~shape ~signed ~half_used  operand =
+let vec_int8_sign_bitmask = uni_op Vec Instr.VecInt8SignBitmask Int
+
+let vec_extend ?varName b ~shape ~signed ~half_used operand =
   verify_var operand Vec b;
   add_instr b
   @@ VecExtend
-       {
-         var = new_var b varName Vec;
-         shape;
-         signed;
-         operand;
-         half_used;
-       }
+       { var = new_var b varName Vec; shape; signed; operand; half_used }
 
 let add = bi_op Int Instr.Add Int
 let sub = bi_op Int Instr.Subtract Int
@@ -402,7 +396,8 @@ let vec_mul_add_16bit = bi_op Vec Instr.VecMulAdd16Bit Vec
 let vec_add = vec_bi_op Instr.VecAdd
 let vec_sub = vec_bi_op Instr.VecSub
 let vec_mul = vec_bi_op Instr.VecMul
-let vec_equal = vec_bi_op Instr.VecLaneEqual
+let vec_equal = vec_bi_op Instr.VecEqual
+let vec_not_equal = vec_bi_op Instr.VecNotEqual
 let div = sign_bi_op Int Instr.Divide Int
 let remainder = sign_bi_op Int Instr.Remainder Int
 let shift_right = sign_bi_op Int Instr.ShiftRight Int
@@ -424,8 +419,18 @@ let vec_narrow_32bit = sign_bi_op Vec Instr.VecNarrow32Bit Long
 let vec_max ~shape = sign_vec_bi_op Instr.VecMax ~shape
 let vec_min ~shape = sign_vec_bi_op Instr.VecMin ~shape
 let vec_less_than ~shape = sign_vec_bi_op Instr.VecLessThan ~shape
-let vec_add_sat ~shape = sign_vec_bi_op Instr.VecAddSaturating ~shape
-let vec_sub_sat ~shape = sign_vec_bi_op Instr.VecSubSaturating ~shape
+let vec_less_than_equal ~shape = sign_vec_bi_op Instr.VecLessThan ~shape
+let vec_greater_than ~shape = sign_vec_bi_op Instr.VecGreaterThan ~shape
+let vec_greater_than_equal ~shape = sign_vec_bi_op Instr.VecGreaterThan ~shape
+
+let vec_add_sat ~(shape : ([ `I8 | `I16 ], _) vec_lane_shape_signed) =
+  sign_vec_bi_op Instr.VecAddSaturating ~shape
+
+let vec_sub_sat ~(shape : ([ `I8 | `I16 ], _) vec_lane_shape_signed) =
+  sign_vec_bi_op Instr.VecSubSaturating ~shape
+
+let vec_div ~shape =
+  sign_vec_bi_op Instr.VecDiv ~shape
 
 let vec_shift_left ?varName t ~lhs ~rhs ~(shape : int_vec_lane_shape) =
   verify_var lhs Vec t;
@@ -455,7 +460,7 @@ let vec_extract ?varName t src ~lane ~shape =
   verify_lane shape lane;
   verify_var src Vec t;
   add_instr t
-  @@ Instr.VecExtractLaneOp { var = new_var t varName Vec; src; shape; lane }
+  @@ Instr.VecExtractLaneOp { var = new_var t varName (vec_lane_type shape); src; shape; lane }
 
 let vec_replace ?varName t ~dest ~value ~lane ~shape =
   verify_lane shape lane;

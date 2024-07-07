@@ -92,7 +92,7 @@ type bi_op =
   | VecMulAdd16Bit
 [@@deriving sexp]
 
-type vec_lane_bi_op = VecSub | VecLaneEqual | VecAdd | VecMul
+type vec_lane_bi_op = VecSub | VecEqual | VecAdd | VecMul | VecNotEqual
 [@@deriving sexp]
 
 type signed_bi_op =
@@ -123,8 +123,12 @@ type signed_vec_lane_bi_op =
   | VecMax
   | VecMin
   | VecLessThan
+  | VecLessThanEqual
+  | VecGreaterThan
+  | VecGreaterThanEqual
   | VecAddSaturating
   | VecSubSaturating
+  | VecDiv
 [@@deriving sexp]
 
 type load_op =

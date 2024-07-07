@@ -11,3 +11,4 @@ val parity : t
 val ( %| ) : t -> t -> t
 val ( %& ) : t -> t -> t
 val all : t
+val contains : t -> t -> bool

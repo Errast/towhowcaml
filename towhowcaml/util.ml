@@ -26,6 +26,9 @@ let ret_addr_local : ident = "__ret_addr__"
 let find_byte_func : ident = "__find_byte__"
 let load_big_float_func : ident = "__load_big_float__"
 let store_big_float_func : ident = "__store_big_float__"
+let float_pow_func : ident = "__float_pow__"
+let float_rem_func : ident = "__float_rem__"
+let float_mod_func : ident = "__float_mod__"
 
 let xmm_reg_to_global : X86reg.sse -> variable = function
   | `xmm0 -> { name = "__xmm0_global__"; typ = Vec }
