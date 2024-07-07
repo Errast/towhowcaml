@@ -2096,7 +2096,9 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
        (10 (Const __i32 4820776))
        (11 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 10))))
        (12 (Landmine (var eax) (typ Int)))
-       (13 (BiOp (var __i32) (op FloatGreaterThan) (lhs (Ref 9)) (rhs (Ref 11))))
+       (13
+        (BiOp (var __i32) (op FloatGreaterThanEqual) (lhs (Ref 9))
+         (rhs (Ref 11))))
        (14 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 8))))))
      (terminator
       (Branch (succeed (Block 19)) (fail (Block 16)) (condition (Ref 13))))

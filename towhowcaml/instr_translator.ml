@@ -726,7 +726,7 @@ let translate_float_test_comparison c constant =
   | JNP, 0x5 -> B.float_less_than c.builder ~lhs ~rhs
   | JNP, 0x44 -> B.float_equal c.builder ~lhs ~rhs
   | JNE, 0x41 -> B.float_greater_than c.builder ~lhs ~rhs |> B.equals_zero c.builder
-  | JE, 0x41 -> B.float_greater_than c.builder ~lhs ~rhs
+  | JE, 0x41 -> B.float_less_than_equal c.builder ~lhs ~rhs |> B.equals_zero c.builder
   | JNP, 0x41 -> B.float_less_than_equal c.builder ~lhs ~rhs
   | JE, 0x1 -> B.float_greater_than_equal c.builder ~lhs ~rhs
   | _ -> raise_comp_ops c
@@ -906,7 +906,7 @@ let translate_sahf_comparison c =
     (c.state.fpu_status_word_instr, c.opcode.id, c.state.fpu_status_word_args)
   with
   | (FCOM | FCOMP | FCOMPP), JAE, [ lhs; rhs ] ->
-      B.float_greater_than c.builder ~lhs ~rhs
+      B.float_greater_than_equal c.builder ~lhs ~rhs
   | (FCOM | FCOMP | FCOMPP), JBE, [ lhs; rhs ] ->
       B.equals_zero c.builder (B.float_greater_than c.builder ~lhs ~rhs)
   | (FCOM | FCOMP | FCOMPP), JP, [ lhs; rhs ] ->
