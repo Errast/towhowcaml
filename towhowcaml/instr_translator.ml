@@ -725,11 +725,7 @@ let translate_float_test_comparison c constant =
   | JP, 0x5 -> B.equals_zero c.builder (B.float_less_than c.builder ~lhs ~rhs)
   | JNP, 0x5 -> B.float_less_than c.builder ~lhs ~rhs
   | JNP, 0x44 -> B.float_equal c.builder ~lhs ~rhs
-  | JNE, 0x41 ->
-      (* ooh evaluation order *)
-      B.int_or c.builder
-        ~rhs:(B.float_not_equal c.builder ~lhs:rhs ~rhs)
-        ~lhs:(B.float_not_equal c.builder ~lhs ~rhs:lhs)
+  | JNE, 0x41 -> B.float_greater_than c.builder ~lhs ~rhs |> B.equals_zero c.builder
   | JE, 0x41 -> B.float_greater_than c.builder ~lhs ~rhs
   | JNP, 0x41 -> B.float_less_than_equal c.builder ~lhs ~rhs
   | JE, 0x1 -> B.float_greater_than_equal c.builder ~lhs ~rhs
