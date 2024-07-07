@@ -187,7 +187,7 @@ let store_operand c src ~dest =
       (let reg_ident = X86reg.to_32_bit reg |> X86reg.to_ident
        and b = c.builder in
        match reg with
-       | #X86reg.reg_32bit -> B.dup_var b ~varName:reg_ident Int src
+       | #X86reg.reg_32bit -> B.try_change_var b reg_ident src
        | #X86reg.reg_16bit ->
            B.merge_trunc_16 b ~varName:reg_ident ~lhs:src
              ~rhs:(B.newest_var b reg_ident)
@@ -618,8 +618,8 @@ let translate_float_store c ~after_pop =
   | _ -> raise_ops c
 
 let translate_float_store_status_word c =
-  match operands c with
-  | [ Register { reg = `ax; _ } ] ->
+  match (operands c, c.opcode.address) with
+  | [ Register { reg = `ax; _ } ], _ ->
       assert_c c
         (Instr.Ref.equal c.state.fpu_status_word Instr.Ref.invalid)
         ~msg:"only store fpu status word once";
@@ -627,7 +627,8 @@ let translate_float_store_status_word c =
       c.state.fpu_status_word <- value;
       c.state.fpu_status_word_instr <- c.state.float_compare_instr;
       c.state.fpu_status_word_args <- c.state.float_compare_args
-  | [ dest ] when c.opcode.address = 0x4893c2 ->
+  | [ dest ], (0x4893c2 | 0x483ab6) ->
+      (* not sure what the status word is used for at 0x483ab6, but I hope it's fine *)
       B.const c.builder 0 |> store_operand c ~dest
   | _ -> raise_ops c
 
@@ -725,15 +726,17 @@ let translate_float_test_comparison c constant =
   | JP, 0x5 -> B.equals_zero c.builder (B.float_less_than c.builder ~lhs ~rhs)
   | JNP, 0x5 -> B.float_less_than c.builder ~lhs ~rhs
   | JNP, 0x44 -> B.float_equal c.builder ~lhs ~rhs
-  | JNE, 0x41 -> B.float_greater_than c.builder ~lhs ~rhs |> B.equals_zero c.builder
-  | JE, 0x41 -> B.float_less_than_equal c.builder ~lhs ~rhs |> B.equals_zero c.builder
+  | JNE, 0x41 ->
+      B.float_greater_than c.builder ~lhs ~rhs |> B.equals_zero c.builder
+  | JE, 0x41 ->
+      B.float_less_than_equal c.builder ~lhs ~rhs |> B.equals_zero c.builder
   | JNP, 0x41 -> B.float_less_than_equal c.builder ~lhs ~rhs
   | JE, 0x1 -> B.float_greater_than_equal c.builder ~lhs ~rhs
   | _ -> raise_comp_ops c
 
 let translate_reflexive_test_comparison c arg =
   match c.opcode.id with
-  | JE | SETE ->
+  | JE | SETE | JA ->
       let operand = extend_either c arg in
       B.equals_zero c.builder operand
   | JNE -> extend_either c arg
@@ -1903,6 +1906,26 @@ let translate_vec_bitmask c =
       |> store_operand c ~dest
   | _ -> raise_ops c
 
+let translate_fxam c =
+  assert_c c (List.is_empty @@ operands c);
+  add_float_comparison c [ get_fpu_stack c 0 ]
+
+let translate_rotate_left c =
+  match operands c with
+  | [ op; Immediate { value; size = 1 } ] ->
+      B.rotate_left c.builder ~rhs:(B.const c.builder value)
+        ~lhs:(load_operand c op)
+      |> store_operand c ~dest:op
+  | _ -> raise_ops c
+
+let translate_xlatb c =
+  assert_c c (List.is_empty @@ operands c);
+  let ebx = load_operand c @@ Register { reg = `ebx; size = 4 } in
+  let al = load_operand c @@ Register { reg = `al; size = 1 } in
+  B.add c.builder ~lhs:ebx ~rhs:al
+  |> B.load8 c.builder ~signed:false
+  |> store_operand c ~dest:(Register { reg = `al; size = 1 })
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   match c.opcode.id with
@@ -2073,6 +2096,9 @@ let translate_no_prefix c =
   | FNSTENV when c.opcode.address = 0x489403 -> ()
   | FLDENV when c.opcode.address = 0x489412 -> ()
   | SHUFPD -> translate_vec_shuffle_doubles c
+  | FXAM -> translate_fxam c
+  | ROL -> translate_rotate_left c
+  | XLATB -> translate_xlatb c
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c =

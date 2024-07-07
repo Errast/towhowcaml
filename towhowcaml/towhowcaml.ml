@@ -18,7 +18,6 @@ let ignroe_funcs =
       0x482B7E;
       0x483A4D;
       0x48C32C;
-      0x48C133;
       (*  Direction flag *)
       0x0047d4b0;
       (*  Store fpu status word twice *)
@@ -54,6 +53,8 @@ let ignroe_funcs =
       0x004894ce;
       (* conditional tail call *)
       4766328;
+      (* terminator *)
+      0x0048c133;
     ]
 
 let block_mods :

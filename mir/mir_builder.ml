@@ -72,7 +72,7 @@ let new_info t ~add_ctx varName =
       raise
       @@ Not_found_s [%message "No local found" ~varName:(varName : string)]
 
-let new_var t varName typ =
+let new_var t ?ref varName typ =
   let varName, subscript =
     match varName with
     (* Use a temp local; skip type check *)
@@ -96,10 +96,21 @@ let new_var t varName typ =
                  "Wrong type for local"
                    ~given:(typ : local_type)
                    (info : Local_info.t)];
+        (match ref with
+        | Some (Instr.Ref.Ref i1) ->
+            let (Instr.Ref.Ref i2) = info.index in
+            if i1 < i2 then
+              raise_s [%message "Provided ref is before previous var ref"]
+        | _ -> ());
         (varName, info.subscript + 1)
   in
   Hashtbl.set t.currentVar ~key:varName
-    ~data:{ typ; subscript; index = Instr.ref (Vec.length t.instrs) };
+    ~data:
+      {
+        typ;
+        subscript;
+        index = Option.value ref ~default:(Instr.ref (Vec.length t.instrs));
+      };
   Variable.{ name = varName }
 
 let newest_var t varName =
@@ -429,8 +440,7 @@ let vec_add_sat ~(shape : ([ `I8 | `I16 ], _) vec_lane_shape_signed) =
 let vec_sub_sat ~(shape : ([ `I8 | `I16 ], _) vec_lane_shape_signed) =
   sign_vec_bi_op Instr.VecSubSaturating ~shape
 
-let vec_div ~shape =
-  sign_vec_bi_op Instr.VecDiv ~shape
+let vec_div ~shape = sign_vec_bi_op Instr.VecDiv ~shape
 
 let vec_shift_left ?varName t ~lhs ~rhs ~(shape : int_vec_lane_shape) =
   verify_var lhs Vec t;
@@ -460,7 +470,8 @@ let vec_extract ?varName t src ~lane ~shape =
   verify_lane shape lane;
   verify_var src Vec t;
   add_instr t
-  @@ Instr.VecExtractLaneOp { var = new_var t varName (vec_lane_type shape); src; shape; lane }
+  @@ Instr.VecExtractLaneOp
+       { var = new_var t varName (vec_lane_type shape); src; shape; lane }
 
 let vec_replace ?varName t ~dest ~value ~lane ~shape =
   verify_lane shape lane;
@@ -562,3 +573,16 @@ let memcopy t ~count ~src ~dest =
   verify_var src Int t;
   verify_var count Int t;
   add_instr t @@ Instr.Memcopy { dest; src; count } |> ignore
+
+let try_change_var t var ref =
+  let (Instr.Ref.Ref index) = ref in
+  let instr = Vec.get t.instrs index in
+  let typ = Instr.value_type instr in
+  if
+    Option.value_map (Instr.assignment_var instr) ~default:false
+      ~f:(fun { name } -> is_temp name)
+  then (
+    new_var t ~ref (Some var) typ
+    |> Instr.replace_var instr |> Vec.set t.instrs index;
+    Instr.Ref.Ref index)
+  else dup_var t ~varName:var typ (Instr.Ref.Ref index)
