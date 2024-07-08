@@ -963,6 +963,11 @@ let translate_ucomisd_comparison c ~lhs ~rhs =
       |> B.vec_extract c.builder ~shape:`I32 ~lane:0
   | _ -> raise_comp_ops c
 
+let translate_bit_test_comparison c arg =
+  match c.opcode.id with
+  | JAE -> B.equals_zero c.builder arg
+  | _ -> raise_comp_ops c
+
 let translate_condition c =
   assert_c c Poly.(c.opcode.prefix = opcode_prefix_none);
   assert_c c
@@ -1005,6 +1010,7 @@ let translate_condition c =
         translate_ucomisd_comparison c ~lhs ~rhs
     | XOR, [ ((_, #gpr_type) as result) ] ->
         translate_result_comparison c ~result ~cf_zero:true ~of_zero:true
+    | BT, [ (arg, `Reg32Bit) ] -> translate_bit_test_comparison c arg
     | _ -> raise_c c "Invalid comparison"
   in
   B.set_check_var_is_latest c.builder true;
@@ -1926,6 +1932,26 @@ let translate_xlatb c =
   |> B.load8 c.builder ~signed:false
   |> store_operand c ~dest:(Register { reg = `al; size = 1 })
 
+let translate_bit_test c kind =
+  match operands c with
+  | [ dest; src ] when operand_size dest = 4 -> (
+      let prev = load_operand c dest in
+      let one = B.const c.builder 1 in
+      let count = load_operand c src in
+      let masked =
+        B.int_and c.builder ~rhs:(B.const c.builder 0x1F)
+          ~lhs:count
+      in
+      let bit = B.shift_left c.builder ~lhs:one ~rhs:masked in
+      match kind with
+      | `Set ->
+          B.int_or c.builder ~lhs:prev ~rhs:bit |> store_operand c ~dest;
+          add_comparison c []
+      | `Test ->
+          add_comparison c
+            [ (B.int_and c.builder ~lhs:prev ~rhs:bit, `Reg32Bit) ])
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   match c.opcode.id with
@@ -2099,6 +2125,8 @@ let translate_no_prefix c =
   | FXAM -> translate_fxam c
   | ROL -> translate_rotate_left c
   | XLATB -> translate_xlatb c
+  | BTS -> translate_bit_test c `Set
+  | BT -> translate_bit_test c `Test
   | _ -> raise_c c "Invalid instruction"
 
 let translate_rep_prefix c =

@@ -55,6 +55,8 @@ let ignroe_funcs =
       4766328;
       (* terminator *)
       0x0048c133;
+      (* push/pop eflags *)
+      0x004849a7;
     ]
 
 let block_mods :
@@ -118,6 +120,7 @@ let contig_exceptions =
       0x0048acaf;
       0x0048aded;
       0x0048b721;
+      0x0047f4c0;
     ]
 
 let make_intrinsics c =

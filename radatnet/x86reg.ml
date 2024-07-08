@@ -74,7 +74,7 @@ let reg_low8bit_of_yojson = function
 
 let __reg_low8bit_of_yojson__ = reg_low8bit_of_yojson
 
-type x87_float = [ `st0 | `st1 | `st2 | `st3 | `st4 | `st5 ]
+type x87_float = [ `st0 | `st1 | `st2 | `st3 | `st4 | `st5 | `st6 ]
 [@@deriving sexp, equal]
 
 let x87_float_of_yojson = function
@@ -84,6 +84,7 @@ let x87_float_of_yojson = function
   | `String "st(3)" -> `st3
   | `String "st(4)" -> `st4
   | `String "st(5)" -> `st5
+  | `String "st(6)" -> `st6
   | _ -> JError.no_variant_match ()
 
 let __x87_float_of_yojson__ = x87_float_of_yojson
@@ -199,6 +200,7 @@ let to_ident (reg : [< t ]) =
   | `st3 -> "st3"
   | `st4 -> "st4"
   | `st5 -> "st5"
+  | `st6 -> "st6"
   | `mm0 -> "mm0"
   | `mm1 -> "mm1"
   | `mm2 -> "mm2"
@@ -232,3 +234,4 @@ let x87_float_reg_index : x87_float -> int = function
   | `st3 -> 3
   | `st4 -> 4
   | `st5 -> 5
+  | `st6 -> 6

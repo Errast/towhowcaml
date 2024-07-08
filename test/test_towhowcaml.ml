@@ -24,6 +24,43 @@ let test_trans_block addr =
   print_s @@ Mir.Block.sexp_of_t
   @@ (Func_translator.translate ~blocks ~name ~intrinsics).blocks.(index)
 
+let%expect_test "bt" =
+ test_trans_block 0x00486fa8;
+ [%expect {|
+   ((id 5)
+    (instrs
+     ((0 (OutsideContext (var esi) (typ Int))) (1 (Const __i32 1))
+      (2 (BiOp (var esi) (op Add) (lhs (Ref 0)) (rhs (Ref 1))))
+      (3 (OutsideContext (var esp) (typ Int)))
+      (4 (LoadOp (var __i32) (op Load32) (addr (Ref 3)))) (5 (Const __i32 1))
+      (6 (OutsideContext (var eax) (typ Int))) (7 (Const __i32 31))
+      (8 (BiOp (var __i32) (op And) (lhs (Ref 6)) (rhs (Ref 7))))
+      (9 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 5)) (rhs (Ref 8))))
+      (10 (BiOp (var __i32) (op And) (lhs (Ref 4)) (rhs (Ref 9))))
+      (11 (UniOp (var __i32) (op EqualsZero) (operand (Ref 10))))))
+    (terminator
+     (Branch (succeed (Block 4)) (fail (Block 6)) (condition (Ref 11))))
+    (roots ((Ref 0) (Ref 2) (Ref 3) (Ref 6))))
+   |}]
+
+let%expect_test "bts" = 
+ test_trans_block 0x00486f8d;
+ [%expect {|
+   ((id 2)
+    (instrs
+     ((0 (OutsideContext (var edx) (typ Int))) (1 (Const __i32 1))
+      (2 (BiOp (var edx) (op Add) (lhs (Ref 0)) (rhs (Ref 1))))
+      (3 (OutsideContext (var esp) (typ Int)))
+      (4 (LoadOp (var __i32) (op Load32) (addr (Ref 3)))) (5 (Const __i32 1))
+      (6 (OutsideContext (var eax) (typ Int))) (7 (Const __i32 31))
+      (8 (BiOp (var __i32) (op And) (lhs (Ref 6)) (rhs (Ref 7))))
+      (9 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 5)) (rhs (Ref 8))))
+      (10 (BiOp (var __i32) (op Or) (lhs (Ref 4)) (rhs (Ref 9))))
+      (11 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 10))))))
+    (terminator (Goto (Block 1)))
+    (roots ((Ref 0) (Ref 2) (Ref 3) (Ref 6) (Ref 11))))
+   |}]
+
 let%expect_test "rol, xlatb" = 
  test_trans_block 0x00483ad4;
  [%expect {|
