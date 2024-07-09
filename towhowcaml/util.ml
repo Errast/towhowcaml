@@ -11,7 +11,7 @@ external int32_to_float : int -> (float[@unboxed])
 
 let addr_to_func_name = Printf.sprintf "__func%x__"
 let addr_to_index_func : ident = "__addrToIndex__"
-let fpu_stack_pointer_global = { name = "__fpuStack__"; typ = Int }
+let fpu_stack_pointer : ident = "__fpuStack__" 
 let input_compare_arg : ident = "__input_compare_arg__"
 let float_sqrt_func : ident = "__float_sqrt__"
 let float_sine_func : ident = "__float_sine__"
@@ -30,62 +30,35 @@ let float_pow_func : ident = "__float_pow__"
 let float_rem_func : ident = "__float_rem__"
 let float_mod_func : ident = "__float_mod__"
 
-let xmm_reg_to_global : X86reg.sse -> variable = function
-  | `xmm0 -> { name = "__xmm0_global__"; typ = Vec }
-  | `xmm1 -> { name = "__xmm1_global__"; typ = Vec }
-  | `xmm2 -> { name = "__xmm2_global__"; typ = Vec }
-  | `xmm3 -> { name = "__xmm3_global__"; typ = Vec }
-  | `xmm4 -> { name = "__xmm4_global__"; typ = Vec }
-  | `xmm5 -> { name = "__xmm5_global__"; typ = Vec }
-  | `xmm6 -> { name = "__xmm6_global__"; typ = Vec }
-  | `xmm7 -> { name = "__xmm7_global__"; typ = Vec }
-
-let mm_reg_to_global : X86reg.mmx -> variable = function
-  | `mm0 -> { name = "__mm0_global__"; typ = Vec }
-  | `mm1 -> { name = "__mm1_global__"; typ = Vec }
-  | `mm2 -> { name = "__mm2_global__"; typ = Vec }
-  | `mm3 -> { name = "__mm3_global__"; typ = Vec }
-  | `mm4 -> { name = "__mm4_global__"; typ = Vec }
-  | `mm5 -> { name = "__mm5_global__"; typ = Vec }
-  | `mm6 -> { name = "__mm6_global__"; typ = Vec }
-  | `mm7 -> { name = "__mm7_global__"; typ = Vec }
-
 let std_call =
-  {
-    args = [ { name = X86reg.to_ident `esp; typ = Int } ];
-    returns =
-      [
-        { name = X86reg.to_ident `eax; typ = Int };
-        { name = X86reg.to_ident `esp; typ = Int };
-        { name = X86reg.to_ident `edx; typ = Int };
-      ];
-  }
+  X86reg.
+    {
+      args = [ { name = to_ident `esp; typ = Int } ];
+      returns = [ { name = to_ident `esp; typ = Int } ];
+    }
 
 let fast_call =
   X86reg.
     {
-      args =
-        [
-          { name = to_ident `ecx; typ = Int };
-          { name = X86reg.to_ident `esp; typ = Int };
-          { name = to_ident `edx; typ = Int };
-        ];
-      returns =
-        [
-          { name = X86reg.to_ident `eax; typ = Int };
-          { name = X86reg.to_ident `esp; typ = Int };
-          { name = X86reg.to_ident `edx; typ = Int };
-        ];
+      args = [ { name = to_ident `esp; typ = Int } ];
+      returns = [ { name = to_ident `esp; typ = Int } ];
     }
 
 let used_locals =
+  let open Builder in
   Map.of_alist_exn (module String)
-  @@ [ (input_compare_arg, Int); (ret_addr_local, Int) ]
+  @@ List.map ~f:(fun l -> (l.name, l))
+  @@ [
+       { name = input_compare_arg; scope = `Local; typ = Int };
+       { name = ret_addr_local; scope = `Local; typ = Int };
+       { name = X86reg.to_ident `esp; scope = `Local; typ = Int };
+       { name = fpu_stack_pointer; scope = `Global; typ = Int };
+     ]
   @ List.map
-      ~f:(fun r -> (X86reg.to_ident r, Int))
-      [ `eax; `ebx; `ecx; `edx; `esi; `edi; `ebp; `esp ]
+      ~f:(fun r -> { name = X86reg.to_ident r; scope = `Global; typ = Int })
+      [ `eax; `ebx; `ecx; `edx; `esi; `edi; `ebp ]
   @ List.map
-      ~f:(fun r -> (X86reg.to_ident r, Vec))
+      ~f:(fun r -> { name = X86reg.to_ident r; scope = `Global; typ = Vec })
       [
         `mm0;
         `mm1;

@@ -276,6 +276,7 @@ type t =
   | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
   | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t }
   | Unreachable
+  | Nop
 [@@deriving sexp]
 
 let local_type_of_lane_shape = function
@@ -369,7 +370,7 @@ let replace_var instr var =
   | OutsideContext v -> OutsideContext { v with var }
   | Landmine v -> Landmine { v with var }
   | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _
-  | AssertOp _ | Memset _ | Memcopy _ | Unreachable ->
+  | AssertOp _ | Memset _ | Memcopy _ | Unreachable | Nop ->
       instr
 
 let replace_instr_ref t ~from ~into =
@@ -439,8 +440,45 @@ let replace_instr_ref t ~from ~into =
   | Memcopy v ->
       Memcopy { count = swap v.count; src = swap v.src; dest = swap v.dest }
   | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
-  | Const _ | FloatConst _ | LongConst _ | VecConst _ ->
+  | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
       t
+
+let iter f = function
+  | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
+  | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
+      ()
+  | DupVar { src = v1; _ }
+  | UniOp { operand = v1; _ }
+  | VecExtend { operand = v1; _ }
+  | VecSplatOp { value = v1; _ }
+  | VecExtractLaneOp { src = v1; _ }
+  | LoadOp { addr = v1; _ }
+  | SignedLoadOp { addr = v1; _ }
+  | SetGlobalOp { value = v1; _ }
+  | AssertOp { condition = v1 } ->
+      f v1
+  | BiOp { lhs = v1; rhs = v2; _ }
+  | VecLaneBiOp { lhs = v1; rhs = v2; _ }
+  | SignedBiOp { lhs = v1; rhs = v2; _ }
+  | SignedVecLaneBiOp { lhs = v1; rhs = v2; _ }
+  | VecShiftLeftOp { operand = v1; count = v2; _ }
+  | VecShiftRightOp { operand = v1; count = v2; _ }
+  | VecReplaceLaneOp { dest = v1; lane_value = v2; _ }
+  | VecShuffleOp { arg1 = v1; arg2 = v2; _ }
+  | VecLoadLaneOp { dest_vec = v1; addr = v2; _ }
+  | StoreOp { addr = v1; value = v2; _ }
+  | VecStoreLaneOp { addr = v1; value = v2; _ } ->
+      f v1;
+      f v2
+  | Memset { dest = v1; value = v2; count = v3 }
+  | Memcopy { dest = v1; src = v2; count = v3 } ->
+      f v1;
+      f v2;
+      f v3
+  | CallOp v -> List.iter ~f v.args
+  | CallIndirectOp v ->
+      f v.table_index;
+      List.iter ~f v.args
 
 (* Using flambda terminology, this definition of pureness only accounts for effects, not coeffects *)
 (* This is only used for dead code elimination, as we currently don't reorder instructions *)
@@ -449,7 +487,7 @@ let is_pure = function
   | VecExtend _ | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _
   | LoadOp _ | SignedLoadOp _ | VecShiftLeftOp _ | VecShiftRightOp _
   | VecSplatOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _ | VecShuffleOp _
-  | VecLoadLaneOp _ | Landmine _ ->
+  | VecLoadLaneOp _ | Landmine _ | Nop ->
       true
   | CallOp _ | CallIndirectOp _ | ReturnedOp _ | GetGlobalOp _
   | OutsideContext _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Memset _
@@ -465,7 +503,7 @@ let is_assignment = function
   | Landmine _ ->
       true
   | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _
-  | Unreachable | SetGlobalOp _ | Memset _ | Memcopy _ ->
+  | Unreachable | SetGlobalOp _ | Memset _ | Memcopy _ | Nop ->
       false
 
 let assignment_var = function
@@ -495,5 +533,5 @@ let assignment_var = function
   | Landmine { var; _ } ->
       Some var
   | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _
-  | AssertOp _ | Unreachable | Memset _ | Memcopy _ ->
+  | AssertOp _ | Unreachable | Memset _ | Memcopy _ | Nop ->
       None

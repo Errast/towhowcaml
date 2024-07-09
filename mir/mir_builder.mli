@@ -7,21 +7,24 @@ val vec_temp : ident
 val int_temp : ident
 val is_temp : ident -> bool
 
+type local = { name : string; scope : [ `Local | `Global ]; typ : local_type }
+
 type t [@@deriving sexp_of]
 
-val create : local_type String.Map.t -> t
+val create : local String.Map.t -> t
 
 val deconstruct :
   t ->
   Instr_list.t
   * (ident, Local_info.t) Hashtbl.t
-  * local_type Map.M(String).t
+  * local Map.M(String).t
   * Set.M(Instr.Ref).t
 
 val set_check_var_is_latest : t -> bool -> unit
 val newest_var : t -> ident -> Instr.ref
 val newest_var_opt : t -> ident -> Instr.ref option
 val get_instr : t -> Instr.ref -> Instr.t
+val store_globals : t -> unit
 val const : ?varName:ident -> t -> int -> Instr.ref
 val float_const : ?varName:ident -> t -> float -> Instr.ref
 val long_const : ?varName:ident -> t -> int64 -> Instr.ref

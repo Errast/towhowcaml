@@ -1,10 +1,12 @@
 open! Core
 open Types
 
+type local = { name : string; scope : [ `Local | `Global ]; typ : local_type }
+
 type t = {
   instrs : Instr_list.builder;
   currentVar : (ident, Local_info.t) Hashtbl.t;
-  locals : (local_type Map.M(String).t[@sexp.opaque]);
+  locals : (local Map.M(String).t[@sexp.opaque]);
   mutable roots : Set.M(Instr.Ref).t;
   mutable check_var_is_latest : bool;
 }
@@ -24,18 +26,18 @@ let is_temp id =
   String.(id = int_temp || id = float_temp || id = long_temp || id = vec_temp)
 
 let create locals =
-  let mk_temp typ =
-    Local_info.{ subscript = 0; index = Instr.Ref.invalid; typ }
+  let mk_temp typ scope =
+    Local_info.{ subscript = 0; index = Instr.Ref.invalid; typ; scope }
   in
   let currentVar =
     Hashtbl.of_alist_exn ~growth_allowed:false
       ~size:(Map.length locals + 4)
       (module String)
       [
-        (int_temp, mk_temp Int);
-        (float_temp, mk_temp Float);
-        (long_temp, mk_temp Long);
-        (vec_temp, mk_temp Vec);
+        (int_temp, mk_temp Int `Local);
+        (float_temp, mk_temp Float `Local);
+        (long_temp, mk_temp Long `Local);
+        (vec_temp, mk_temp Vec `Local);
       ]
   in
   {
@@ -60,20 +62,30 @@ let type_temp = function
 
 let new_info t ~add_ctx varName =
   match Map.find t.locals varName with
-  | Some typ ->
+  | Some { typ; scope; _ } ->
       if add_ctx then
         let index =
-          add_instr t
-          @@ Instr.OutsideContext { typ; var = Variable.{ name = varName } }
+          match scope with
+          | `Local ->
+              add_instr t
+              @@ Instr.OutsideContext { typ; var = Variable.{ name = varName } }
+          | `Global ->
+              add_instr t
+              @@ Instr.GetGlobalOp
+                   {
+                     var = Variable.{ name = varName };
+                     global = { name = varName; typ };
+                   }
         in
-        Local_info.{ subscript = 0; index; typ }
-      else Local_info.{ subscript = 0; index = Instr.Ref.invalid; typ }
+        (* we want the context (if it exists) to always be at subscript 0*)
+        Local_info.{ subscript = 0; index; typ; scope }
+      else Local_info.{ subscript = 0; index = Instr.Ref.invalid; typ; scope }
   | _ ->
       raise
       @@ Not_found_s [%message "No local found" ~varName:(varName : string)]
 
 let new_var t ?ref varName typ =
-  let varName, subscript =
+  let varName, subscript, scope =
     match varName with
     (* Use a temp local; skip type check *)
     | None ->
@@ -82,7 +94,7 @@ let new_var t ?ref varName typ =
           Hashtbl.find t.currentVar varName
           |> Option.value_map ~f:(fun c -> c.subscript) ~default:1
         in
-        (varName, subscript)
+        (varName, subscript, `Local)
     | Some varName ->
         let info =
           Hashtbl.find t.currentVar varName
@@ -102,12 +114,13 @@ let new_var t ?ref varName typ =
             if i1 < i2 then
               raise_s [%message "Provided ref is before previous var ref"]
         | _ -> ());
-        (varName, info.subscript + 1)
+        (varName, info.subscript + 1, info.scope)
   in
   Hashtbl.set t.currentVar ~key:varName
     ~data:
       {
         typ;
+        scope;
         subscript;
         index = Option.value ref ~default:(Instr.ref (Vec.length t.instrs));
       };
@@ -167,6 +180,16 @@ let vec_lane_type = function
   | `I8 | `I16 | `I32 -> Int
   | `F32 | `F64 -> Float
   | `I64 -> Long
+
+let store_globals t =
+  Hashtbl.filteri_inplace t.currentVar ~f:(fun ~key ~data ->
+      match data with
+      | { scope = `Local; _ } -> true
+      | { scope = `Global; typ; index; subscript } ->
+          if subscript > 0 then
+            ignore @@ add_instr t
+            @@ Instr.SetGlobalOp { global = { name = key; typ }; value = index };
+          false)
 
 let const ?varName t value =
   (* wtf is this here for? *)
@@ -530,7 +553,9 @@ let returned ?varName t typ =
   | _ -> raise_s [%message "invalid previous instr for returned" (t : t)]);
   add_instr t @@ Instr.ReturnedOp { var = new_var t varName typ; typ }
 
-let get_global ?varName t global =
+let get_global ?varName t (global : variable) =
+  if Map.mem t.locals global.name then
+    raise_s [%message "read from global managed by builder" (global : variable)];
   add_instr t
   @@ Instr.GetGlobalOp { var = new_var t varName global.typ; global }
 
@@ -552,7 +577,9 @@ let vec_store ?(offset = 0) t ~addr ~vec ~shape ~lane =
   add_instr t @@ Instr.VecStoreLaneOp { value = vec; addr; shape; lane; offset }
   |> ignore
 
-let set_global t global value =
+let set_global t (global : variable) value =
+  if Map.mem t.locals global.name then
+    raise_s [%message "write to global managed by builder" (global : variable)];
   verify_var value global.typ t;
   add_instr t @@ Instr.SetGlobalOp { value; global } |> ignore
 

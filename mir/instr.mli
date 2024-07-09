@@ -263,6 +263,7 @@ type t =
   | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
   | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t }
   | Unreachable
+  | Nop
 [@@deriving sexp]
 
 val local_type_of_lane_shape : vec_lane_shape -> local_type
@@ -272,3 +273,4 @@ val replace_instr_ref : t -> from:Ref.t -> into:Ref.t -> t
 val is_pure : t -> bool
 val is_assignment : t -> bool
 val assignment_var : t -> Variable.t option
+val iter : (ref -> unit) -> t -> unit

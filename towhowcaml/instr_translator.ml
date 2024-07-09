@@ -31,7 +31,6 @@ type state = {
   (* the stack grows up *)
   fpu_stack_changes : (int, Instr.Ref.t) Hashtbl.t;
   mutable fpu_status_word : Instr.Ref.t;
-  global_usages : (ident, global_info) Hashtbl.t;
 }
 [@@deriving sexp_of]
 
@@ -49,7 +48,6 @@ let initial_state () =
     local_fpu_stack_height = 0;
     fpu_stack_changes = Hashtbl.create ~size:0 (module Int);
     fpu_status_word = Instr.Ref.invalid;
-    global_usages = Hashtbl.create ~size:0 (module String);
   }
 
 let backward_direction s = s.backward_direction
@@ -292,18 +290,6 @@ let add_float_comparison c args =
   c.state.float_compare_instr <- c.opcode.id;
   c.state.float_compare_args <- args
 
-let cached_set_global state global value =
-  Hashtbl.update state.global_usages global.name ~f:(fun _ ->
-      { value; global; modified = true })
-
-let cached_get_global state builder global =
-  (Hashtbl.find_or_add state.global_usages global.name ~default:(fun () ->
-       { global; modified = false; value = B.get_global builder global }))
-    .value
-
-let get_fpu_stack_pointer ~state ~builder =
-  cached_get_global state builder Util.fpu_stack_pointer_global
-
 let set_fpu_stack c value index =
   Hashtbl.set c.state.fpu_stack_changes
     ~key:(c.state.local_fpu_stack_height - index)
@@ -314,7 +300,7 @@ let set_fpu_stack c value index =
 let get_fpu_stack c index =
   let offset = c.state.local_fpu_stack_height - index in
   Hashtbl.find_or_add c.state.fpu_stack_changes offset ~default:(fun () ->
-      let addr = get_fpu_stack_pointer ~state:c.state ~builder:c.builder in
+      let addr = B.newest_var c.builder Util.fpu_stack_pointer in
       let offset = offset * int_of_float_size in
       match float_size with
       | `Single -> B.float_load32 c.builder addr ~offset
@@ -369,7 +355,7 @@ let store_operand_f c value ~dest =
 let load_operand_v c src =
   match src with
   | Register { size = 16; reg = #X86reg.sse as reg } ->
-      cached_get_global c.state c.builder (Util.xmm_reg_to_global reg)
+    B.newest_var c.builder @@ X86reg.to_ident reg
   | Memory ({ segment = None; size = 16; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.vec_load128 c.builder addr ~offset
@@ -378,7 +364,7 @@ let load_operand_v c src =
 let store_operand_v c value ~dest =
   match dest with
   | Register { size = 16; reg = #X86reg.sse as reg } ->
-      cached_set_global c.state (Util.xmm_reg_to_global reg) value
+    B.try_change_var c.builder (X86reg.to_ident reg) value |> ignore
   | Memory ({ segment = None; size = 16; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.vec_store128 c.builder ~addr ~offset ~value
@@ -401,7 +387,7 @@ let store_operand_l c value ~dest =
 let load_operand_mmx c src =
   match src with
   | Register { size = 8; reg = #X86reg.mmx as reg } ->
-      cached_get_global c.state c.builder (Util.mm_reg_to_global reg)
+    B.newest_var c.builder @@ X86reg.to_ident reg
   | Memory ({ segment = None; size = 8; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.vec_load64_zero_extend c.builder addr ~offset
@@ -410,7 +396,7 @@ let load_operand_mmx c src =
 let store_operand_mmx c value ~dest =
   match dest with
   | Register { size = 8; reg = #X86reg.mmx as reg } ->
-      cached_set_global c.state (Util.mm_reg_to_global reg) value
+    B.try_change_var c.builder (X86reg.to_ident reg) value |> ignore
   | Memory ({ segment = None; size = 8; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.vec_store c.builder ~addr ~offset ~vec:value ~shape:`I64 ~lane:0
@@ -420,7 +406,7 @@ let write_fpu_stack_changes ~state ~builder =
   (* Do this before resetting local_fpu_stack_height *)
   let stack_head = state.local_fpu_stack_height in
   if not @@ Hashtbl.is_empty state.fpu_stack_changes then (
-    let addr = get_fpu_stack_pointer ~state ~builder in
+    let addr = B.newest_var builder Util.fpu_stack_pointer in
     Hashtbl.iteri state.fpu_stack_changes ~f:(fun ~key:index ~data:value ->
         if index <= stack_head then
           match float_size with
@@ -433,18 +419,16 @@ let write_fpu_stack_changes ~state ~builder =
     Hashtbl.clear state.fpu_stack_changes;
 
     if stack_head <> 0 then
-      cached_set_global state Util.fpu_stack_pointer_global
-      @@ B.add builder
-           ~lhs:(cached_get_global state builder Util.fpu_stack_pointer_global)
-           ~rhs:(B.const builder @@ (stack_head * int_of_float_size)))
+      B.add builder ~varName:Util.fpu_stack_pointer
+        ~lhs:(B.newest_var builder Util.fpu_stack_pointer)
+        ~rhs:(B.const builder @@ (stack_head * int_of_float_size))
+      |> ignore)
 
 let write_globals state builder =
   write_fpu_stack_changes ~state ~builder;
-  Hashtbl.iter state.global_usages ~f:(fun g ->
-      if g.modified then B.set_global builder g.global g.value)
+  B.store_globals builder
 
 let read_globals c =
-  Hashtbl.clear c.state.global_usages;
   c.state.local_fpu_stack_height <- 0
 
 let translate_mov c =
@@ -1939,8 +1923,7 @@ let translate_bit_test c kind =
       let one = B.const c.builder 1 in
       let count = load_operand c src in
       let masked =
-        B.int_and c.builder ~rhs:(B.const c.builder 0x1F)
-          ~lhs:count
+        B.int_and c.builder ~rhs:(B.const c.builder 0x1F) ~lhs:count
       in
       let bit = B.shift_left c.builder ~lhs:one ~rhs:masked in
       match kind with
@@ -2228,13 +2211,15 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
         B.mir_assert builder
         @@ B.equal builder ~lhs:new_ret_addr
              ~rhs:(B.newest_var builder Util.ret_addr_local);
-        (match operands with
-        | [] -> ()
-        | [ Immediate { value; _ } ] ->
-            B.add builder ~rhs:(B.const builder value)
-              ~lhs:(B.newest_var builder esp) ~varName:esp
-            |> ignore
-        | _ -> raise_ops { intrinsics; builder; state; opcode });
+        let pop_size =
+          match operands with
+          | [] -> 4
+          | [ Immediate { value; _ } ] -> value + 4
+          | _ -> raise_ops { intrinsics; builder; state; opcode }
+        in
+        B.add builder ~rhs:(B.const builder pop_size)
+          ~lhs:(B.newest_var builder esp) ~varName:esp
+        |> ignore;
         Return
     | {
      id =

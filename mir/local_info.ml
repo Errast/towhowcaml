@@ -1,4 +1,4 @@
 open Core
 
-type t = { subscript : int; index : Instr.Ref.t; typ : Types.local_type }
+type t = { subscript : int; index : Instr.Ref.t; typ : Types.local_type; scope : [`Local | `Global] }
 [@@deriving sexp]
