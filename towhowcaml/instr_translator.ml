@@ -321,7 +321,7 @@ let fpu_pop_off c =
 let load_operand_f c src =
   match src with
   | Immediate { value; size = 4 } ->
-      B.float_const c.builder @@ Util.int32_to_float value
+      B.float_const c.builder @@ Mir.Bits.int32_to_float value
   | Register { reg = #X86reg.x87_float as reg; _ } ->
       get_fpu_stack c @@ X86reg.x87_float_reg_index reg
   | Memory ({ segment = None | Some Es; _ } as mem) -> (
@@ -355,7 +355,7 @@ let store_operand_f c value ~dest =
 let load_operand_v c src =
   match src with
   | Register { size = 16; reg = #X86reg.sse as reg } ->
-    B.newest_var c.builder @@ X86reg.to_ident reg
+      B.newest_var c.builder @@ X86reg.to_ident reg
   | Memory ({ segment = None; size = 16; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.vec_load128 c.builder addr ~offset
@@ -364,7 +364,7 @@ let load_operand_v c src =
 let store_operand_v c value ~dest =
   match dest with
   | Register { size = 16; reg = #X86reg.sse as reg } ->
-    B.try_change_var c.builder (X86reg.to_ident reg) value |> ignore
+      B.try_change_var c.builder (X86reg.to_ident reg) value |> ignore
   | Memory ({ segment = None; size = 16; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.vec_store128 c.builder ~addr ~offset ~value
@@ -387,7 +387,7 @@ let store_operand_l c value ~dest =
 let load_operand_mmx c src =
   match src with
   | Register { size = 8; reg = #X86reg.mmx as reg } ->
-    B.newest_var c.builder @@ X86reg.to_ident reg
+      B.newest_var c.builder @@ X86reg.to_ident reg
   | Memory ({ segment = None; size = 8; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.vec_load64_zero_extend c.builder addr ~offset
@@ -396,7 +396,7 @@ let load_operand_mmx c src =
 let store_operand_mmx c value ~dest =
   match dest with
   | Register { size = 8; reg = #X86reg.mmx as reg } ->
-    B.try_change_var c.builder (X86reg.to_ident reg) value |> ignore
+      B.try_change_var c.builder (X86reg.to_ident reg) value |> ignore
   | Memory ({ segment = None; size = 8; _ } as mem) ->
       let addr, offset = load_partial_address c mem in
       B.vec_store c.builder ~addr ~offset ~vec:value ~shape:`I64 ~lane:0
@@ -426,10 +426,8 @@ let write_fpu_stack_changes ~state ~builder =
 
 let write_globals state builder =
   write_fpu_stack_changes ~state ~builder;
-  B.store_globals builder
-
-let read_globals c =
-  c.state.local_fpu_stack_height <- 0
+  B.store_globals builder;
+  state.local_fpu_stack_height <- 0
 
 let translate_mov c =
   match operands c with
@@ -628,7 +626,7 @@ let translate_call_start c ~push_addr =
      B.store32 c.builder ~addr:esp ~value:(B.const c.builder c.opcode.address));
   write_globals c.state c.builder
 
-let translate_call_end c = read_globals c
+let translate_call_end _ = () 
 
 let translate_direct_call c func_name func_sig ~push_addr =
   translate_call_start c ~push_addr;

@@ -126,6 +126,7 @@ val xor : bi_op_add
 val long_eq : bi_op_add
 val shift_left : bi_op_add
 val rotate_left : bi_op_add
+val rotate_right : bi_op_add
 val long_equal : bi_op_add
 val long_not_equal : bi_op_add
 val float_equal : bi_op_add
@@ -170,7 +171,6 @@ val vec_shift_left :
 val div : signed_bi_op_add
 val remainder : signed_bi_op_add
 val shift_right : signed_bi_op_add
-val rotate_right : signed_bi_op_add
 val less_than : signed_bi_op_add
 val greater_than : signed_bi_op_add
 val less_than_equal : signed_bi_op_add

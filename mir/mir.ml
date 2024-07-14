@@ -7,6 +7,8 @@ module Variable = Variable
 module Vec = Vec
 module Func = Func
 module Instr_list = Instr_list
+module Bits= Bits
+include Opt
 
 let float_size : [ `Single | `Double ] = `Double
 let int_of_float_size = match float_size with `Single -> 4 | `Double -> 8

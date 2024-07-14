@@ -1,8 +1,5 @@
 (library
- (public_name towhowcaml)
+ (name towhowcaml)
  (preprocess
   (pps ppx_jane))
- (foreign_stubs
-  (language c)
-  (names bits))
  (libraries core mir radatnet))

@@ -5,10 +5,6 @@ open Radatnet
 type intrinsic = { addr : int; signature : func_sig; name : string }
 [@@deriving sexp]
 
-external int32_to_float : int -> (float[@unboxed])
-  = "towhowcaml_int32_to_double_byte" "towhowcaml_int32_to_double"
-[@@noalloc]
-
 let addr_to_func_name = Printf.sprintf "__func%x__"
 let addr_to_index_func : ident = "__addrToIndex__"
 let fpu_stack_pointer : ident = "__fpuStack__" 

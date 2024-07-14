@@ -1,6 +1,8 @@
 (library
- (public_name mir)
  (name mir)
- (libraries core)
+ (foreign_stubs
+  (language c)
+  (names bits))
+ (libraries core mir_ppx)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane mir_ppx)))

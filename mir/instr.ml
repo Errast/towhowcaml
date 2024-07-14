@@ -12,7 +12,7 @@ module Ref = struct
   let invalid = Ref (-1)
 end
 
-type ref = Ref.t
+type ref = Ref.t = Ref of int [@@unboxed]
 
 let ref i = Ref.Ref i
 
@@ -63,6 +63,7 @@ type bi_op =
   | Xor
   | ShiftLeft
   | RotateLeft
+  | RotateRight
   | LongEq
   | LongNotEq
   | FloatEq
@@ -103,7 +104,6 @@ type signed_bi_op =
   | Divide
   | Remainder
   | ShiftRight
-  | RotateRight
   | LessThan
   | LessThanEqual
   | GreaterThan
@@ -306,7 +306,7 @@ let value_type = function
   | BiOp { op; _ } -> (
       match op with
       | Add | Subtract | Multiply | Equal | NotEqual | And | Or | Xor
-      | ShiftLeft | RotateLeft | LongEq | LongNotEq | FloatEq | FloatNotEq
+      | ShiftLeft | RotateLeft |RotateRight | LongEq | LongNotEq | FloatEq | FloatNotEq
       | FloatGreaterThan | FloatLessThan | FloatGreaterThanEqual
       | FloatLessThanEqual | MergeTruncLow8 | MergeTruncHigh8 | MergeTrunc16 ->
           Int
@@ -318,7 +318,7 @@ let value_type = function
   | VecLaneBiOp _ -> Vec
   | SignedBiOp { op; _ } -> (
       match op with
-      | Divide | Remainder | ShiftRight | RotateRight | LessThan | LessThanEqual
+      | Divide | Remainder | ShiftRight |  LessThan | LessThanEqual
       | GreaterThan | GreaterThanEqual | LongGreaterThan | LongGreaterThanEqual
       | LongLessThan | LongLessThanEqual ->
           Int
@@ -443,6 +443,40 @@ let replace_instr_ref t ~from ~into =
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
       t
 
+let fold f s = function
+  | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
+  | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
+      s
+  | DupVar { src = v1; _ }
+  | UniOp { operand = v1; _ }
+  | VecExtend { operand = v1; _ }
+  | VecSplatOp { value = v1; _ }
+  | VecExtractLaneOp { src = v1; _ }
+  | LoadOp { addr = v1; _ }
+  | SignedLoadOp { addr = v1; _ }
+  | SetGlobalOp { value = v1; _ }
+  | AssertOp { condition = v1 } ->
+      f s v1
+  | BiOp { lhs = v1; rhs = v2; _ }
+  | VecLaneBiOp { lhs = v1; rhs = v2; _ }
+  | SignedBiOp { lhs = v1; rhs = v2; _ }
+  | SignedVecLaneBiOp { lhs = v1; rhs = v2; _ }
+  | VecShiftLeftOp { operand = v1; count = v2; _ }
+  | VecShiftRightOp { operand = v1; count = v2; _ }
+  | VecReplaceLaneOp { dest = v1; lane_value = v2; _ }
+  | VecShuffleOp { arg1 = v1; arg2 = v2; _ }
+  | VecLoadLaneOp { dest_vec = v1; addr = v2; _ }
+  | StoreOp { addr = v1; value = v2; _ }
+  | VecStoreLaneOp { addr = v1; value = v2; _ } ->
+      f (f s v1) v2
+  | Memset { dest = v1; value = v2; count = v3 }
+  | Memcopy { dest = v1; src = v2; count = v3 } ->
+      f (f (f s v1) v2) v3
+  | CallOp v -> List.fold ~f ~init:s v.args
+  | CallIndirectOp v ->
+      let s = f s v.table_index in
+      List.fold ~f ~init:s v.args
+
 let iter f = function
   | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
@@ -480,6 +514,116 @@ let iter f = function
       f v.table_index;
       List.iter ~f v.args
 
+let map f t =
+  match t with
+  | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
+  | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
+      t
+  | DupVar v ->
+      let r = f v.src in
+      if Ref.equal r v.src then t else DupVar { v with src = r }
+  | UniOp v ->
+      let r = f v.operand in
+      if Ref.equal r v.operand then t else UniOp { v with operand = r }
+  | VecExtend v ->
+      let r = f v.operand in
+      if Ref.equal r v.operand then t else VecExtend { v with operand = r }
+  | VecSplatOp v ->
+      let r = f v.value in
+      if Ref.equal r v.value then t else VecSplatOp { v with value = r }
+  | SetGlobalOp v ->
+      let r = f v.value in
+      if Ref.equal r v.value then t else SetGlobalOp { v with value = r }
+  | LoadOp v ->
+      let r = f v.addr in
+      if Ref.equal r v.addr then t else LoadOp { v with addr = r }
+  | VecExtractLaneOp v ->
+      let r = f v.src in
+      if Ref.equal r v.src then t else VecExtractLaneOp { v with src = r }
+  | SignedLoadOp v ->
+      let r = f v.addr in
+      if Ref.equal r v.addr then t else SignedLoadOp { v with addr = r }
+  | AssertOp v ->
+      let r = f v.condition in
+      if Ref.equal r v.condition then t else AssertOp { condition = r }
+  | BiOp v ->
+      let r1 = f v.lhs in
+      let r2 = f v.rhs in
+      if Ref.equal r1 v.lhs && Ref.equal r2 v.rhs then t
+      else BiOp { v with lhs = r1; rhs = r2 }
+  | VecLaneBiOp v ->
+      let r1 = f v.lhs in
+      let r2 = f v.rhs in
+      if Ref.equal r1 v.lhs && Ref.equal r2 v.rhs then t
+      else VecLaneBiOp { v with lhs = r1; rhs = r2 }
+  | SignedBiOp v ->
+      let r1 = f v.lhs in
+      let r2 = f v.rhs in
+      if Ref.equal r1 v.lhs && Ref.equal r2 v.rhs then t
+      else SignedBiOp { v with lhs = r1; rhs = r2 }
+  | SignedVecLaneBiOp v ->
+      let r1 = f v.lhs in
+      let r2 = f v.rhs in
+      if Ref.equal r1 v.lhs && Ref.equal r2 v.rhs then t
+      else SignedVecLaneBiOp { v with lhs = r1; rhs = r2 }
+  | VecShiftLeftOp v ->
+      let r1 = f v.operand in
+      let r2 = f v.count in
+      if Ref.equal r1 v.operand && Ref.equal r2 v.count then t
+      else VecShiftLeftOp { v with operand = r1; count = r2 }
+  | VecShiftRightOp v ->
+      let r1 = f v.operand in
+      let r2 = f v.count in
+      if Ref.equal r1 v.operand && Ref.equal r2 v.count then t
+      else VecShiftRightOp { v with operand = r1; count = r2 }
+  | VecReplaceLaneOp v ->
+      let r1 = f v.dest in
+      let r2 = f v.lane_value in
+      if Ref.equal r1 v.dest && Ref.equal r2 v.lane_value then t
+      else VecReplaceLaneOp { v with dest = r1; lane_value = r2 }
+  | VecShuffleOp v ->
+      let r1 = f v.arg1 in
+      let r2 = f v.arg2 in
+      if Ref.equal r1 v.arg1 && Ref.equal r2 v.arg2 then t
+      else VecShuffleOp { v with arg1 = r1; arg2 = r2 }
+  | VecLoadLaneOp v ->
+      let r1 = f v.dest_vec in
+      let r2 = f v.addr in
+      if Ref.equal r1 v.dest_vec && Ref.equal r2 v.addr then t
+      else VecLoadLaneOp { v with dest_vec = r1; addr = r2 }
+  | VecStoreLaneOp v ->
+      let r1 = f v.addr in
+      let r2 = f v.value in
+      if Ref.equal r1 v.addr && Ref.equal r2 v.value then t
+      else VecStoreLaneOp { v with addr = r1; value = r2 }
+  | StoreOp v ->
+      let r1 = f v.addr in
+      let r2 = f v.value in
+      if Ref.equal r1 v.addr && Ref.equal r2 v.value then t
+      else StoreOp { v with addr = r1; value = r2 }
+  | Memcopy v ->
+      let r1 = f v.dest in
+      let r2 = f v.src in
+      let r3 = f v.count in
+      if Ref.equal r1 v.dest && Ref.equal r2 v.src && Ref.equal r3 v.count then
+        t
+      else Memcopy { dest = r1; src = r2; count = r3 }
+  | Memset v ->
+      let r1 = f v.dest in
+      let r2 = f v.value in
+      let r3 = f v.count in
+      if Ref.equal r1 v.dest && Ref.equal r2 v.value && Ref.equal r3 v.count
+      then t
+      else Memset { dest = r1; value = r2; count = r3 }
+  | CallOp v ->
+      let r = List.map ~f v.args in
+      if equal_list Ref.equal r v.args then t else CallOp { v with args = r }
+  | CallIndirectOp v ->
+      let r1 = f v.table_index in
+      let r2 = List.map ~f v.args in
+      if Ref.equal r1 v.table_index && equal_list Ref.equal r2 v.args then t
+      else CallIndirectOp { args = r2; table_index = r1 }
+
 (* Using flambda terminology, this definition of pureness only accounts for effects, not coeffects *)
 (* This is only used for dead code elimination, as we currently don't reorder instructions *)
 let is_pure = function
@@ -487,11 +631,10 @@ let is_pure = function
   | VecExtend _ | BiOp _ | VecLaneBiOp _ | SignedBiOp _ | SignedVecLaneBiOp _
   | LoadOp _ | SignedLoadOp _ | VecShiftLeftOp _ | VecShiftRightOp _
   | VecSplatOp _ | VecReplaceLaneOp _ | VecExtractLaneOp _ | VecShuffleOp _
-  | VecLoadLaneOp _ | Landmine _ | Nop ->
+  | VecLoadLaneOp _ | Landmine _ | Nop | GetGlobalOp _ | OutsideContext _ ->
       true
-  | CallOp _ | CallIndirectOp _ | ReturnedOp _ | GetGlobalOp _
-  | OutsideContext _ | StoreOp _ | VecStoreLaneOp _ | AssertOp _ | Memset _
-  | Memcopy _ | Unreachable | SetGlobalOp _ ->
+  | CallOp _ | CallIndirectOp _ | ReturnedOp _ | StoreOp _ | VecStoreLaneOp _
+  | AssertOp _ | Memset _ | Memcopy _ | Unreachable | SetGlobalOp _ ->
       false
 
 let is_assignment = function

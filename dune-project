@@ -4,16 +4,6 @@
 
 (generate_opam_files)
 
-(map_workspace_root false)
-
-(package
- (name radatnet)
- (depends ocaml dune utop ppx_yojson_conv core))
-
-(package
- (name mir)
- (depends ocaml dune utop core))
-
 (package
  (name towhowcaml)
  (depends ocaml dune utop core))

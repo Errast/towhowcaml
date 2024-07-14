@@ -1,5 +1,4 @@
 open! Core
-open Mir
 open Radatnet
 
 type state

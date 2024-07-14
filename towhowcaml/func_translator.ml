@@ -2,7 +2,8 @@ open! Core
 open Radatnet
 open Types
 open Mir
-module AP = Array
+module A = Array
+module AP = Array.Permissioned
 module Vec = Mir.Vec
 
 type terminator =
@@ -48,7 +49,7 @@ let offset_to_block_id c offset =
       let[@warning "-8"] (Some (Block id)) = c.call_0x47dcf0_block in
       id
   | _ ->
-      AP.binary_search c.raw_blocks
+      A.binary_search c.raw_blocks
         ~compare:(fun b o -> compare_int b.offset o)
         `First_equal_to offset
       |> Option.value_or_thunk ~default:(fun () ->
@@ -57,7 +58,7 @@ let offset_to_block_id c offset =
 let add_block_branches c id (block : block) =
   let add_branch b =
     let b_id = offset_to_block_id c b in
-    AP.set c.inverted_cfg b_id (id :: AP.get c.inverted_cfg b_id)
+    A.set c.inverted_cfg b_id (id :: A.get c.inverted_cfg b_id)
   in
   match block.terminator with
   | Goto b -> add_branch b
@@ -78,9 +79,9 @@ let translate_block c id block =
       (Builder.newest_var builder @@ X86reg.to_ident `esp)
     |> ignore;
 
-  AP.foldi
+  A.foldi
     ~f:(fun i () op ->
-      if i <> AP.length block.ops - 1 then
+      if i <> A.length block.ops - 1 then
         Instr_translator.translate c.intrinsics builder state op)
     ~init:() block.ops;
 
@@ -89,7 +90,7 @@ let translate_block c id block =
       Builder.unreachable builder ();
       Block.Return)
     else
-      let term_op = AP.last block.ops in
+      let term_op = A.last block.ops in
       let block_term = block.terminator in
       let tail_position = match block_term with Return -> true | _ -> false in
       let term_found =
@@ -101,8 +102,8 @@ let translate_block c id block =
           let next_block = id + 1 in
           if
             not
-              (next_block < AP.length c.raw_blocks
-              && (AP.get c.raw_blocks next_block).offset = next_addr)
+              (next_block < A.length c.raw_blocks
+              && (A.get c.raw_blocks next_block).offset = next_addr)
           then
             raise_s
               [%message
@@ -234,12 +235,18 @@ let to_mir_block used_locals b =
           Set.add roots data.index))
       ~init:roots current_vars
   in
-  Block.{ id = b.id; terminator = b.terminator; instrs; roots }
+  let roots =
+    match b.terminator with
+    | Branch { condition; _ } | Switch { switch_on = condition;_ } ->
+        Set.add roots condition
+    | _ -> roots
+  in
+  Mir.opt @@ Block.{ id = b.id; terminator = b.terminator; instrs; roots }
 
 let add_opt_block blocks f block =
-  if AP.exists ~f !blocks then (
-    let id = AP.length !blocks in
-    blocks := AP.append !blocks block;
+  if A.exists ~f !blocks then (
+    let id = A.length !blocks in
+    blocks := A.append !blocks block;
     Some (Block id))
   else None
 
@@ -302,11 +309,11 @@ let translate ~intrinsics ~name ~(blocks : block array) =
       call_0x47dcf0_block_arr
   in
   let blocks = !blocks in
-  let num_blocks = AP.length blocks in
-  let inverted_cfg = AP.create ~len:num_blocks [] in
+  let num_blocks = A.length blocks in
+  let inverted_cfg = A.create ~len:num_blocks [] in
   if
     not
-    @@ AP.is_sorted_strictly
+    @@ A.is_sorted_strictly
          ~compare:(fun l r -> compare_int l.offset r.offset)
          blocks
   then raise_s [%message "blocks not sorted" (name : ident)];
@@ -321,15 +328,17 @@ let translate ~intrinsics ~name ~(blocks : block array) =
       raw_blocks = blocks;
     }
   in
-  AP.foldi ~f:(fun i () b -> add_block_branches c i b) ~init:() blocks;
-  let block_data = AP.mapi ~f:(translate_block c) c.raw_blocks in
-  AP.iter ~f:(add_input_blocks c.inverted_cfg block_data) block_data;
+  A.foldi ~f:(fun i () b -> add_block_branches c i b) ~init:() blocks;
+  let block_data = A.mapi ~f:(translate_block c) c.raw_blocks in
+  A.iter ~f:(add_input_blocks c.inverted_cfg block_data) block_data;
   let used_locals = Hashtbl.create (module String) in
   let signature = Util.fast_call in
   List.iter ~f:(fun a -> add_used_local used_locals a.name a.typ) signature.args;
   List.iter signature.returns ~f:(fun r ->
       add_used_local used_locals r.name r.typ);
-  let mir_blocks = AP.map ~f:(to_mir_block used_locals) block_data in
+  let mir_blocks =
+    AP.of_array_id block_data |> AP.map ~f:(to_mir_block used_locals)
+  in
   Func.
     {
       name;

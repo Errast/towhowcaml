@@ -9,7 +9,7 @@ module Ref : sig
   val invalid : t
 end
 
-type ref = Ref.t
+type ref = Ref.t = Ref of int [@@unboxed]
 
 val ref : int -> ref
 
@@ -60,6 +60,7 @@ type bi_op =
   | Xor
   | ShiftLeft
   | RotateLeft
+  | RotateRight
   | LongEq
   | LongNotEq
   | FloatEq
@@ -100,7 +101,6 @@ type signed_bi_op =
   | Divide
   | Remainder
   | ShiftRight
-  | RotateRight
   | LessThan
   | LessThanEqual
   | GreaterThan
@@ -274,3 +274,5 @@ val is_pure : t -> bool
 val is_assignment : t -> bool
 val assignment_var : t -> Variable.t option
 val iter : (ref -> unit) -> t -> unit
+val fold : ('a -> ref -> 'a) -> 'a -> t -> 'a
+val map : (ref -> ref) -> t -> t

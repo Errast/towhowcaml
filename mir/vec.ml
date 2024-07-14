@@ -10,6 +10,16 @@ let create ?(cap = 4) () =
     length = 0;
   }
 
+let init length ?(cap = length) f =
+  assert (cap >= length);
+  assert (length >= 0);
+  let array = Option_array.create ~len:cap in
+  for i = 0 to length - 1 do
+    Option_array.set_some array i @@ f i
+    (* Option_array.unsafe_set_some array i @@ f i *)
+  done;
+  { array; length }
+
 let length vec = vec.length
 let valid_index vec i = i < length vec
 
@@ -45,6 +55,35 @@ let add vec value =
   (* Option_array.unsafe_set_some vec.array len value *)
   Option_array.set_some vec.array len value;
   vec.length <- len + 1
+
+let pop vec =
+  if vec.length < 1 then raise @@ Invalid_argument "Vec is empty";
+  vec.length <- vec.length - 1;
+  (* Option_array.unsafe_get_some_assuming_some vec.array vec.length *)
+  let res = Option_array.get_some_exn vec.array vec.length in
+  (* Option_array.unsafe_set_none vec.array vec.length *)
+  Option_array.set_none vec.array vec.length;
+  res
+
+let insert vec i value =
+  let len = vec.length in
+  vec.length <- len + 1;
+  valid_index_exn vec i;
+  if len = Option_array.length vec.array then (
+    let new_arr =
+      Option_array.create ~len:(Int.max 4 @@ (Int.floor_pow2 2 * len))
+    in
+    if i > 0 then
+      Option_array.blit ~src:vec.array ~dst:new_arr ~src_pos:0 ~dst_pos:0 ~len:i;
+    if len <> i then
+      Option_array.blit ~src:vec.array ~dst:new_arr ~src_pos:i ~dst_pos:(i + 1)
+        ~len:(len - i);
+    vec.array <- new_arr)
+  else if i < len then
+    Option_array.blit ~src:vec.array ~dst:vec.array ~src_pos:i ~dst_pos:(i + 1)
+      ~len:(len - 1);
+  (* Option_array.unsafe_set_some vec.array i value *)
+  Option_array.set_some vec.array i value
 
 let copy vec = { vec with array = Option_array.copy vec.array }
 
@@ -84,8 +123,8 @@ let to_array vec =
 let to_perm_array vec =
   Array.Permissioned.init vec.length
     ~f:
-      ((* Option_array.unsafe_get_some_assuming_some *)
-       Option_array.get_some_exn vec.array)
+      (Option_array.unsafe_get_some_assuming_some
+         (*Option_array.get_some_exn*) vec.array)
 
 include
   Sexpable.Of_sexpable1

@@ -57,6 +57,8 @@ let ignroe_funcs =
       0x0048c133;
       (* push/pop eflags *)
       0x004849a7;
+      (* TODO bored *)
+      0x47e0d1;
     ]
 
 let block_mods :
@@ -140,59 +142,57 @@ let make_intrinsics c =
 
 let counts = ref 0
 
-
 let definite_assignment (func : Mir.Func.t) =
-    let open Mir in
-    let module LocalSet = Set.Make (Variable) in
-    let module IntSet = Set.Make (Int) in
-    let defined_by = Option_array.create ~len:(Array.length func.blocks) in
-    let oops = Hash_set.create (module Variable) in
-    let rec track_assigned defined (Block id) =
-      let block = func.blocks.(id) in
-      let now, continue =
-        match Option_array.get defined_by id with
-        | Some v ->
-            let now = Set.inter v defined in
-            (now, Set.length now <> Set.length v)
-        | None -> (defined, true)
-      in
-      if continue then (
-        Option_array.set_some defined_by id now;
-        let block_defines =
-          Set.fold block.roots ~init:now ~f:(fun s (Instr.Ref.Ref r) ->
-              block.instrs.(r) |> Mir.Instr.assignment_var
-              |> Option.value_map ~default:s ~f:(Set.add s))
-        in
-        match block.terminator with
-        | Return -> ()
-        | Goto next -> track_assigned block_defines next
-        | Branch v ->
-            track_assigned block_defines v.fail;
-            track_assigned block_defines v.succeed
-        | Switch v ->
-            List.iter v.cases ~f:(track_assigned block_defines);
-            track_assigned block_defines v.default)
+  let open Mir in
+  let module Array = Array.Permissioned in
+  let module LocalSet = Set.Make (Variable) in
+  let module IntSet = Set.Make (Int) in
+  let defined_by = Option_array.create ~len:(Array.length func.blocks) in
+  let oops = Hash_set.create (module Variable) in
+  let rec track_assigned defined (Block id) =
+    let block = func.blocks.(id) in
+    let now, continue =
+      match Option_array.get defined_by id with
+      | Some v ->
+          let now = Set.inter v defined in
+          (now, Set.length now <> Set.length v)
+      | None -> (defined, true)
     in
-    track_assigned
-      (func.signature.args
-      |> List.map ~f:(fun v -> { Variable.name = v.name })
-      |> LocalSet.of_list)
-      (Block 0);
-    Option_array.iteri defined_by ~f:(fun i defined ->
-        let defined = Option.value defined ~default:LocalSet.empty in
-        Array.iter func.blocks.(i).instrs ~f:(function
-          | OutsideContext { var; _ } ->
-              if not @@ Set.mem defined var then
-                Hash_set.add oops var
-          | _ -> ()));
-     if not @@ Hash_set.is_empty oops then (
-       counts := !counts + 1;
-       print_s 
-                     [%message
-                       "use without def"
-                         ~func:(func.name : string)
-                         (oops : Variable.t Hash_set.t)]
-     ) 
+    if continue then (
+      Option_array.set_some defined_by id now;
+      let block_defines =
+        Set.fold block.roots ~init:now ~f:(fun s (Instr.Ref.Ref r) ->
+            block.instrs.(r) |> Mir.Instr.assignment_var
+            |> Option.value_map ~default:s ~f:(Set.add s))
+      in
+      match block.terminator with
+      | Return -> ()
+      | Goto next -> track_assigned block_defines next
+      | Branch v ->
+          track_assigned block_defines v.fail;
+          track_assigned block_defines v.succeed
+      | Switch v ->
+          List.iter v.cases ~f:(track_assigned block_defines);
+          track_assigned block_defines v.default)
+  in
+  track_assigned
+    (func.signature.args
+    |> List.map ~f:(fun v -> { Variable.name = v.name })
+    |> LocalSet.of_list)
+    (Block 0);
+  Option_array.iteri defined_by ~f:(fun i defined ->
+      let defined = Option.value defined ~default:LocalSet.empty in
+      Array.iter func.blocks.(i).instrs ~f:(function
+        | OutsideContext { var; _ } ->
+            if not @@ Set.mem defined var then Hash_set.add oops var
+        | _ -> ()));
+  if not @@ Hash_set.is_empty oops then (
+    counts := !counts + 1;
+    print_s
+      [%message
+        "use without def"
+          ~func:(func.name : string)
+          (oops : Variable.t Hash_set.t)])
 
 let make_block c block =
   let open Radatnet.Types in

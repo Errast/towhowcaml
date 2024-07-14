@@ -4,11 +4,14 @@ type !'a t
 
 val empty : unit -> 'a t
 val create : ?cap:int -> unit -> 'a t
+val init : int -> ?cap:int -> (int -> 'a) -> 'a t
 val get : 'a t -> int -> 'a
 val get_opt : 'a t -> int -> 'a option
 val unsafe_get : 'a t -> int -> 'a
 val set : 'a t -> int -> 'a -> unit
 val add : 'a t -> 'a -> unit
+val pop : 'a t -> 'a
+val insert : 'a t -> int -> 'a -> unit
 val copy : 'a t -> 'a t
 val to_perm_array : 'a t -> ('a, [< 'b perms ]) Array.Permissioned.t
 

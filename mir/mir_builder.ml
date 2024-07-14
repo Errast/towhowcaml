@@ -13,7 +13,7 @@ type t = {
 [@@deriving sexp_of]
 
 let deconstruct { instrs; currentVar; locals; roots; _ } =
-  (Vec.to_array instrs, currentVar, locals, roots)
+  (Vec.to_perm_array instrs, currentVar, locals, roots)
 
 let get_instr t (Instr.Ref.Ref i) = Vec.get t.instrs i
 let set_check_var_is_latest t b = t.check_var_is_latest <- b
@@ -435,7 +435,7 @@ let vec_not_equal = vec_bi_op Instr.VecNotEqual
 let div = sign_bi_op Int Instr.Divide Int
 let remainder = sign_bi_op Int Instr.Remainder Int
 let shift_right = sign_bi_op Int Instr.ShiftRight Int
-let rotate_right = sign_bi_op Int Instr.RotateRight Int
+let rotate_right = bi_op Int Instr.RotateRight Int
 let less_than = sign_bi_op Int Instr.LessThan Int
 let greater_than = sign_bi_op Int Instr.GreaterThan Int
 let less_than_equal = sign_bi_op Int Instr.LessThanEqual Int

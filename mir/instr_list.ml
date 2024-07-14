@@ -1,9 +1,10 @@
 open! Core
+module AP = Array.Permissioned
 
 type builder = Instr.t Vec.t
-type t = Instr.t array
+type t = (Instr.t, immutable) AP.t
 
-let t_of_builder = Vec.to_array
+let t_of_builder = Vec.to_perm_array
 
 let sexp_of_builder vec =
   Sexp.List
@@ -14,9 +15,11 @@ let sexp_of_builder vec =
 
 let sexp_of_t vec =
   Sexp.List
-    (Array.mapi vec ~f:(fun i instr ->
+    (AP.mapi vec ~f:(fun i instr ->
          Sexp.List [ sexp_of_int i; Instr.sexp_of_t instr ])
-    |> Array.to_list)
+    |> AP.to_list)
 
 let t_of_sexp sexp =
-  [%of_sexp: (Sexp.t * Instr.t) array] sexp |> Array.map ~f:snd
+  [%of_sexp: (Sexp.t * Instr.t) array] sexp
+  |> AP.of_array_id
+  |> AP.map ~f:snd
