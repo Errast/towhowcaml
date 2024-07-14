@@ -23,10 +23,328 @@ let test_trans_block addr =
   in
   print_s @@ Mir.Block.sexp_of_t
   @@ Array.Permissioned.get (Func_translator.translate ~blocks ~name ~intrinsics).blocks (index)
+let%expect_test "small regs" = 
+ test_trans_block 0x0047bd35;
+ [%expect {|
+   func_47bd10 262  |  ((id 1)
+    (instrs
+     ((0 (OutsideContext (var esp) (typ Int)))
+      (1 (LoadOp (var esi) (op Load32) (addr (Ref 0)) (offset 52)))
+      (2 (LoadOp (var edi) (op Load32) (addr (Ref 0)) (offset 48)))
+      (3 (SignedLoadOp (var __i32) (op Load16) (addr (Ref 1)) (signed true)))
+      (4 Nop) (5 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+      (6 Nop)
+      (7
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 1)) (signed true)
+        (offset 64)))
+      (8 Nop) (9 (GetGlobalOp (var ebx) (global ((name ebx) (typ Int)))))
+      (10 Nop) (11 Nop)
+      (12 (SignedLoadOp (var __i32) (op Load16) (addr (Ref 2)) (signed true)))
+      (13 Nop)
+      (14 (BiOp (var __i32) (op Multiply) (lhs (Ref 3)) (rhs (Ref 12))))
+      (15 Nop)
+      (16
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 1)) (signed true)
+        (offset 32)))
+      (17 Nop) (18 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
+      (19 Nop) (20 Nop)
+      (21
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 2)) (signed true)
+        (offset 64)))
+      (22 Nop)
+      (23 (BiOp (var __i32) (op Multiply) (lhs (Ref 7)) (rhs (Ref 21))))
+      (24 Nop)
+      (25
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 1)) (signed true)
+        (offset 96)))
+      (26 Nop) (27 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
+      (28 Nop) (29 Nop)
+      (30
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 2)) (signed true)
+        (offset 32)))
+      (31 Nop)
+      (32 (BiOp (var __i32) (op Multiply) (lhs (Ref 16)) (rhs (Ref 30))))
+      (33 Nop) (34 Nop)
+      (35
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 2)) (signed true)
+        (offset 96)))
+      (36 Nop)
+      (37 (BiOp (var __i32) (op Multiply) (lhs (Ref 25)) (rhs (Ref 35))))
+      (38 Nop) (39 Nop)
+      (40 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 14)) (offset 32)))
+      (41 Nop) (42 Nop)
+      (43 (BiOp (var __i32) (op Add) (lhs (Ref 14)) (rhs (Ref 23)))) (44 Nop)
+      (45
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 32)))
+      (46 Nop) (47 Nop)
+      (48 (BiOp (var __i32) (op Subtract) (lhs (Ref 45)) (rhs (Ref 23))))
+      (49 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 48)) (offset 32)))
+      (50 Nop) (51 Nop) (52 Nop) (53 Nop)
+      (54 (BiOp (var __i32) (op Add) (lhs (Ref 32)) (rhs (Ref 37)))) (55 Nop)
+      (56 Nop) (57 Nop)
+      (58 (BiOp (var __i32) (op Subtract) (lhs (Ref 32)) (rhs (Ref 37))))
+      (59 (BiOp (var ebx) (op MergeTrunc16) (lhs (Ref 58)) (rhs (Ref 9))))
+      (60 Nop) (61 Nop)
+      (62 (UniOp (var ebx) (op SignExtend16) (operand (Ref 59)))) (63 Nop)
+      (64 Nop) (65 (BiOp (var __i32) (op Add) (lhs (Ref 43)) (rhs (Ref 54))))
+      (66 Nop) (67 (Const __i32 4785088))
+      (68 (LoadOp (var __i32) (op Load32) (addr (Ref 67))))
+      (69 (BiOp (var ebx) (op Multiply) (lhs (Ref 62)) (rhs (Ref 68))))
+      (70 Nop) (71 Nop)
+      (72 (BiOp (var __i32) (op Subtract) (lhs (Ref 43)) (rhs (Ref 54))))
+      (73 Nop) (74 Nop)
+      (75 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 65)) (offset 28)))
+      (76 Nop)
+      (77 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 72)) (offset 24)))
+      (78 Nop) (79 (Const __i32 8))
+      (80
+       (SignedBiOp (var ebx) (op ShiftRight) (signed true) (lhs (Ref 69))
+        (rhs (Ref 79))))
+      (81
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 32)))
+      (82 Nop) (83 Nop) (84 Nop) (85 Nop)
+      (86 (BiOp (var __i32) (op Subtract) (lhs (Ref 80)) (rhs (Ref 54))))
+      (87 Nop) (88 Nop) (89 Nop)
+      (90 (BiOp (var __i32) (op Add) (lhs (Ref 81)) (rhs (Ref 86)))) (91 Nop)
+      (92
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 32)))
+      (93 Nop) (94 Nop)
+      (95 (BiOp (var __i32) (op Subtract) (lhs (Ref 92)) (rhs (Ref 86))))
+      (96 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 95)) (offset 32)))
+      (97 Nop)
+      (98 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 90)) (offset 20)))
+      (99
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 1)) (signed true)
+        (offset 16)))
+      (100 Nop) (101 Nop) (102 Nop)
+      (103
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 2)) (signed true)
+        (offset 16)))
+      (104 Nop)
+      (105 (BiOp (var __i32) (op Multiply) (lhs (Ref 99)) (rhs (Ref 103))))
+      (106 Nop)
+      (107
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 1)) (signed true)
+        (offset 112)))
+      (108 Nop) (109 Nop)
+      (110
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 1)) (signed true)
+        (offset 48)))
+      (111 Nop) (112 Nop) (113 Nop)
+      (114
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 2)) (signed true)
+        (offset 112)))
+      (115 Nop)
+      (116 (BiOp (var __i32) (op Multiply) (lhs (Ref 107)) (rhs (Ref 114))))
+      (117 Nop)
+      (118
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 1)) (signed true)
+        (offset 80)))
+      (119 Nop) (120 Nop) (121 Nop)
+      (122
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 2)) (signed true)
+        (offset 48)))
+      (123 Nop)
+      (124 (BiOp (var __i32) (op Multiply) (lhs (Ref 110)) (rhs (Ref 122))))
+      (125 Nop) (126 Nop)
+      (127
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 2)) (signed true)
+        (offset 80)))
+      (128 Nop)
+      (129 (BiOp (var __i32) (op Multiply) (lhs (Ref 118)) (rhs (Ref 127))))
+      (130 Nop) (131 Nop)
+      (132 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 105)) (offset 16)))
+      (133 Nop) (134 Nop)
+      (135 (BiOp (var __i32) (op Add) (lhs (Ref 105)) (rhs (Ref 116))))
+      (136 Nop)
+      (137
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 16)))
+      (138 Nop) (139 Nop)
+      (140 (BiOp (var __i32) (op Subtract) (lhs (Ref 137)) (rhs (Ref 116))))
+      (141 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 140)) (offset 16)))
+      (142 Nop) (143 Nop) (144 Nop) (145 Nop)
+      (146 (BiOp (var __i32) (op Add) (lhs (Ref 129)) (rhs (Ref 124))))
+      (147 Nop) (148 Nop) (149 Nop)
+      (150 (BiOp (var __i32) (op Subtract) (lhs (Ref 129)) (rhs (Ref 124))))
+      (151 Nop) (152 Nop) (153 Nop) (154 Nop) (155 Nop)
+      (156 (BiOp (var __i32) (op Add) (lhs (Ref 135)) (rhs (Ref 146))))
+      (157 Nop) (158 Nop) (159 Nop)
+      (160 (BiOp (var __i32) (op Subtract) (lhs (Ref 135)) (rhs (Ref 146))))
+      (161 (BiOp (var ecx) (op MergeTrunc16) (lhs (Ref 160)) (rhs (Ref 18))))
+      (162 (UniOp (var ecx) (op SignExtend16) (operand (Ref 161)))) (163 Nop)
+      (164 (BiOp (var edx) (op MergeTrunc16) (lhs (Ref 150)) (rhs (Ref 27))))
+      (165 Nop)
+      (166
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 16)))
+      (167 Nop)
+      (168 (BiOp (var __i32) (op Add) (lhs (Ref 150)) (rhs (Ref 166))))
+      (169 (BiOp (var ebx) (op MergeTrunc16) (lhs (Ref 168)) (rhs (Ref 80))))
+      (170 (Const __i32 4785088))
+      (171 (LoadOp (var __i32) (op Load32) (addr (Ref 170))))
+      (172 (BiOp (var ecx) (op Multiply) (lhs (Ref 162)) (rhs (Ref 171))))
+      (173 (UniOp (var edx) (op SignExtend16) (operand (Ref 164))))
+      (174 (UniOp (var ebx) (op SignExtend16) (operand (Ref 169))))
+      (175 (Const __i32 4785092))
+      (176 (LoadOp (var __i32) (op Load32) (addr (Ref 175))))
+      (177 (BiOp (var edx) (op Multiply) (lhs (Ref 173)) (rhs (Ref 176))))
+      (178 (Const __i32 4785100))
+      (179 (LoadOp (var __i32) (op Load32) (addr (Ref 178))))
+      (180 (BiOp (var ebx) (op Multiply) (lhs (Ref 174)) (rhs (Ref 179))))
+      (181
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 16)))
+      (182 Nop) (183 Nop) (184 Nop) (185 Nop) (186 (Const __i32 8))
+      (187
+       (SignedBiOp (var ecx) (op ShiftRight) (signed true) (lhs (Ref 172))
+        (rhs (Ref 186))))
+      (188 Nop) (189 (Const __i32 8))
+      (190
+       (SignedBiOp (var ebx) (op ShiftRight) (signed true) (lhs (Ref 180))
+        (rhs (Ref 189))))
+      (191 (Const __i32 4785096))
+      (192 (LoadOp (var __i32) (op Load32) (addr (Ref 191))))
+      (193 (BiOp (var edi) (op Multiply) (lhs (Ref 181)) (rhs (Ref 192))))
+      (194 Nop) (195 (Const __i32 8))
+      (196
+       (SignedBiOp (var edx) (op ShiftRight) (signed true) (lhs (Ref 177))
+        (rhs (Ref 195))))
+      (197 Nop) (198 (Const __i32 8))
+      (199
+       (SignedBiOp (var edi) (op ShiftRight) (signed true) (lhs (Ref 193))
+        (rhs (Ref 198))))
+      (200 Nop) (201 Nop)
+      (202 (BiOp (var __i32) (op Subtract) (lhs (Ref 199)) (rhs (Ref 190))))
+      (203 Nop) (204 Nop) (205 Nop)
+      (206 (BiOp (var __i32) (op Add) (lhs (Ref 196)) (rhs (Ref 190))))
+      (207 Nop) (208 Nop) (209 Nop)
+      (210 (BiOp (var __i32) (op Subtract) (lhs (Ref 206)) (rhs (Ref 156))))
+      (211 Nop) (212 Nop) (213 Nop)
+      (214 (BiOp (var __i32) (op Subtract) (lhs (Ref 187)) (rhs (Ref 210))))
+      (215 Nop) (216 Nop) (217 Nop)
+      (218 (BiOp (var __i32) (op Add) (lhs (Ref 202)) (rhs (Ref 214))))
+      (219 Nop) (220 Nop)
+      (221 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 218)) (offset 12)))
+      (222 (LoadOp (var edi) (op Load32) (addr (Ref 0)) (offset 44))) (223 Nop)
+      (224 (BiOp (var esi) (op MergeTrunc16) (lhs (Ref 156)) (rhs (Ref 1))))
+      (225
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 28)))
+      (226 Nop) (227 Nop) (228 Nop)
+      (229
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 28)))
+      (230 Nop)
+      (231 (BiOp (var __i32) (op Add) (lhs (Ref 156)) (rhs (Ref 229))))
+      (232 Nop) (233 Nop) (234 Nop)
+      (235 (BiOp (var __i32) (op Subtract) (lhs (Ref 225)) (rhs (Ref 156))))
+      (236 Nop) (237 Nop)
+      (238 (StoreOp (op Store16) (addr (Ref 222)) (value (Ref 231)))) (239 Nop)
+      (240
+       (StoreOp (op Store16) (addr (Ref 222)) (value (Ref 235)) (offset 112)))
+      (241 Nop) (242 Nop)
+      (243
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 20)))
+      (244 Nop) (245 Nop) (246 Nop) (247 Nop)
+      (248 (BiOp (var __i32) (op Add) (lhs (Ref 210)) (rhs (Ref 243))))
+      (249 Nop) (250 Nop) (251 Nop)
+      (252 (BiOp (var __i32) (op Subtract) (lhs (Ref 243)) (rhs (Ref 210))))
+      (253 Nop) (254 Nop)
+      (255
+       (StoreOp (op Store16) (addr (Ref 222)) (value (Ref 248)) (offset 16)))
+      (256 Nop)
+      (257
+       (StoreOp (op Store16) (addr (Ref 222)) (value (Ref 252)) (offset 96)))
+      (258 Nop)
+      (259 (BiOp (var edx) (op MergeTrunc16) (lhs (Ref 214)) (rhs (Ref 196))))
+      (260
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 32)))
+      (261 Nop) (262 Nop) (263 Nop) (264 Nop)
+      (265 (BiOp (var __i32) (op Add) (lhs (Ref 214)) (rhs (Ref 260))))
+      (266 Nop) (267 Nop) (268 Nop)
+      (269 (BiOp (var __i32) (op Subtract) (lhs (Ref 260)) (rhs (Ref 214))))
+      (270 Nop) (271 Nop)
+      (272
+       (StoreOp (op Store16) (addr (Ref 222)) (value (Ref 265)) (offset 32)))
+      (273 Nop)
+      (274
+       (StoreOp (op Store16) (addr (Ref 222)) (value (Ref 269)) (offset 80)))
+      (275
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 12)))
+      (276 Nop)
+      (277 (BiOp (var ecx) (op MergeTrunc16) (lhs (Ref 275)) (rhs (Ref 187))))
+      (278
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 24)))
+      (279 Nop) (280 Nop)
+      (281
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 12)))
+      (282 Nop) (283 Nop)
+      (284 (BiOp (var __i32) (op Add) (lhs (Ref 281)) (rhs (Ref 278))))
+      (285 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 284)) (offset 12)))
+      (286 Nop) (287 Nop)
+      (288 (BiOp (var __i32) (op Subtract) (lhs (Ref 278)) (rhs (Ref 275))))
+      (289 Nop)
+      (290
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 12)))
+      (291 Nop)
+      (292 (BiOp (var ebx) (op MergeTrunc16) (lhs (Ref 290)) (rhs (Ref 190))))
+      (293 Nop)
+      (294
+       (StoreOp (op Store16) (addr (Ref 222)) (value (Ref 290)) (offset 64)))
+      (295 Nop)
+      (296
+       (StoreOp (op Store16) (addr (Ref 222)) (value (Ref 288)) (offset 48)))
+      (297 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 52)))
+      (298 (Const __i32 2))
+      (299 (BiOp (var __i32) (op Add) (lhs (Ref 297)) (rhs (Ref 298))))
+      (300 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 299)) (offset 52)))
+      (301 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 48)))
+      (302 (Const __i32 2))
+      (303 (BiOp (var __i32) (op Add) (lhs (Ref 301)) (rhs (Ref 302))))
+      (304 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 303)) (offset 48)))
+      (305 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 44)))
+      (306 (Const __i32 2))
+      (307 (BiOp (var __i32) (op Add) (lhs (Ref 305)) (rhs (Ref 306))))
+      (308 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 307)) (offset 44)))
+      (309
+       (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
+        (offset 36)))
+      (310 Nop) (311 Nop) (312 (Const __i32 1)) (313 Nop)
+      (314 (BiOp (var __i32) (op Subtract) (lhs (Ref 309)) (rhs (Ref 312))))
+      (315 (BiOp (var eax) (op MergeTrunc16) (lhs (Ref 314)) (rhs (Ref 5))))
+      (316 Nop)
+      (317 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 314)) (offset 36)))
+      (318 (UniOp (var __i32) (op SignExtend16) (operand (Ref 314))))
+      (319 (SetGlobalOp (value (Ref 259)) (global ((name edx) (typ Int)))))
+      (320 (SetGlobalOp (value (Ref 277)) (global ((name ecx) (typ Int)))))
+      (321 (SetGlobalOp (value (Ref 224)) (global ((name esi) (typ Int)))))
+      (322 (SetGlobalOp (value (Ref 315)) (global ((name eax) (typ Int)))))
+      (323 (SetGlobalOp (value (Ref 222)) (global ((name edi) (typ Int)))))
+      (324 (SetGlobalOp (value (Ref 292)) (global ((name ebx) (typ Int)))))))
+    (terminator
+     (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 318))))
+    (roots
+     ((Ref 0) (Ref 40) (Ref 49) (Ref 75) (Ref 77) (Ref 96) (Ref 98) (Ref 132)
+      (Ref 141) (Ref 221) (Ref 238) (Ref 240) (Ref 255) (Ref 257) (Ref 272)
+      (Ref 274) (Ref 285) (Ref 294) (Ref 296) (Ref 300) (Ref 304) (Ref 308)
+      (Ref 317) (Ref 318) (Ref 319) (Ref 320) (Ref 321) (Ref 322) (Ref 323)
+      (Ref 324))))
+   |}]
+
 let%expect_test "_sd" = 
  test_trans_block 0x00484bb6;
  [%expect {|
-   func_484b39 95  |  ((id 2)
+   func_484b39 1  |  ((id 2)
     (instrs
      ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
       (1 (GetGlobalOp (var xmm1) (global ((name xmm1) (typ Vec)))))
@@ -50,11 +368,7 @@ let%expect_test "_sd" =
         (lane 0)))
       (10 (GetGlobalOp (var xmm3) (global ((name xmm3) (typ Vec)))))
       (11 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec))))) (12 Nop)
-      (13
-       (VecShuffleOp (var xmm3) (arg1 (Ref 10)) (arg2 (Ref 11))
-        (control_lower_bits 1663540288323457296)
-        (control_upper_bits 1084818905618843912)))
-      (14 (Const __i32 38))
+      (13 Nop) (14 (Const __i32 38))
       (15
        (VecShiftRightOp (var xmm7) (operand (Ref 11)) (count (Ref 14))
         (shape I64) (signed false)))
@@ -75,13 +389,12 @@ let%expect_test "_sd" =
        (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 28))
         (offset 4792192)))
       (30
-       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 13))
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 11))
         (rhs (Ref 29))))
-      (31 Nop)
+      (31 (VecExtractLaneOp (var __i64) (src (Ref 10)) (shape I64) (lane 1)))
       (32
-       (VecShuffleOp (var xmm3) (arg1 (Ref 30)) (arg2 (Ref 13))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
+       (VecReplaceLaneOp (var xmm3) (dest (Ref 30)) (lane_value (Ref 31))
+        (shape I64) (lane 1)))
       (33 (GetGlobalOp (var xmm5) (global ((name xmm5) (typ Vec)))))
       (34 (Const __i32 4))
       (35 (BiOp (var __i32) (op Multiply) (lhs (Ref 26)) (rhs (Ref 34))))
@@ -91,8 +404,8 @@ let%expect_test "_sd" =
       (37
        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 33))
         (rhs (Ref 36))))
-      (38 (VecExtractLaneOp (var __i64) (src (Ref 33)) (shape I64) (lane 1)))
-      (39 Nop) (40 (BiOp (var eax) (op Add) (lhs (Ref 26)) (rhs (Ref 26))))
+      (38 Nop) (39 Nop)
+      (40 (BiOp (var eax) (op Add) (lhs (Ref 26)) (rhs (Ref 26))))
       (41 (Const __i32 4))
       (42 (BiOp (var __i32) (op Multiply) (lhs (Ref 40)) (rhs (Ref 41))))
       (43 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 42)) (offset 4793232)))
@@ -112,11 +425,7 @@ let%expect_test "_sd" =
         (shape I64) (lane 1)))
       (52 (BiOp (var xmm1) (op VecAnd) (lhs (Ref 9)) (rhs (Ref 48))))
       (53 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec))))) (54 Nop)
-      (55
-       (VecShuffleOp (var xmm2) (arg1 (Ref 53)) (arg2 (Ref 30))
-        (control_lower_bits 1663540288323457296)
-        (control_upper_bits 1084818905618843912)))
-      (56 (Const __i32 31))
+      (55 Nop) (56 (Const __i32 31))
       (57
        (VecShiftRightOp (var xmm3) (operand (Ref 32)) (count (Ref 56))
         (shape I64) (signed false)))
@@ -128,8 +437,7 @@ let%expect_test "_sd" =
       (61
        (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 48))
         (rhs (Ref 52))))
-      (62 (VecExtractLaneOp (var __i64) (src (Ref 48)) (shape I64) (lane 1)))
-      (63 Nop) (64 (Const __i32 4803664))
+      (62 Nop) (63 Nop) (64 (Const __i32 4803664))
       (65
        (VecLoadLaneOp (var xmm7) (dest_vec (Ref 15)) (addr (Ref 64)) (shape I64)
         (lane 0)))
@@ -147,21 +455,19 @@ let%expect_test "_sd" =
       (75
        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 37))
         (rhs (Ref 74))))
-      (76 Nop)
+      (76 (VecExtractLaneOp (var __i64) (src (Ref 33)) (shape I64) (lane 1)))
       (77
-       (VecShuffleOp (var xmm5) (arg1 (Ref 75)) (arg2 (Ref 33))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
+       (VecReplaceLaneOp (var xmm5) (dest (Ref 75)) (lane_value (Ref 76))
+        (shape I64) (lane 1)))
       (78 (Const __i32 4))
       (79 (BiOp (var __i32) (op Multiply) (lhs (Ref 71)) (rhs (Ref 78))))
       (80
        (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 79))
         (offset 4795296)))
       (81
-       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 55))
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 30))
         (rhs (Ref 80))))
-      (82 (VecExtractLaneOp (var __i64) (src (Ref 55)) (shape I64) (lane 1)))
-      (83 Nop) (84 (Const __i32 8))
+      (82 Nop) (83 Nop) (84 (Const __i32 8))
       (85 (BiOp (var __i32) (op Multiply) (lhs (Ref 71)) (rhs (Ref 84))))
       (86 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 85)) (offset 4797360)))
       (87
@@ -171,44 +477,32 @@ let%expect_test "_sd" =
       (89
        (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 75))
         (rhs (Ref 88))))
-      (90 Nop)
+      (90 (VecExtractLaneOp (var __i64) (src (Ref 33)) (shape I64) (lane 1)))
       (91
-       (VecShuffleOp (var xmm5) (arg1 (Ref 89)) (arg2 (Ref 33))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
+       (VecReplaceLaneOp (var xmm5) (dest (Ref 89)) (lane_value (Ref 90))
+        (shape I64) (lane 1)))
       (92
        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 65))
         (rhs (Ref 81))))
-      (93 (VecExtractLaneOp (var __i64) (src (Ref 65)) (shape I64) (lane 1)))
-      (94 Nop) (95 Nop)
-      (96
-       (VecShuffleOp (var xmm3) (arg1 (Ref 57)) (arg2 (Ref 88))
-        (control_lower_bits 1663540288323457296)
-        (control_upper_bits 1084818905618843912)))
+      (93 Nop) (94 Nop) (95 Nop) (96 Nop)
       (97
        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 88))
         (rhs (Ref 52))))
-      (98 Nop)
-      (99
-       (VecShuffleOp (var xmm0) (arg1 (Ref 97)) (arg2 (Ref 88))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
+      (98 Nop) (99 Nop)
       (100
        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 52))
         (rhs (Ref 89))))
-      (101 Nop)
+      (101 (VecExtractLaneOp (var __i64) (src (Ref 52)) (shape I64) (lane 1)))
       (102
-       (VecShuffleOp (var xmm1) (arg1 (Ref 100)) (arg2 (Ref 52))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
+       (VecReplaceLaneOp (var xmm1) (dest (Ref 100)) (lane_value (Ref 101))
+        (shape I64) (lane 1)))
       (103
-       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 96))
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 88))
         (rhs (Ref 61))))
-      (104 Nop)
+      (104 (VecExtractLaneOp (var __i64) (src (Ref 57)) (shape I64) (lane 1)))
       (105
-       (VecShuffleOp (var xmm3) (arg1 (Ref 103)) (arg2 (Ref 96))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
+       (VecReplaceLaneOp (var xmm3) (dest (Ref 103)) (lane_value (Ref 104))
+        (shape I64) (lane 1)))
       (106
        (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 81))
         (rhs (Ref 97))))
@@ -216,16 +510,7 @@ let%expect_test "_sd" =
       (109
        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 61))
         (rhs (Ref 89))))
-      (110 Nop)
-      (111
-       (VecShuffleOp (var xmm4) (arg1 (Ref 109)) (arg2 (Ref 48))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
-      (112 Nop)
-      (113
-       (VecShuffleOp (var xmm0) (arg1 (Ref 99)) (arg2 (Ref 87))
-        (control_lower_bits 1663540288323457296)
-        (control_upper_bits 1084818905618843912)))
+      (110 Nop) (111 Nop) (112 Nop) (113 Nop)
       (114
        (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 106))
         (rhs (Ref 100))))
@@ -235,9 +520,8 @@ let%expect_test "_sd" =
         (rhs (Ref 92))))
       (118 (VecExtractLaneOp (var __i64) (src (Ref 87)) (shape I64) (lane 1)))
       (119
-       (VecShuffleOp (var xmm6) (arg1 (Ref 117)) (arg2 (Ref 87))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
+       (VecReplaceLaneOp (var xmm6) (dest (Ref 117)) (lane_value (Ref 118))
+        (shape I64) (lane 1)))
       (120 (OutsideContext (var esp) (typ Int)))
       (121
        (VecLoadLaneOp (var xmm1) (dest_vec (Ref 102)) (addr (Ref 120))
@@ -248,10 +532,9 @@ let%expect_test "_sd" =
         (rhs (Ref 103))))
       (124 Nop) (125 Nop)
       (126
-       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 113))
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 87))
         (rhs (Ref 117))))
-      (127 (VecExtractLaneOp (var __i64) (src (Ref 113)) (shape I64) (lane 1)))
-      (128 Nop) (129 (Const __i32 4803656))
+      (127 Nop) (128 Nop) (129 (Const __i32 4803656))
       (130
        (VecLoadLaneOp (var xmm3) (dest_vec (Ref 105)) (addr (Ref 129))
         (shape I64) (lane 0)))
@@ -259,36 +542,34 @@ let%expect_test "_sd" =
       (132
        (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 123))
         (rhs (Ref 109))))
-      (133 Nop)
+      (133 (VecExtractLaneOp (var __i64) (src (Ref 53)) (shape I64) (lane 1)))
       (134
-       (VecShuffleOp (var xmm2) (arg1 (Ref 132)) (arg2 (Ref 55))
-        (control_lower_bits 506097522914230528)
-        (control_upper_bits 2242261671028070680)))
-      (135 Nop)
+       (VecReplaceLaneOp (var xmm2) (dest (Ref 132)) (lane_value (Ref 133))
+        (shape I64) (lane 1)))
+      (135 (VecExtractLaneOp (var __i64) (src (Ref 117)) (shape I64) (lane 0)))
       (136
-       (VecShuffleOp (var xmm4) (arg1 (Ref 111)) (arg2 (Ref 117))
-        (control_lower_bits 1663540288323457296)
-        (control_upper_bits 1084818905618843912)))
+       (VecReplaceLaneOp (var xmm4) (dest (Ref 48)) (lane_value (Ref 135))
+        (shape I64) (lane 0)))
       (137
        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 126))
         (rhs (Ref 92))))
-      (138 Nop)
+      (138 (VecExtractLaneOp (var __i64) (src (Ref 88)) (shape I64) (lane 1)))
       (139
-       (VecReplaceLaneOp (var xmm0) (dest (Ref 137)) (lane_value (Ref 127))
+       (VecReplaceLaneOp (var xmm0) (dest (Ref 137)) (lane_value (Ref 138))
         (shape I64) (lane 1)))
       (140
        (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 92))
         (rhs (Ref 132))))
-      (141 Nop)
+      (141 (VecExtractLaneOp (var __i64) (src (Ref 65)) (shape I64) (lane 1)))
       (142
-       (VecReplaceLaneOp (var xmm7) (dest (Ref 140)) (lane_value (Ref 93))
+       (VecReplaceLaneOp (var xmm7) (dest (Ref 140)) (lane_value (Ref 141))
         (shape I64) (lane 1)))
       (143
        (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 117))
         (rhs (Ref 132))))
-      (144 Nop)
+      (144 (VecExtractLaneOp (var __i64) (src (Ref 87)) (shape I64) (lane 1)))
       (145
-       (VecReplaceLaneOp (var xmm6) (dest (Ref 143)) (lane_value (Ref 118))
+       (VecReplaceLaneOp (var xmm6) (dest (Ref 143)) (lane_value (Ref 144))
         (shape I64) (lane 1)))
       (146
        (VecShuffleOp (var xmm7) (arg1 (Ref 142)) (arg2 (Ref 142))
@@ -320,7 +601,7 @@ let%expect_test "_sd" =
 let%expect_test "bt" =
  test_trans_block 0x00486fa8;
  [%expect {|
-   ((id 5)
+   func_486f70 8  |  ((id 5)
     (instrs
      ((0 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
       (1 (Const __i32 1))
@@ -342,7 +623,7 @@ let%expect_test "bt" =
 let%expect_test "bts" = 
  test_trans_block 0x00486f8d;
  [%expect {|
-   ((id 2)
+   func_486f70 8  |  ((id 2)
     (instrs
      ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
       (1 (Const __i32 1))
@@ -362,7 +643,7 @@ let%expect_test "bts" =
 let%expect_test "rol, xlatb" = 
  test_trans_block 0x00483ad4;
  [%expect {|
-   ((id 3)
+   func_483a80 21  |  ((id 3)
     (instrs
      ((0 (GetGlobalOp (var ebx) (global ((name ebx) (typ Int))))) (1 Nop)
       (2 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -392,22 +673,20 @@ let%expect_test "rol, xlatb" =
       (28 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 25))))
       (29 (BiOp (var __i32) (op RotateLeft) (lhs (Ref 28)) (rhs (Ref 27))))
       (30 (BiOp (var ecx) (op MergeTruncLow8) (lhs (Ref 29)) (rhs (Ref 16))))
-      (31 Nop) (32 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
-      (33 Nop) (34 Nop) (35 Nop) (36 (Const __i32 15))
+      (31 Nop) (32 Nop) (33 Nop) (34 Nop) (35 Nop) (36 (Const __i32 15))
       (37 (BiOp (var __i32) (op And) (lhs (Ref 29)) (rhs (Ref 36)))) (38 Nop)
       (39 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 37))))
       (40 (BiOp (var __i32) (op Add) (lhs (Ref 4)) (rhs (Ref 39))))
-      (41 (SignedLoadOp (var __i32) (op Load8) (addr (Ref 40)) (signed false)))
-      (42 Nop) (43 (UniOp (var eax) (op SignExtendLow8) (operand (Ref 41))))
-      (44 (Const __i32 1028))
+      (41 (SignedLoadOp (var __i32) (op Load8) (addr (Ref 40)) (signed true)))
+      (42 Nop) (43 Nop) (44 (Const __i32 1028))
       (45 (BiOp (var ecx) (op And) (lhs (Ref 30)) (rhs (Ref 44)))) (46 Nop)
-      (47 (BiOp (var ebx) (op Add) (lhs (Ref 7)) (rhs (Ref 43))))
+      (47 (BiOp (var ebx) (op Add) (lhs (Ref 7)) (rhs (Ref 41))))
       (48 (Const __i32 16))
       (49 (BiOp (var ebx) (op Add) (lhs (Ref 47)) (rhs (Ref 48))))
       (50 (LoadOp (var __i32) (op Load32) (addr (Ref 49))))
       (51 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 6))))
       (52 (SetGlobalOp (value (Ref 45)) (global ((name ecx) (typ Int)))))
-      (53 (SetGlobalOp (value (Ref 43)) (global ((name eax) (typ Int)))))
+      (53 (SetGlobalOp (value (Ref 41)) (global ((name eax) (typ Int)))))
       (54 (SetGlobalOp (value (Ref 49)) (global ((name ebx) (typ Int)))))
       (55 (OutsideContext (var esp) (typ Int)))
       (56 (CallIndirectOp (table_index (Ref 50)) (args ((Ref 55)))))
@@ -421,7 +700,7 @@ let%expect_test "rol, xlatb" =
 let%expect_test "shufpd" = 
   test_trans_block 0x0048be1e ;
   [%expect {|
-    func_48bd9e 20  |  ((id 4)
+    func_48bd9e 1  |  ((id 4)
      (instrs
       ((0 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec))))) (1 Nop)
        (2
@@ -462,9 +741,8 @@ let%expect_test "shufpd" =
          (rhs (Ref 2))))
        (20 (VecExtractLaneOp (var __i64) (src (Ref 18)) (shape I64) (lane 1)))
        (21
-        (VecShuffleOp (var xmm5) (arg1 (Ref 19)) (arg2 (Ref 18))
-         (control_lower_bits 506097522914230528)
-         (control_upper_bits 2242261671028070680)))
+        (VecReplaceLaneOp (var xmm5) (dest (Ref 19)) (lane_value (Ref 20))
+         (shape I64) (lane 1)))
        (22 Nop)
        (23
         (VecShuffleOp (var xmm3) (arg1 (Ref 21)) (arg2 (Ref 21))
@@ -478,19 +756,17 @@ let%expect_test "shufpd" =
        (28
         (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 24))
          (rhs (Ref 27))))
-       (29 Nop)
+       (29 (VecExtractLaneOp (var __i64) (src (Ref 18)) (shape I64) (lane 1)))
        (30
-        (VecShuffleOp (var xmm5) (arg1 (Ref 28)) (arg2 (Ref 18))
-         (control_lower_bits 506097522914230528)
-         (control_upper_bits 2242261671028070680)))
+        (VecReplaceLaneOp (var xmm5) (dest (Ref 28)) (lane_value (Ref 29))
+         (shape I64) (lane 1)))
        (31
         (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 27))
          (rhs (Ref 28))))
-       (32 Nop)
+       (32 (VecExtractLaneOp (var __i64) (src (Ref 27)) (shape I64) (lane 1)))
        (33
-        (VecShuffleOp (var xmm7) (arg1 (Ref 31)) (arg2 (Ref 27))
-         (control_lower_bits 506097522914230528)
-         (control_upper_bits 2242261671028070680)))
+        (VecReplaceLaneOp (var xmm7) (dest (Ref 31)) (lane_value (Ref 32))
+         (shape I64) (lane 1)))
        (34 (VecExtractLaneOp (var __i64) (src (Ref 31)) (shape I64) (lane 0)))
        (35 (OutsideContext (var esp) (typ Int)))
        (36
@@ -522,14 +798,14 @@ let%expect_test "shufpd" =
 let%expect_test "movq, comisd jae" = 
  test_trans_block 0x0048bed8;
  [%expect {|
-   func_48bd9e 20  |  ((id 7)
+   func_48bd9e 1  |  ((id 7)
     (instrs
-     ((0 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec))))) (1 Nop)
+     ((0 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
+      (1 (VecExtractLaneOp (var __fl) (src (Ref 0)) (shape F64) (lane 0)))
       (2 (GetGlobalOp (var xmm6) (global ((name xmm6) (typ Vec)))))
       (3
-       (VecShuffleOp (var xmm6) (arg1 (Ref 2)) (arg2 (Ref 0))
-        (control_lower_bits 1663540288323457296)
-        (control_upper_bits 1084818905618843912)))
+       (VecReplaceLaneOp (var xmm6) (dest (Ref 2)) (lane_value (Ref 1))
+        (shape F64) (lane 0)))
       (4 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec)))))
       (5 (BiOp (var xmm6) (op VecXor) (lhs (Ref 3)) (rhs (Ref 4))))
       (6 (Const __i32 4820656))
@@ -547,7 +823,7 @@ let%expect_test "movq, comisd jae" =
 let%expect_test "comisd jp" = 
  test_trans_block 0x0048bdb6;
  [%expect {|
-   func_48bd9e 20  |  ((id 0)
+   func_48bd9e 1  |  ((id 0)
     (instrs
      ((0 (OutsideContext (var esp) (typ Int)))
       (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -584,7 +860,7 @@ let%expect_test "comisd jp" =
 let%expect_test "fprem" =
   test_trans_block 0x004892f4;
   [%expect {|
-    ((id 9)
+    func_489216 3  |  ((id 9)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int))) (1 (Const __i32 40))
        (2 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 1))))
@@ -626,7 +902,7 @@ let%expect_test "fprem" =
 let%expect_test "sub ja" =
   test_trans_block 0x0048929e;
   [%expect {|
-    ((id 7)
+    func_489216 3  |  ((id 7)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 24)))
@@ -680,7 +956,7 @@ let%expect_test "sahf je" =
 let%expect_test "add jae" =
   test_trans_block 0x00488a1e;
   [%expect {|
-    ((id 1)
+    func_488a10 3  |  ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -697,7 +973,7 @@ let%expect_test "add jae" =
 let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
   test_trans_block 0x00484ef1;
   [%expect {|
-    func_484b39 95  |  ((id 9)
+    func_484b39 1  |  ((id 9)
      (instrs
       ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
        (1 (Const __i32 0))
@@ -754,7 +1030,7 @@ let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
 let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
   test_trans_block 0x00484fd8;
   [%expect {|
-    func_484b39 95  |  ((id 18)
+    func_484b39 1  |  ((id 18)
      (instrs
       ((0 (VecConst (var xmm0) (lower_bits 0) (upper_bits 0)))
        (1 (Const eax 17392))
@@ -801,7 +1077,7 @@ let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
 let%expect_test "pextrw, mulsd" =
   test_trans_block 0x00485561;
   [%expect {|
-    func_484b39 95  |  ((id 69)
+    func_484b39 1  |  ((id 69)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var esi) (op Load32) (addr (Ref 0)))) (2 (Const __i32 4))
@@ -811,8 +1087,8 @@ let%expect_test "pextrw, mulsd" =
        (6
         (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 4))
          (rhs (Ref 5))))
-       (7 (VecExtractLaneOp (var __i64) (src (Ref 4)) (shape I64) (lane 1)))
-       (8 Nop) (9 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
+       (7 Nop) (8 Nop)
+       (9 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
        (10
         (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 6))
          (rhs (Ref 9))))
@@ -821,17 +1097,16 @@ let%expect_test "pextrw, mulsd" =
        (14
         (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 13))
          (rhs (Ref 10))))
-       (15 Nop)
+       (15 (VecExtractLaneOp (var __i64) (src (Ref 13)) (shape I64) (lane 1)))
        (16
-        (VecShuffleOp (var xmm6) (arg1 (Ref 14)) (arg2 (Ref 13))
-         (control_lower_bits 506097522914230528)
-         (control_upper_bits 2242261671028070680)))
+        (VecReplaceLaneOp (var xmm6) (dest (Ref 14)) (lane_value (Ref 15))
+         (shape I64) (lane 1)))
        (17
         (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 10))
          (rhs (Ref 14))))
-       (18 Nop)
+       (18 (VecExtractLaneOp (var __i64) (src (Ref 4)) (shape I64) (lane 1)))
        (19
-        (VecReplaceLaneOp (var xmm0) (dest (Ref 17)) (lane_value (Ref 7))
+        (VecReplaceLaneOp (var xmm0) (dest (Ref 17)) (lane_value (Ref 18))
          (shape I64) (lane 1)))
        (20 (VecExtractLaneOp (var eax) (src (Ref 19)) (shape I16) (lane 3)))
        (21 (Const __i32 32752))
@@ -851,7 +1126,7 @@ let%expect_test "pextrw, mulsd" =
 let%expect_test "movsd" =
   test_trans_block 0x004852c9;
   [%expect {|
-    func_484b39 95  |  ((id 52)
+    func_484b39 1  |  ((id 52)
      (instrs
       ((0 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec)))))
        (1
@@ -861,11 +1136,11 @@ let%expect_test "movsd" =
        (3
         (VecReplaceLaneOp (var xmm2) (dest (Ref 1)) (lane_value (Ref 2))
          (shape I64) (lane 1)))
-       (4 (GetGlobalOp (var xmm0) (global ((name xmm0) (typ Vec))))) (5 Nop)
+       (4 (GetGlobalOp (var xmm0) (global ((name xmm0) (typ Vec)))))
+       (5 (VecExtractLaneOp (var __i64) (src (Ref 1)) (shape I64) (lane 0)))
        (6
-        (VecShuffleOp (var xmm0) (arg1 (Ref 4)) (arg2 (Ref 1))
-         (control_lower_bits 1663540288323457296)
-         (control_upper_bits 1084818905618843912)))
+        (VecReplaceLaneOp (var xmm0) (dest (Ref 4)) (lane_value (Ref 5))
+         (shape I64) (lane 0)))
        (7 (Const edx 1006))
        (8 (SetGlobalOp (value (Ref 7)) (global ((name edx) (typ Int)))))
        (9 (SetGlobalOp (value (Ref 3)) (global ((name xmm2) (typ Vec)))))
@@ -877,7 +1152,7 @@ let%expect_test "backward direction" =
   test_trans_block 0x0047d9d7;
   [%expect
     {|
-    ((id 23)
+    func_47d820 26  |  ((id 23)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
        (1 (Const __i32 2))
@@ -908,7 +1183,7 @@ let%expect_test "int3" =
   test_trans_block 0x00487ff1;
   [%expect
     {|
-    ((id 10)
+    func_487ea8 1  |  ((id 10)
      (instrs
       ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
        (2 (Const __i32 4))
@@ -928,7 +1203,7 @@ let%expect_test "mmx stuff" =
   test_trans_block 0x00476bce;
   [%expect
     {|
-    ((id 1)
+    func_476bb5 1  |  ((id 1)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
        (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))
@@ -1181,14 +1456,13 @@ let%expect_test "xor je" =
 let%expect_test "imul byte" =
   test_trans_block 0x0046e208;
   [%expect {|
-    ((id 32)
+    func_46e137 62  |  ((id 32)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
        (1
         (SignedLoadOp (var __i32) (op Load8) (addr (Ref 0)) (signed true)
          (offset 24)))
-       (2 Nop) (3 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
-       (4 Nop)
+       (2 Nop) (3 Nop) (4 Nop)
        (5
         (SignedLoadOp (var __i32) (op Load8) (addr (Ref 0)) (signed true)
          (offset 29)))
@@ -1371,7 +1645,7 @@ let%expect_test "fsubrp" =
 let%expect_test "psrlq, andpd, psubd" =
   test_trans_block 0x0047ee50;
   [%expect {|
-    func_47ee10 1  |  ((id 5)
+    func_47ee10 11  |  ((id 5)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
        (1 (OutsideContext (var esp) (typ Int)))
@@ -1411,7 +1685,7 @@ let%expect_test "psrlq, andpd, psubd" =
 let%expect_test "movq, psllq, cmpltpd" =
   test_trans_block 0x0047eed2;
   [%expect {|
-    func_47ee10 1  |  ((id 12)
+    func_47ee10 11  |  ((id 12)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
        (1 (OutsideContext (var esp) (typ Int)))
@@ -1444,7 +1718,7 @@ let%expect_test "movq, psllq, cmpltpd" =
 let%expect_test "branch return" =
   test_trans_block 0x0047ee10;
   [%expect {|
-    func_47ee10 1  |  ((id 0)
+    func_47ee10 11  |  ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -1507,7 +1781,7 @@ let%expect_test "frndint" =
   test_trans_block 0x0044f059;
   [%expect
     {|
-    ((id 1)
+    func_44efb0 23  |  ((id 1)
      (instrs
       ((0 (Const __i32 4956072))
        (1 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0))))
@@ -1558,7 +1832,7 @@ let%expect_test "test eax,eax jae" =
   test_trans_block 0x0045dbcd;
   [%expect
     {|
-    ((id 5)
+    func_45db60 12  |  ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -52)))
@@ -1577,7 +1851,7 @@ let%expect_test "test eax,eax jbe" =
   test_trans_block 0x0047e73c;
   [%expect
     {|
-    ((id 2)
+    func_47e723 15  |  ((id 2)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 16)))
@@ -1592,7 +1866,7 @@ let%expect_test "test eax,eax jbe" =
 let%expect_test "shld" =
   test_trans_block 0x00481fa8;
   [%expect {|
-    ((id 211)
+    func_48178f 212  |  ((id 211)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -92)))
@@ -1618,7 +1892,7 @@ let%expect_test "repne scasb" =
   test_trans_block 0x0047dcc4;
   [%expect
     {|
-    ((id 1)
+    func_47dcb0 6  |  ((id 1)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int))))) (1 Nop)
        (2 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -1665,7 +1939,7 @@ let%expect_test "jecxz" =
   test_trans_block 0x0047dcb9;
   [%expect
     {|
-    ((id 0)
+    func_47dcb0 6  |  ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -1700,7 +1974,7 @@ let%expect_test "double fadd" =
   test_trans_block 0x00444017;
   [%expect
     {|
-    ((id 23)
+    func_443da0 32  |  ((id 23)
      (instrs
       ((0 (Const __i32 6447736))
        (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0))))
@@ -1798,10 +2072,7 @@ let%expect_test "dumb div" =
        (14
         (SignedBiOp (var __i64) (op LongDivide) (signed false) (lhs (Ref 12))
          (rhs (Ref 13))))
-       (15 (UniOp (var eax) (op LongToInt32) (operand (Ref 14))))
-       (16
-        (SignedBiOp (var __i64) (op LongRemainder) (signed false) (lhs (Ref 12))
-         (rhs (Ref 13))))
+       (15 (UniOp (var eax) (op LongToInt32) (operand (Ref 14)))) (16 Nop)
        (17 Nop) (18 Nop)
        (19 (SetGlobalOp (value (Ref 4)) (global ((name edx) (typ Int)))))
        (20 (SetGlobalOp (value (Ref 1)) (global ((name ecx) (typ Int)))))
@@ -1843,7 +2114,7 @@ let%expect_test "stosw" =
   test_trans_block 0x00439633;
   [%expect
     {|
-    ((id 0)
+    func_4395fb 11  |  ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -1918,8 +2189,8 @@ let%expect_test "stosw" =
        (75 (BiOp (var edi) (op Add) (lhs (Ref 71)) (rhs (Ref 74))))
        (76 (Const __i32 4812696))
        (77 (SignedLoadOp (var __i32) (op Load16) (addr (Ref 76)) (signed true)))
-       (78 Nop) (79 Nop) (80 (Const __i32 0))
-       (81 (StoreOp (op Store16) (addr (Ref 60)) (value (Ref 80)) (offset -16)))
+       (78 Nop) (79 Nop) (80 Nop)
+       (81 (StoreOp (op Store16) (addr (Ref 60)) (value (Ref 77)) (offset -16)))
        (82 (Const __i32 54))
        (83 (StoreOp (op Store32) (addr (Ref 60)) (value (Ref 82)) (offset -6)))
        (84 (LoadOp (var eax) (op Load32) (addr (Ref 60)) (offset -6)))
@@ -1958,7 +2229,7 @@ let%expect_test "movsw" =
   test_trans_block 0x004399e1;
   [%expect
     {|
-    ((id 9)
+    func_4398b6 45  |  ((id 9)
      (instrs
       ((0 Nop) (1 (Const __i32 1)) (2 (Const __i32 5724808))
        (3 (StoreOp (op Store8) (addr (Ref 2)) (value (Ref 1)))) (4 Nop)
@@ -2014,7 +2285,7 @@ let%expect_test "sub jne" =
   test_trans_block 0x0047dc43;
   [%expect
     {|
-    ((id 7)
+    func_47dbf0 4  |  ((id 7)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (1 Nop)
        (2 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -2054,7 +2325,7 @@ let%expect_test "rep movsb" =
   test_trans_block 0x004446bb;
   [%expect
     {|
-    ((id 20)
+    func_4444d0 26  |  ((id 20)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -2116,7 +2387,7 @@ let%expect_test "repe cmpsd" =
   test_trans_block 0x00444521;
   [%expect
     {|
-    ((id 3)
+    func_4444d0 26  |  ((id 3)
      (instrs
       ((0 (Const ecx 14))
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -2146,7 +2417,7 @@ let%expect_test "repe cmpsd" =
 let%expect_test "and jns" =
   test_trans_block 0x0043dbb0;
   [%expect {|
-    ((id 18)
+    func_43d9e0 21  |  ((id 18)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -2167,7 +2438,7 @@ let%expect_test "and jns" =
 let%expect_test "fidivr" =
   test_trans_block 0x00414d50;
   [%expect {|
-    ((id 818)
+    func_410520 746  |  ((id 818)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -2215,7 +2486,7 @@ let%expect_test "fidivr" =
 let%expect_test "tib offset 0" =
   test_trans_block 0x0043009a;
   [%expect {|
-    ((id 0)
+    func_430090 4  |  ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -2291,7 +2562,7 @@ let%expect_test "shl reg" =
   test_trans_block 0x0040f3de;
   [%expect
     {|
-    ((id 1)
+    func_40f3c0 3  |  ((id 1)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1
@@ -2313,7 +2584,7 @@ let%expect_test "shl reg" =
 let%expect_test "cld" =
   test_trans_block 0x0048c237;
   [%expect {|
-    ((id 20)
+    func_48c13a 38  |  ((id 20)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (Const __i32 8))
@@ -2348,7 +2619,7 @@ let%expect_test "cld" =
 let%expect_test "fscale/fabs/fcomp sahf jae" =
   test_trans_block 0x0048c1e9;
   [%expect {|
-    ((id 15)
+    func_48c13a 38  |  ((id 15)
      (instrs
       ((0 (Const __i32 4))
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -2377,7 +2648,7 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
 let%expect_test "fscale/fabs/fcomp sahf jbe" =
   test_trans_block 0x0048c217;
   [%expect {|
-    ((id 17)
+    func_48c13a 38  |  ((id 17)
      (instrs
       ((0 (Const __i32 3))
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -2405,16 +2676,15 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
 let%expect_test "and je" =
   test_trans_block 0x0048c178;
   [%expect {|
-    ((id 6)
+    func_48c13a 38  |  ((id 6)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1
         (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed true)
          (offset -164)))
        (2 Nop) (3 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
-       (4 Nop) (5 (UniOp (var __i32) (op SignExtend16) (operand (Ref 3))))
-       (6 Nop) (7 (Const __i32 32))
-       (8 (BiOp (var __i32) (op And) (lhs (Ref 5)) (rhs (Ref 7))))
+       (4 Nop) (5 Nop) (6 Nop) (7 (Const __i32 32))
+       (8 (BiOp (var __i32) (op And) (lhs (Ref 1)) (rhs (Ref 7))))
        (9 (BiOp (var eax) (op MergeTrunc16) (lhs (Ref 8)) (rhs (Ref 3))))
        (10 (UniOp (var __i32) (op SignExtend16) (operand (Ref 8))))
        (11 (SetGlobalOp (value (Ref 9)) (global ((name eax) (typ Int)))))))
@@ -2426,7 +2696,7 @@ let%expect_test "and je" =
 let%expect_test "or je" =
   test_trans_block 0x0048c15b;
   [%expect {|
-    ((id 4)
+    func_48c13a 38  |  ((id 4)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
        (1 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 0))))
@@ -2689,7 +2959,7 @@ let%expect_test "dec/dec js" =
   test_trans_block 0x0047d173;
   [%expect
     {|
-    ((id 1)
+    func_47d13c 2  |  ((id 1)
      (instrs
       ((0 (Const __i32 1))
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -2709,7 +2979,7 @@ let%expect_test "jb" =
   test_trans_block 0x0044e4f5;
   [%expect
     {|
-    ((id 1)
+    func_44e4e0 4  |  ((id 1)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -2726,7 +2996,7 @@ let%expect_test "fsubr" =
   test_trans_block 0x00404715;
   [%expect
     {|
-    ((id 7)
+    func_404690 37  |  ((id 7)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -2806,7 +3076,7 @@ let%expect_test "rep movsd" =
   test_trans_block 0x00403ad5;
   [%expect
     {|
-    ((id 3)
+    func_403a20 1  |  ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var esi) (op Load32) (addr (Ref 0)) (offset -604)))
@@ -2848,7 +3118,7 @@ let%expect_test "fabs" =
   test_trans_block 0x004023c9;
   [%expect
     {|
-    ((id 23)
+    func_4020b0 14  |  ((id 23)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -8)))
@@ -2884,7 +3154,7 @@ let%expect_test "jae" =
   test_trans_block 0x004027fc;
   [%expect
     {|
-    ((id 5)
+    func_402780 85  |  ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -2901,7 +3171,7 @@ let%expect_test "rep stosd (zeroed)" =
   test_trans_block 0x0040118c;
   [%expect
     {|
-    ((id 0)
+    func_401170 1  |  ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -2935,8 +3205,8 @@ let%expect_test "rep stosd (zeroed)" =
        (35 (Const __i32 4294967295))
        (36 (StoreOp (op Store16) (addr (Ref 33)) (value (Ref 35)) (offset 468)))
        (37 (LoadOp (var eax) (op Load32) (addr (Ref 26)) (offset -36)))
-       (38 (LoadOp (var edi) (op Load32) (addr (Ref 23)))) (39 (Const __i32 4))
-       (40 Nop) (41 Nop) (42 (LoadOp (var ebp) (op Load32) (addr (Ref 26))))
+       (38 (LoadOp (var edi) (op Load32) (addr (Ref 23)))) (39 Nop) (40 Nop)
+       (41 Nop) (42 (LoadOp (var ebp) (op Load32) (addr (Ref 26))))
        (43 (Const __i32 4))
        (44 (BiOp (var esp) (op Add) (lhs (Ref 26)) (rhs (Ref 43))))
        (45 (LoadOp (var __i32) (op Load32) (addr (Ref 44))))
@@ -2958,7 +3228,7 @@ let%expect_test "fild/fiadd" =
   test_trans_block 0x00453df6;
   [%expect
     {|
-    ((id 510)
+    func_450d60 216  |  ((id 510)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -3016,7 +3286,7 @@ let%expect_test "div" =
   test_trans_block 0x00452f62;
   [%expect
     {|
-    ((id 341)
+    func_450d60 216  |  ((id 341)
      (instrs
       ((0 (Const ecx 4849184)) (1 (Const __i32 4))
        (2 (OutsideContext (var esp) (typ Int)))
@@ -3046,7 +3316,7 @@ let%expect_test "fdiv" =
   test_trans_block 0x00452949;
   [%expect
     {|
-    ((id 279)
+    func_450d60 216  |  ((id 279)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -500)))
@@ -3097,12 +3367,11 @@ let%expect_test "cdq/idiv" =
   test_trans_block 0x004529e3;
   [%expect
     {|
-    ((id 286)
+    func_450d60 216  |  ((id 286)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
-       (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -512)))
-       (2 (Const __i32 31)) (3 Nop)
-       (4 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -516)))
+       (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -512))) (2 Nop)
+       (3 Nop) (4 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -516)))
        (5 Nop)
        (6
         (SignedBiOp (var edx) (op Remainder) (signed true) (lhs (Ref 1))
@@ -3150,7 +3419,7 @@ let%expect_test "imul" =
   test_trans_block 0x004539dd;
   [%expect
     {|
-    ((id 491)
+    func_450d60 216  |  ((id 491)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -12)))
@@ -3178,7 +3447,7 @@ let%expect_test "float jp 0x5" =
   test_trans_block 0x00451bfe;
   [%expect
     {|
-    ((id 148)
+    func_450d60 216  |  ((id 148)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -3199,7 +3468,7 @@ let%expect_test "jle" =
   test_trans_block 0x004536f0;
   [%expect
     {|
-    ((id 450)
+    func_450d60 216  |  ((id 450)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -728)))
@@ -3217,7 +3486,7 @@ let%expect_test "jumptable" =
   test_trans_block 0x00450dec;
   [%expect
     {|
-    ((id 6)
+    func_450d60 216  |  ((id 6)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -312)))
@@ -3247,7 +3516,7 @@ let%expect_test "ja" =
   test_trans_block 0x00450de0;
   [%expect
     {|
-    ((id 5)
+    func_450d60 216  |  ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -3275,7 +3544,7 @@ let%expect_test "jg" =
   test_trans_block 4525496;
   [%expect
     {|
-    ((id 4)
+    func_450d60 216  |  ((id 4)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -3304,7 +3573,7 @@ let%expect_test "jge" =
   test_trans_block 4380548;
   [%expect
     {|
-    ((id 2)
+    func_42d75a 1  |  ((id 2)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -3344,7 +3613,7 @@ let%expect_test _ =
   test_trans 0x47ea7d;
   [%expect
     {|
-    ((name func_47ea7d)
+    func_47ea7d 6  |  ((name func_47ea7d)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
      (blocks

@@ -3,6 +3,7 @@ module T_Util = Util
 open Radatnet
 open Mir
 module B = Builder
+let vcount = ref 0
 
 type term_trans_result =
   | Nothing
@@ -263,16 +264,16 @@ let load_operand_typed c src : Instr.ref * [> X86reg.gpr_type ] =
 let extend_unsigned c (instr, typ) =
   match typ with
   | `Reg32Bit -> instr
-  | `Reg16Bit -> B.zero_extend_16 c.builder instr
-  | `RegHigh8Bit -> B.zero_extend_high8 c.builder instr
-  | `RegLow8Bit -> B.zero_extend_low8 c.builder instr
+  | `Reg16Bit -> vcount := !vcount + 1; B.zero_extend_16 c.builder instr
+  | `RegHigh8Bit -> vcount := !vcount + 1; B.zero_extend_high8 c.builder instr
+  | `RegLow8Bit -> vcount := !vcount + 1; B.zero_extend_low8 c.builder instr
 
 let extend_signed c (instr, typ) =
   match typ with
   | `Reg32Bit -> instr
-  | `Reg16Bit -> B.sign_extend_16 c.builder instr
-  | `RegHigh8Bit -> B.sign_extend_high8 c.builder instr
-  | `RegLow8Bit -> B.sign_extend_low8 c.builder instr
+  | `Reg16Bit -> vcount := !vcount + 1; B.sign_extend_16 c.builder instr
+  | `RegHigh8Bit -> vcount := !vcount + 1; B.sign_extend_high8 c.builder instr
+  | `RegLow8Bit -> vcount := !vcount + 1; B.sign_extend_low8 c.builder instr
 
 let load_operand_s c src = load_operand_typed c src |> extend_signed c
 let load_operand_u c src = load_operand_typed c src |> extend_unsigned c
@@ -1814,9 +1815,7 @@ let translate_vec_insert c shape =
       |> store_operand_v c ~dest
   | _ -> raise_ops c
 
-let vcount = ref 0
 let translate_vec_bottom_64 c f =
-  vcount := !vcount + 1;
   let dest, lhs, rhs =
     match operands c with
     | [ dest; Memory ({ size = 8; _ } as mem) ] ->
