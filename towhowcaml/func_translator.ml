@@ -237,7 +237,7 @@ let to_mir_block used_locals b =
   in
   let roots =
     match b.terminator with
-    | Branch { condition; _ } | Switch { switch_on = condition;_ } ->
+    | Branch { condition; _ } | Switch { switch_on = condition; _ } ->
         Set.add roots condition
     | _ -> roots
   in
@@ -339,6 +339,8 @@ let translate ~intrinsics ~name ~(blocks : block array) =
   let mir_blocks =
     AP.of_array_id block_data |> AP.map ~f:(to_mir_block used_locals)
   in
+  (let c = Instr_translator.print () in
+   if c > 0 then printf "%s %d  |  " name c);
   Func.
     {
       name;

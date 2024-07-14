@@ -23,6 +23,299 @@ let test_trans_block addr =
   in
   print_s @@ Mir.Block.sexp_of_t
   @@ Array.Permissioned.get (Func_translator.translate ~blocks ~name ~intrinsics).blocks (index)
+let%expect_test "_sd" = 
+ test_trans_block 0x00484bb6;
+ [%expect {|
+   func_484b39 95  |  ((id 2)
+    (instrs
+     ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
+      (1 (GetGlobalOp (var xmm1) (global ((name xmm1) (typ Vec)))))
+      (2
+       (VecReplaceLaneOp (var xmm1) (dest (Ref 1)) (lane_value (Ref 0))
+        (shape I32) (lane 0)))
+      (3 (GetGlobalOp (var xmm0) (global ((name xmm0) (typ Vec)))))
+      (4
+       (VecLaneBiOp (var xmm0) (op VecAdd) (shape I64) (lhs (Ref 3))
+        (rhs (Ref 2))))
+      (5 (Const __i32 8))
+      (6
+       (VecShiftRightOp (var xmm0) (operand (Ref 4)) (count (Ref 5)) (shape I64)
+        (signed false)))
+      (7
+       (UniOp (var xmm0) (op VecConvertLow32BitsToFloatsSigned)
+        (operand (Ref 6))))
+      (8 (Const __i32 4803656))
+      (9
+       (VecLoadLaneOp (var xmm1) (dest_vec (Ref 2)) (addr (Ref 8)) (shape I64)
+        (lane 0)))
+      (10 (GetGlobalOp (var xmm3) (global ((name xmm3) (typ Vec)))))
+      (11 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec))))) (12 Nop)
+      (13
+       (VecShuffleOp (var xmm3) (arg1 (Ref 10)) (arg2 (Ref 11))
+        (control_lower_bits 1663540288323457296)
+        (control_upper_bits 1084818905618843912)))
+      (14 (Const __i32 38))
+      (15
+       (VecShiftRightOp (var xmm7) (operand (Ref 11)) (count (Ref 14))
+        (shape I64) (signed false)))
+      (16 (VecExtractLaneOp (var eax) (src (Ref 15)) (shape I16) (lane 0)))
+      (17 (Const __i32 4803568))
+      (18 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 17))))
+      (19 (GetGlobalOp (var xmm4) (global ((name xmm4) (typ Vec)))))
+      (20 (BiOp (var xmm4) (op VecAnd) (lhs (Ref 19)) (rhs (Ref 18))))
+      (21 (Const __i32 255))
+      (22 (BiOp (var eax) (op And) (lhs (Ref 16)) (rhs (Ref 21))))
+      (23 (Const __i32 1))
+      (24 (BiOp (var eax) (op Add) (lhs (Ref 22)) (rhs (Ref 23))))
+      (25 (Const __i32 510))
+      (26 (BiOp (var eax) (op And) (lhs (Ref 24)) (rhs (Ref 25))))
+      (27 (Const __i32 4))
+      (28 (BiOp (var __i32) (op Multiply) (lhs (Ref 26)) (rhs (Ref 27))))
+      (29
+       (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 28))
+        (offset 4792192)))
+      (30
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 13))
+        (rhs (Ref 29))))
+      (31 Nop)
+      (32
+       (VecShuffleOp (var xmm3) (arg1 (Ref 30)) (arg2 (Ref 13))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (33 (GetGlobalOp (var xmm5) (global ((name xmm5) (typ Vec)))))
+      (34 (Const __i32 4))
+      (35 (BiOp (var __i32) (op Multiply) (lhs (Ref 26)) (rhs (Ref 34))))
+      (36
+       (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 35))
+        (offset 4792192)))
+      (37
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 33))
+        (rhs (Ref 36))))
+      (38 (VecExtractLaneOp (var __i64) (src (Ref 33)) (shape I64) (lane 1)))
+      (39 Nop) (40 (BiOp (var eax) (op Add) (lhs (Ref 26)) (rhs (Ref 26))))
+      (41 (Const __i32 4))
+      (42 (BiOp (var __i32) (op Multiply) (lhs (Ref 40)) (rhs (Ref 41))))
+      (43 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 42)) (offset 4793232)))
+      (44 (GetGlobalOp (var xmm6) (global ((name xmm6) (typ Vec)))))
+      (45
+       (VecLaneBiOp (var xmm6) (op VecAdd) (shape F64) (lhs (Ref 44))
+        (rhs (Ref 43))))
+      (46 (Const __i32 4803584))
+      (47 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 46))))
+      (48 (BiOp (var xmm4) (op VecOr) (lhs (Ref 20)) (rhs (Ref 47))))
+      (49
+       (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 45))
+        (rhs (Ref 7))))
+      (50 (VecExtractLaneOp (var __i64) (src (Ref 45)) (shape I64) (lane 1)))
+      (51
+       (VecReplaceLaneOp (var xmm6) (dest (Ref 49)) (lane_value (Ref 50))
+        (shape I64) (lane 1)))
+      (52 (BiOp (var xmm1) (op VecAnd) (lhs (Ref 9)) (rhs (Ref 48))))
+      (53 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec))))) (54 Nop)
+      (55
+       (VecShuffleOp (var xmm2) (arg1 (Ref 53)) (arg2 (Ref 30))
+        (control_lower_bits 1663540288323457296)
+        (control_upper_bits 1084818905618843912)))
+      (56 (Const __i32 31))
+      (57
+       (VecShiftRightOp (var xmm3) (operand (Ref 32)) (count (Ref 56))
+        (shape I64) (signed false)))
+      (58 (VecExtractLaneOp (var eax) (src (Ref 57)) (shape I16) (lane 0)))
+      (59 (Const __i32 4803656))
+      (60
+       (VecLoadLaneOp (var xmm0) (dest_vec (Ref 7)) (addr (Ref 59)) (shape I64)
+        (lane 0)))
+      (61
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 48))
+        (rhs (Ref 52))))
+      (62 (VecExtractLaneOp (var __i64) (src (Ref 48)) (shape I64) (lane 1)))
+      (63 Nop) (64 (Const __i32 4803664))
+      (65
+       (VecLoadLaneOp (var xmm7) (dest_vec (Ref 15)) (addr (Ref 64)) (shape I64)
+        (lane 0)))
+      (66 (Const __i32 511))
+      (67 (BiOp (var eax) (op And) (lhs (Ref 58)) (rhs (Ref 66))))
+      (68 (Const __i32 1))
+      (69 (BiOp (var eax) (op Add) (lhs (Ref 67)) (rhs (Ref 68))))
+      (70 (Const __i32 1022))
+      (71 (BiOp (var eax) (op And) (lhs (Ref 69)) (rhs (Ref 70))))
+      (72 (Const __i32 4))
+      (73 (BiOp (var __i32) (op Multiply) (lhs (Ref 71)) (rhs (Ref 72))))
+      (74
+       (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 73))
+        (offset 4795296)))
+      (75
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 37))
+        (rhs (Ref 74))))
+      (76 Nop)
+      (77
+       (VecShuffleOp (var xmm5) (arg1 (Ref 75)) (arg2 (Ref 33))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (78 (Const __i32 4))
+      (79 (BiOp (var __i32) (op Multiply) (lhs (Ref 71)) (rhs (Ref 78))))
+      (80
+       (LoadOp (var __vec) (op VecLoad64ZeroExtend) (addr (Ref 79))
+        (offset 4795296)))
+      (81
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 55))
+        (rhs (Ref 80))))
+      (82 (VecExtractLaneOp (var __i64) (src (Ref 55)) (shape I64) (lane 1)))
+      (83 Nop) (84 (Const __i32 8))
+      (85 (BiOp (var __i32) (op Multiply) (lhs (Ref 71)) (rhs (Ref 84))))
+      (86 (LoadOp (var __vec) (op VecLoad128) (addr (Ref 85)) (offset 4797360)))
+      (87
+       (VecLaneBiOp (var xmm6) (op VecAdd) (shape F64) (lhs (Ref 51))
+        (rhs (Ref 86))))
+      (88 (BiOp (var xmm0) (op VecAnd) (lhs (Ref 60)) (rhs (Ref 77))))
+      (89
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 75))
+        (rhs (Ref 88))))
+      (90 Nop)
+      (91
+       (VecShuffleOp (var xmm5) (arg1 (Ref 89)) (arg2 (Ref 33))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (92
+       (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 65))
+        (rhs (Ref 81))))
+      (93 (VecExtractLaneOp (var __i64) (src (Ref 65)) (shape I64) (lane 1)))
+      (94 Nop) (95 Nop)
+      (96
+       (VecShuffleOp (var xmm3) (arg1 (Ref 57)) (arg2 (Ref 88))
+        (control_lower_bits 1663540288323457296)
+        (control_upper_bits 1084818905618843912)))
+      (97
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 88))
+        (rhs (Ref 52))))
+      (98 Nop)
+      (99
+       (VecShuffleOp (var xmm0) (arg1 (Ref 97)) (arg2 (Ref 88))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (100
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 52))
+        (rhs (Ref 89))))
+      (101 Nop)
+      (102
+       (VecShuffleOp (var xmm1) (arg1 (Ref 100)) (arg2 (Ref 52))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (103
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 96))
+        (rhs (Ref 61))))
+      (104 Nop)
+      (105
+       (VecShuffleOp (var xmm3) (arg1 (Ref 103)) (arg2 (Ref 96))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (106
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 81))
+        (rhs (Ref 97))))
+      (107 Nop) (108 Nop)
+      (109
+       (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 61))
+        (rhs (Ref 89))))
+      (110 Nop)
+      (111
+       (VecShuffleOp (var xmm4) (arg1 (Ref 109)) (arg2 (Ref 48))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (112 Nop)
+      (113
+       (VecShuffleOp (var xmm0) (arg1 (Ref 99)) (arg2 (Ref 87))
+        (control_lower_bits 1663540288323457296)
+        (control_upper_bits 1084818905618843912)))
+      (114
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 106))
+        (rhs (Ref 100))))
+      (115 Nop) (116 Nop)
+      (117
+       (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 87))
+        (rhs (Ref 92))))
+      (118 (VecExtractLaneOp (var __i64) (src (Ref 87)) (shape I64) (lane 1)))
+      (119
+       (VecShuffleOp (var xmm6) (arg1 (Ref 117)) (arg2 (Ref 87))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (120 (OutsideContext (var esp) (typ Int)))
+      (121
+       (VecLoadLaneOp (var xmm1) (dest_vec (Ref 102)) (addr (Ref 120))
+        (shape I64) (lane 0) (offset 12)))
+      (122 (VecExtractLaneOp (var eax) (src (Ref 121)) (shape I16) (lane 3)))
+      (123
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 114))
+        (rhs (Ref 103))))
+      (124 Nop) (125 Nop)
+      (126
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 113))
+        (rhs (Ref 117))))
+      (127 (VecExtractLaneOp (var __i64) (src (Ref 113)) (shape I64) (lane 1)))
+      (128 Nop) (129 (Const __i32 4803656))
+      (130
+       (VecLoadLaneOp (var xmm3) (dest_vec (Ref 105)) (addr (Ref 129))
+        (shape I64) (lane 0)))
+      (131 (VecExtractLaneOp (var edx) (src (Ref 119)) (shape I16) (lane 3)))
+      (132
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 123))
+        (rhs (Ref 109))))
+      (133 Nop)
+      (134
+       (VecShuffleOp (var xmm2) (arg1 (Ref 132)) (arg2 (Ref 55))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 2242261671028070680)))
+      (135 Nop)
+      (136
+       (VecShuffleOp (var xmm4) (arg1 (Ref 111)) (arg2 (Ref 117))
+        (control_lower_bits 1663540288323457296)
+        (control_upper_bits 1084818905618843912)))
+      (137
+       (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 126))
+        (rhs (Ref 92))))
+      (138 Nop)
+      (139
+       (VecReplaceLaneOp (var xmm0) (dest (Ref 137)) (lane_value (Ref 127))
+        (shape I64) (lane 1)))
+      (140
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 92))
+        (rhs (Ref 132))))
+      (141 Nop)
+      (142
+       (VecReplaceLaneOp (var xmm7) (dest (Ref 140)) (lane_value (Ref 93))
+        (shape I64) (lane 1)))
+      (143
+       (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 117))
+        (rhs (Ref 132))))
+      (144 Nop)
+      (145
+       (VecReplaceLaneOp (var xmm6) (dest (Ref 143)) (lane_value (Ref 118))
+        (shape I64) (lane 1)))
+      (146
+       (VecShuffleOp (var xmm7) (arg1 (Ref 142)) (arg2 (Ref 142))
+        (control_lower_bits 506097522914230528)
+        (control_upper_bits 1663540288323457296)))
+      (147 (Const __i32 32752))
+      (148 (BiOp (var eax) (op And) (lhs (Ref 122)) (rhs (Ref 147))))
+      (149 (Const __i32 32752))
+      (150
+       (SignedBiOp (var __i32) (op GreaterThanEqual) (signed false)
+        (lhs (Ref 148)) (rhs (Ref 149))))
+      (151 (SetGlobalOp (value (Ref 131)) (global ((name edx) (typ Int)))))
+      (152 (SetGlobalOp (value (Ref 134)) (global ((name xmm2) (typ Vec)))))
+      (153 (SetGlobalOp (value (Ref 130)) (global ((name xmm3) (typ Vec)))))
+      (154 (SetGlobalOp (value (Ref 148)) (global ((name eax) (typ Int)))))
+      (155 (SetGlobalOp (value (Ref 139)) (global ((name xmm0) (typ Vec)))))
+      (156 (SetGlobalOp (value (Ref 146)) (global ((name xmm7) (typ Vec)))))
+      (157 (SetGlobalOp (value (Ref 145)) (global ((name xmm6) (typ Vec)))))
+      (158 (SetGlobalOp (value (Ref 121)) (global ((name xmm1) (typ Vec)))))
+      (159 (SetGlobalOp (value (Ref 136)) (global ((name xmm4) (typ Vec)))))
+      (160 (SetGlobalOp (value (Ref 91)) (global ((name xmm5) (typ Vec)))))))
+    (terminator
+     (Branch (succeed (Block 39)) (fail (Block 3)) (condition (Ref 150))))
+    (roots
+     ((Ref 120) (Ref 150) (Ref 151) (Ref 152) (Ref 153) (Ref 154) (Ref 155)
+      (Ref 156) (Ref 157) (Ref 158) (Ref 159) (Ref 160))))
+   |}]
 
 let%expect_test "bt" =
  test_trans_block 0x00486fa8;
@@ -128,7 +421,7 @@ let%expect_test "rol, xlatb" =
 let%expect_test "shufpd" = 
   test_trans_block 0x0048be1e ;
   [%expect {|
-    ((id 4)
+    func_48bd9e 20  |  ((id 4)
      (instrs
       ((0 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec))))) (1 Nop)
        (2
@@ -167,38 +460,38 @@ let%expect_test "shufpd" =
        (19
         (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 18))
          (rhs (Ref 2))))
-       (20 (VecExtractLaneOp (var __i64) (src (Ref 19)) (shape I64) (lane 0)))
+       (20 (VecExtractLaneOp (var __i64) (src (Ref 18)) (shape I64) (lane 1)))
        (21
-        (VecReplaceLaneOp (var xmm5) (dest (Ref 18)) (lane_value (Ref 20))
-         (shape I64) (lane 0)))
+        (VecShuffleOp (var xmm5) (arg1 (Ref 19)) (arg2 (Ref 18))
+         (control_lower_bits 506097522914230528)
+         (control_upper_bits 2242261671028070680)))
        (22 Nop)
        (23
         (VecShuffleOp (var xmm3) (arg1 (Ref 21)) (arg2 (Ref 21))
          (control_lower_bits 1084818905618843912)
          (control_upper_bits 1663540288323457296)))
        (24
-        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 21))
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 19))
          (rhs (Ref 23))))
-       (25 (VecExtractLaneOp (var __i64) (src (Ref 24)) (shape I64) (lane 0)))
-       (26
-        (VecReplaceLaneOp (var xmm5) (dest (Ref 21)) (lane_value (Ref 25))
-         (shape I64) (lane 0)))
+       (25 Nop) (26 Nop)
        (27 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
        (28
-        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 26))
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 24))
          (rhs (Ref 27))))
-       (29 (VecExtractLaneOp (var __i64) (src (Ref 28)) (shape I64) (lane 0)))
+       (29 Nop)
        (30
-        (VecReplaceLaneOp (var xmm5) (dest (Ref 26)) (lane_value (Ref 29))
-         (shape I64) (lane 0)))
+        (VecShuffleOp (var xmm5) (arg1 (Ref 28)) (arg2 (Ref 18))
+         (control_lower_bits 506097522914230528)
+         (control_upper_bits 2242261671028070680)))
        (31
         (VecLaneBiOp (var __vec) (op VecSub) (shape F64) (lhs (Ref 27))
-         (rhs (Ref 30))))
-       (32 (VecExtractLaneOp (var __i64) (src (Ref 31)) (shape I64) (lane 0)))
+         (rhs (Ref 28))))
+       (32 Nop)
        (33
-        (VecReplaceLaneOp (var xmm7) (dest (Ref 27)) (lane_value (Ref 32))
-         (shape I64) (lane 0)))
-       (34 (VecExtractLaneOp (var __i64) (src (Ref 33)) (shape I64) (lane 0)))
+        (VecShuffleOp (var xmm7) (arg1 (Ref 31)) (arg2 (Ref 27))
+         (control_lower_bits 506097522914230528)
+         (control_upper_bits 2242261671028070680)))
+       (34 (VecExtractLaneOp (var __i64) (src (Ref 31)) (shape I64) (lane 0)))
        (35 (OutsideContext (var esp) (typ Int)))
        (36
         (StoreOp (op LongStore64) (addr (Ref 35)) (value (Ref 34)) (offset 4)))
@@ -229,14 +522,14 @@ let%expect_test "shufpd" =
 let%expect_test "movq, comisd jae" = 
  test_trans_block 0x0048bed8;
  [%expect {|
-   ((id 7)
+   func_48bd9e 20  |  ((id 7)
     (instrs
-     ((0 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
-      (1 (VecExtractLaneOp (var __fl) (src (Ref 0)) (shape F64) (lane 0)))
+     ((0 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec))))) (1 Nop)
       (2 (GetGlobalOp (var xmm6) (global ((name xmm6) (typ Vec)))))
       (3
-       (VecReplaceLaneOp (var xmm6) (dest (Ref 2)) (lane_value (Ref 1))
-        (shape F64) (lane 0)))
+       (VecShuffleOp (var xmm6) (arg1 (Ref 2)) (arg2 (Ref 0))
+        (control_lower_bits 1663540288323457296)
+        (control_upper_bits 1084818905618843912)))
       (4 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec)))))
       (5 (BiOp (var xmm6) (op VecXor) (lhs (Ref 3)) (rhs (Ref 4))))
       (6 (Const __i32 4820656))
@@ -254,7 +547,7 @@ let%expect_test "movq, comisd jae" =
 let%expect_test "comisd jp" = 
  test_trans_block 0x0048bdb6;
  [%expect {|
-   ((id 0)
+   func_48bd9e 20  |  ((id 0)
     (instrs
      ((0 (OutsideContext (var esp) (typ Int)))
       (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -404,7 +697,7 @@ let%expect_test "add jae" =
 let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
   test_trans_block 0x00484ef1;
   [%expect {|
-    ((id 9)
+    func_484b39 95  |  ((id 9)
      (instrs
       ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
        (1 (Const __i32 0))
@@ -461,7 +754,7 @@ let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
 let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
   test_trans_block 0x00484fd8;
   [%expect {|
-    ((id 18)
+    func_484b39 95  |  ((id 18)
      (instrs
       ((0 (VecConst (var xmm0) (lower_bits 0) (upper_bits 0)))
        (1 (Const eax 17392))
@@ -482,10 +775,10 @@ let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
        (10
         (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 2))
          (rhs (Ref 9))))
-       (11 (VecExtractLaneOp (var __i64) (src (Ref 10)) (shape I64) (lane 0)))
+       (11 (VecExtractLaneOp (var __i64) (src (Ref 2)) (shape I64) (lane 1)))
        (12
-        (VecReplaceLaneOp (var xmm0) (dest (Ref 2)) (lane_value (Ref 11))
-         (shape I64) (lane 0)))
+        (VecReplaceLaneOp (var xmm0) (dest (Ref 10)) (lane_value (Ref 11))
+         (shape I64) (lane 1)))
        (13 (VecExtractLaneOp (var edx) (src (Ref 9)) (shape I32) (lane 0)))
        (14 (Const __i32 32))
        (15
@@ -508,7 +801,7 @@ let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
 let%expect_test "pextrw, mulsd" =
   test_trans_block 0x00485561;
   [%expect {|
-    ((id 69)
+    func_484b39 95  |  ((id 69)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var esi) (op Load32) (addr (Ref 0)))) (2 (Const __i32 4))
@@ -518,33 +811,28 @@ let%expect_test "pextrw, mulsd" =
        (6
         (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 4))
          (rhs (Ref 5))))
-       (7 (VecExtractLaneOp (var __i64) (src (Ref 6)) (shape I64) (lane 0)))
-       (8
-        (VecReplaceLaneOp (var xmm0) (dest (Ref 4)) (lane_value (Ref 7))
-         (shape I64) (lane 0)))
-       (9 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
+       (7 (VecExtractLaneOp (var __i64) (src (Ref 4)) (shape I64) (lane 1)))
+       (8 Nop) (9 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
        (10
-        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 8))
+        (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 6))
          (rhs (Ref 9))))
-       (11 (VecExtractLaneOp (var __i64) (src (Ref 10)) (shape I64) (lane 0)))
-       (12
-        (VecReplaceLaneOp (var xmm0) (dest (Ref 8)) (lane_value (Ref 11))
-         (shape I64) (lane 0)))
+       (11 Nop) (12 Nop)
        (13 (GetGlobalOp (var xmm6) (global ((name xmm6) (typ Vec)))))
        (14
         (VecLaneBiOp (var __vec) (op VecMul) (shape F64) (lhs (Ref 13))
-         (rhs (Ref 12))))
-       (15 (VecExtractLaneOp (var __i64) (src (Ref 14)) (shape I64) (lane 0)))
+         (rhs (Ref 10))))
+       (15 Nop)
        (16
-        (VecReplaceLaneOp (var xmm6) (dest (Ref 13)) (lane_value (Ref 15))
-         (shape I64) (lane 0)))
+        (VecShuffleOp (var xmm6) (arg1 (Ref 14)) (arg2 (Ref 13))
+         (control_lower_bits 506097522914230528)
+         (control_upper_bits 2242261671028070680)))
        (17
-        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 12))
-         (rhs (Ref 16))))
-       (18 (VecExtractLaneOp (var __i64) (src (Ref 17)) (shape I64) (lane 0)))
+        (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 10))
+         (rhs (Ref 14))))
+       (18 Nop)
        (19
-        (VecReplaceLaneOp (var xmm0) (dest (Ref 12)) (lane_value (Ref 18))
-         (shape I64) (lane 0)))
+        (VecReplaceLaneOp (var xmm0) (dest (Ref 17)) (lane_value (Ref 7))
+         (shape I64) (lane 1)))
        (20 (VecExtractLaneOp (var eax) (src (Ref 19)) (shape I16) (lane 3)))
        (21 (Const __i32 32752))
        (22 (BiOp (var eax) (op And) (lhs (Ref 20)) (rhs (Ref 21))))
@@ -563,21 +851,21 @@ let%expect_test "pextrw, mulsd" =
 let%expect_test "movsd" =
   test_trans_block 0x004852c9;
   [%expect {|
-    ((id 52)
+    func_484b39 95  |  ((id 52)
      (instrs
       ((0 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec)))))
        (1
         (VecLaneBiOp (var __vec) (op VecAdd) (shape F64) (lhs (Ref 0))
          (rhs (Ref 0))))
-       (2 (VecExtractLaneOp (var __i64) (src (Ref 1)) (shape I64) (lane 0)))
+       (2 (VecExtractLaneOp (var __i64) (src (Ref 0)) (shape I64) (lane 1)))
        (3
-        (VecReplaceLaneOp (var xmm2) (dest (Ref 0)) (lane_value (Ref 2))
-         (shape I64) (lane 0)))
-       (4 (GetGlobalOp (var xmm0) (global ((name xmm0) (typ Vec)))))
-       (5 (VecExtractLaneOp (var __i64) (src (Ref 3)) (shape I64) (lane 0)))
+        (VecReplaceLaneOp (var xmm2) (dest (Ref 1)) (lane_value (Ref 2))
+         (shape I64) (lane 1)))
+       (4 (GetGlobalOp (var xmm0) (global ((name xmm0) (typ Vec))))) (5 Nop)
        (6
-        (VecReplaceLaneOp (var xmm0) (dest (Ref 4)) (lane_value (Ref 5))
-         (shape I64) (lane 0)))
+        (VecShuffleOp (var xmm0) (arg1 (Ref 4)) (arg2 (Ref 1))
+         (control_lower_bits 1663540288323457296)
+         (control_upper_bits 1084818905618843912)))
        (7 (Const edx 1006))
        (8 (SetGlobalOp (value (Ref 7)) (global ((name edx) (typ Int)))))
        (9 (SetGlobalOp (value (Ref 3)) (global ((name xmm2) (typ Vec)))))
@@ -1083,7 +1371,7 @@ let%expect_test "fsubrp" =
 let%expect_test "psrlq, andpd, psubd" =
   test_trans_block 0x0047ee50;
   [%expect {|
-    ((id 5)
+    func_47ee10 1  |  ((id 5)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
        (1 (OutsideContext (var esp) (typ Int)))
@@ -1123,7 +1411,7 @@ let%expect_test "psrlq, andpd, psubd" =
 let%expect_test "movq, psllq, cmpltpd" =
   test_trans_block 0x0047eed2;
   [%expect {|
-    ((id 12)
+    func_47ee10 1  |  ((id 12)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
        (1 (OutsideContext (var esp) (typ Int)))
@@ -1156,7 +1444,7 @@ let%expect_test "movq, psllq, cmpltpd" =
 let%expect_test "branch return" =
   test_trans_block 0x0047ee10;
   [%expect {|
-    ((id 0)
+    func_47ee10 1  |  ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))

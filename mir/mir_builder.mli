@@ -20,6 +20,7 @@ val deconstruct :
   * local Map.M(String).t
   * Set.M(Instr.Ref).t
 
+val vec_lane_type : vec_lane_shape -> local_type
 val set_check_var_is_latest : t -> bool -> unit
 val newest_var : t -> ident -> Instr.ref
 val newest_var_opt : t -> ident -> Instr.ref option

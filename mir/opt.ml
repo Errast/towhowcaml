@@ -277,6 +277,77 @@ let peephole_opts c i =
       | BiOp { op = MergeTrunc16; lhs; _ } ->
           (StoreOp { v with value = lhs }, [])
       | _ -> peephole_const c i)
+  | VecReplaceLaneOp ({ dest; lane; shape = `I64 | `F64; _ } as r) -> (
+      match c.instrs.(unref dest) with
+      | ( BiOp { op = VecAnd | VecOr | VecXor | VecMulAdd16Bit; _ }
+        | VecLaneBiOp _ | SignedVecLaneBiOp _ | VecShiftLeftOp _
+        | VecShiftRightOp _ ) as biop
+        when c.uses.(unref dest) = 1 ->
+          update c dest
+          @@ Instr.map
+               (fun (Ref r) ->
+                 match c.instrs.(r) with
+                 | VecReplaceLaneOp ({ shape = `I64 | `F64; dest; _ } as v)
+                   when v.lane = lane ->
+                     dest
+                 | _ -> Ref r)
+               biop;
+          (i, [])
+      | _ -> (
+          match c.instrs.(unref r.lane_value) with
+          | VecExtractLaneOp ({ shape = `I64 | `F64; _ } as e) ->
+              let ctrl_h, ctrl_l =
+                match (r.lane, e.lane) with
+                | 0, 0 ->
+                    (0x0F_0E_0D_0C_0B_0A_09_08L, 0x17_16_15_14_13_12_11_10L)
+                | _, 0 ->
+                    (0x17_16_15_14_13_12_11_10L, 0x07_06_05_04_03_02_01_00L)
+                | 0, _ ->
+                    (0x0F_0E_0D_0C_0B_0A_09_08L, 0x1F_1E_1D_1C_1B_1A_19_18L)
+                | _, _ ->
+                    (0x1F_1E_1D_1C_1B_1A_19_18L, 0x07_06_05_04_03_02_01_00L)
+              in
+              ( VecShuffleOp
+                  {
+                    var = r.var;
+                    arg1 = r.dest;
+                    arg2 = e.src;
+                    control_upper_bits = ctrl_h;
+                    control_lower_bits = ctrl_l;
+                  },
+                [] )
+          | _ -> peephole_const c i))
+  | VecExtractLaneOp ({ src; lane; shape = `I64 | `F64; _ } as e) -> (
+      match c.instrs.(unref src) with
+      | ( BiOp { op = VecAnd | VecOr | VecXor | VecMulAdd16Bit; _ }
+        | VecLaneBiOp _ | SignedVecLaneBiOp _ | VecShiftLeftOp _
+        | VecShiftRightOp _ ) as biop
+        when c.uses.(unref src) = 1 ->
+          update c src
+          @@ Instr.map
+               (fun (Ref r) ->
+                 match c.instrs.(r) with
+                 | VecReplaceLaneOp ({ shape = `I64 | `F64; dest; _ } as v)
+                   when v.lane <> lane ->
+                     dest
+                 | _ -> Ref r)
+               biop;
+          (i, [])
+      | VecReplaceLaneOp
+          { shape = (`I64 | `F64) as shape; lane = lane2; dest; lane_value; _ }
+        ->
+          if lane2 = lane then
+            ( (if Poly.(shape = e.shape) then
+                 DupVar
+                   {
+                     var = e.var;
+                     typ = Mir_builder.vec_lane_type shape;
+                     src = lane_value;
+                   }
+               else i),
+              [] )
+          else (VecExtractLaneOp { e with src = dest }, [])
+      | _ -> peephole_const c i)
   | _ -> peephole_const c i
 
 let peephole_dup c instr =

@@ -32,3 +32,5 @@ val translate_terminator :
   Radatnet.Types.opcode ->
   tail_position:bool ->
   term_trans_result
+
+val print : unit -> int

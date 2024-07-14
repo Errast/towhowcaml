@@ -1814,7 +1814,9 @@ let translate_vec_insert c shape =
       |> store_operand_v c ~dest
   | _ -> raise_ops c
 
+let vcount = ref 0
 let translate_vec_bottom_64 c f =
+  vcount := !vcount + 1;
   let dest, lhs, rhs =
     match operands c with
     | [ dest; Memory ({ size = 8; _ } as mem) ] ->
@@ -1831,8 +1833,8 @@ let translate_vec_bottom_64 c f =
   let result = f ?varName:None c.builder ~lhs ~rhs in
   (* B.vec_shuffle c.builder ~vec1:result ~vec2:lhs *)
   (* ~ctrl_l:0x07_06_05_04_03_02_01_00L ~ctrl_h:0x1F_1E_1D_1C_1B_1A_19_18L *)
-  let bottom_part = B.vec_extract c.builder result ~shape:`I64 ~lane:0 in
-  B.vec_replace c.builder ~dest:lhs ~value:bottom_part ~shape:`I64 ~lane:0
+  let top_part = B.vec_extract c.builder lhs ~shape:`I64 ~lane:1 in
+  B.vec_replace c.builder ~dest:result ~value:top_part ~shape:`I64 ~lane:1
   |> store_operand_v c ~dest
 
 let translate_cvtdq2pd c =
@@ -2288,3 +2290,5 @@ let translate_output_condition builder state condition_opcode =
     { builder; state; opcode = condition_opcode; intrinsics = empty_hashtbl }
   |> B.dup_var builder ~varName:Util.input_compare_arg Int
   |> ignore
+
+let print () = let c = !vcount in vcount := 0; c
