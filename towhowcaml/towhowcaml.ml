@@ -2,7 +2,7 @@ open! Core
 module Status_flags = Status_flags
 module Func_translator = Func_translator
 module Instr_translator = Instr_translator
-
+include Custom_funcs
 let ignroe_funcs =
   Hash_set.of_list
     (module Core.Int)

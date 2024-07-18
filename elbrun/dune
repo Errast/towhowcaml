@@ -1,0 +1,8 @@
+(library
+ (name elbrun)
+ (preprocess
+  (pps ppx_jane sedlex.ppx))
+ (libraries core mir sedlex menhirLib))
+
+(menhir
+  (modules parser))

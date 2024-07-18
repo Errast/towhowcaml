@@ -6,7 +6,7 @@
 
 (package
  (name towhowcaml)
- (depends ocaml dune utop core))
+ (depends ocaml dune utop core sedlex menhir))
 
-
+(using menhir 3.0)
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

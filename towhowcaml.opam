@@ -5,6 +5,8 @@ depends: [
   "dune" {>= "3.13"}
   "utop"
   "core"
+  "sedlex"
+  "menhir"
   "odoc" {with-doc}
 ]
 build: [

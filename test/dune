@@ -1,6 +1,6 @@
 (library
  (name test_towhowcaml)
- (libraries radatnet mir towhowcaml core)
- (inline_tests )
+ (libraries radatnet mir towhowcaml core elbrun)
+ (inline_tests (flags -only-test test_elbrun.ml))
  (preprocess
   (pps ppx_inline_test ppx_expect)))
