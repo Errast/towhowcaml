@@ -151,7 +151,7 @@ let verify_var (Instr.Ref.Ref var as instr_ref) typ ?(check_type = true) t =
     raise_s
       [%message
         "Wrong local type"
-          ~given:(typ : local_type)
+          ~expected:(typ : local_type)
           ~found:(found_typ : local_type)];
   let declared = get_var t instr_ref in
   if

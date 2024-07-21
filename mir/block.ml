@@ -8,6 +8,7 @@ type terminator =
       fail : branch_target;
       condition : Instr.Ref.t;
     }
+  | BranchReturn of { fail : branch_target; condition : Instr.Ref.t }
   | Switch of {
       cases : branch_target list;
       default : branch_target;

@@ -3,6 +3,7 @@ module Status_flags = Status_flags
 module Func_translator = Func_translator
 module Instr_translator = Instr_translator
 include Custom_funcs
+
 let ignroe_funcs =
   Hash_set.of_list
     (module Core.Int)
@@ -171,6 +172,7 @@ let definite_assignment (func : Mir.Func.t) =
       | Branch v ->
           track_assigned block_defines v.fail;
           track_assigned block_defines v.succeed
+      | BranchReturn { fail = next; _ } -> track_assigned block_defines next
       | Switch v ->
           List.iter v.cases ~f:(track_assigned block_defines);
           track_assigned block_defines v.default)

@@ -2,21 +2,25 @@
 open! Core
 open Mir
 open Syntax
+
+let or_zero = function
+  | None -> 0
+  | Some s -> int_of_string s
+
+let fresh = let i = ref 0 in fun () -> i := !i + 1; string_of_int !i
 %}
 %token <string> IDENT
 %token <string> REF_IDENT
 %token <string> LABEL_IDENT
-%token <int> NUMBER
+%token <string> GLOBAL_IDENT
+%token <string> NUMBER
+%token INT LONG FLOAT VEC
 %token IF
 %token ELSE
 %token PLUS "+"
 %token MINUS "-"
 %token STAR "*"
 %token BANG "!"
-%token INT 
-%token LONG
-%token FLOAT
-%token VEC
 %token COMMA ","
 %token LPAREN "("
 %token RPAREN ")"
@@ -27,12 +31,19 @@ open Syntax
 %token EQ "="
 %token SEMI ";"
 %token COLON ":"
-%token GO
+%token GO RETURN LOOP WHILE
 %token DOUBLE_EQ "=="
 %token NOT_EQ "!="
 %token AMPERSAND "&"
 %token PIPE "|"
 %token NOT
+%token LANGLE "<"
+%token RANGLE ">"
+%token STORE
+%token LOAD
+%token SHIFT_LEFT "<<" SHIFT_RIGHT ">>"
+%token I8 I16 I32 I64 F32 F64 V128
+%token VSPLAT TRUNC EXTEND
 %token EOF
 
 %start <func_def list> main
@@ -43,7 +54,7 @@ func_def: FN; name=IDENT;
   "(" args=separated_list(COMMA,var_decl); ")" 
   rets=func_def_return
   "{" locals=loption(terminated(separated_list(COMMA,var_decl), "->")) 
-  body=statement* "}" 
+  body=statements "}" 
   { {name;signature={args=List.concat args;returns=List.concat rets};locals=List.concat locals;body} }
 
 func_def_return: { [] } | "->" "(" rets=separated_list(COMMA,var_decl) ")" { rets }
@@ -56,54 +67,109 @@ prim_typ:
   | FLOAT { Float }
   | VEC { Vec }
 
+statements: 
+  | { [] }
+  | statements statement { $2 @ $1 }
+
 statement:
-	| lhs=IDENT; "=" rhs=expr  { Let {lhs;rhs} }
-    | lhs=REF_IDENT; "=" rhs=expr { Alias {lhs;rhs} }
-	| addr=deref; "=" value=expr { Store {addr=fst addr;offset=snd addr;value} }
-	| IF cond=expr; t=if_body  ELSE f=if_body { If {cond;t;f} }
-	| IF cond=expr; t=if_body { If {cond;t;f=[]}}
-	| LABEL_IDENT COLON { Label $1 }
-    | GO LABEL_IDENT { Goto $2 }
+	| lhs=IDENT; "=" rhs=expr  { [Let {lhs;rhs}] }
+    | lhs=REF_IDENT; "=" rhs=expr { [Alias {lhs;rhs}] }
+	| STORE offset=preceded(":", NUMBER)? size=size addr=expr "," value=expr { [Store {addr=addr;offset=or_zero offset;value;size}] }
+	| STORE offset=preceded(":", NUMBER)? I8 addr=expr "," value=expr { [Store8 {addr=addr;offset=or_zero offset;value}] }
+    | if_statement { $1 }
+	| LABEL_IDENT COLON { [Label $1] }
+    | GO LABEL_IDENT { [Goto $2] }
+    | RETURN { [Return] }
+    | LOOP "{" body=statements "}" WHILE cond=expr { let l = fresh () in 
+         If{cond;t=[Goto l];f=[]}::(body @ [Label l]) }
+
+if_statement:
+  | IF cond=expr; t=if_true_body  ELSE f=if_body { [If {cond;t;f}] }
+  | IF cond=expr; t=if_true_body { [If {cond;t;f=[]}]}
+
+if_true_body: 
+  | RETURN { [Return] }
+  | if_body { $1 }
 
 if_body:
   | GO LABEL_IDENT { [Goto $2] }
-  | "{" stmts=statement* "}" { stmts }
+  | "{" stmts=statements "}" { stmts }
 
-expr: keyword_expr { $1 }
-
-keyword_expr: 
-  | NOT keyword_expr { UniOp(Not, $2) }
-  | eq_expr { $1 }
+expr: eq_expr { $1 }
 
 eq_expr: 
   | lhs=bit_expr1 "==" rhs=bit_expr1 { BiOp(Eq,lhs,rhs) }
   | lhs=bit_expr1 "!=" rhs=bit_expr1 { BiOp(NotEq,lhs,rhs) }
+  | lhs=bit_expr1 op=comp_op signed=boption("!") rhs=bit_expr1 { SignBiOp {op;lhs;rhs;signed} }
+  | lhs=bit_expr1 op=long_comp_op LONG signed=boption("!") rhs=bit_expr1 { SignBiOp {op;lhs;rhs;signed} }
   | bit_expr1 { $1 }
+
+comp_op: 
+  | "<" { IntLT }
+  | ">" { IntGT }
+  | "<" "=" { IntLTE }
+  | ">" "=" { IntGTE }
+
+long_comp_op: 
+  | "<" { LongLT }
+  | ">" { LongGT }
+  | "<" "=" { LongLTE }
+  | ">" "=" { LongGTE }
 
 bit_expr1:
   | lhs=bit_expr1 "|" rhs=bit_expr2 { BiOp(BitOr,lhs,rhs) }
+  | lhs=bit_expr1 "|" LONG rhs=bit_expr2 { BiOp(LongOr,lhs,rhs) }
   | bit_expr2 { $1 }
 
 bit_expr2:
-  | lhs=bit_expr2 "&" rhs=expr_atomic { BiOp(BitAnd, lhs,rhs) }
+  | lhs=bit_expr2 "&" rhs=arith_expr1 { BiOp(BitAnd,lhs,rhs) }
+  | lhs=bit_expr2 "&" LONG rhs=arith_expr1 { BiOp(LongAnd,lhs,rhs) }
+  | bit_expr3 { $1 }
+
+bit_expr3: 
+  | lhs=arith_expr1 "<<" rhs=arith_expr1 { BiOp(ShiftLeft,lhs,rhs) }
+  | lhs=arith_expr1 "<<" LONG rhs=arith_expr1 { BiOp(LongShiftLeft,lhs,rhs) }
+  | lhs=arith_expr1 ">>" signed=boption("!") rhs=arith_expr1 { SignBiOp{op=ShiftRight;lhs;rhs;signed} }
+  | lhs=arith_expr1 ">>" LONG signed=boption("!") rhs=arith_expr1 { SignBiOp{op=LongShiftRight;lhs;rhs;signed} }
   | arith_expr1 { $1 }
 
 arith_expr1:
   | lhs=arith_expr1; "+" rhs=arith_expr2 { BiOp(Add, lhs,rhs) }
+  | lhs=arith_expr1; "+" LONG rhs=arith_expr2 { BiOp(LongAdd, lhs,rhs) }
   | lhs=arith_expr1; "-" rhs=arith_expr2 { BiOp(Sub, lhs,rhs) }
+  | lhs=arith_expr1; "-" LONG rhs=arith_expr2 { BiOp(LongSub, lhs,rhs) }
   | arith_expr2 { $1 }
 
 arith_expr2: 
   | lhs=arith_expr2; "*" rhs=expr_atomic { BiOp(Mul, lhs,rhs) }
+  | lhs=arith_expr2; "*" LONG rhs=expr_atomic { BiOp(LongMul, lhs,rhs) }
   | expr_atomic { $1 }
 
 expr_atomic:
   | NUMBER { Const $1 }
-  | v=REF_IDENT | v=IDENT { Var v }
-  | addr=deref { Deref (fst addr, snd addr) }
+  | NUMBER LONG { LongConst $1 }
+  | v=IDENT { Var v }
+  | v=REF_IDENT { Use v }
+  | LOAD offset=preceded(":", NUMBER)? size=size addr=expr_atomic { Deref {addr;offset=or_zero offset;size} }
+  | LOAD offset=preceded(":",NUMBER)? I8 signed=boption("!") addr=expr_atomic { Deref8 (addr,signed,or_zero offset) }
+  | LOAD offset=preceded(":",NUMBER)? I16 signed=boption("!") addr=expr_atomic { Deref16 (addr,signed,or_zero offset) }
   | "(" expr ")" { $2 }
+  | NOT expr_atomic { UniOp(Not, $2) }
+  | VSPLAT lane_shape=lane_shape expr=expr_atomic { Splat (lane_shape, expr) }
+  | TRUNC expr_atomic { UniOp(TruncLongToInt, $2) }
+  | EXTEND expr_atomic { UniOp(ZextIntToLong, $2) }
+  | EXTEND "!" expr_atomic { UniOp(SextIntToLong, $3) }
 
-deref:
-  | expr_atomic "!" { $1,0 }
-  | expr_atomic ":" NUMBER "!" { $1,$3 }
- 
+size: { Int }
+  | INT { Int }
+  | LONG { Long }
+  | FLOAT { Float }
+  | VEC { Vec }
+
+lane_shape:
+  | I8 { `I8 }
+  | I16 { `I16 }
+  | I32 { `I32 }
+  | I64 { `I64 }
+  | F32 { `F32 }
+  | F64 { `F64 }

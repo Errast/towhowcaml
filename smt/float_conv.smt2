@@ -1,0 +1,32 @@
+(define-sort Float80 () (_ FloatingPoint 15 65))
+
+(declare-const a Float64)
+(declare-const b Float80)
+(assert (= ((_ to_fp 11 53) RNE b) a))
+
+(declare-const a-bv (_ BitVec 64))
+(assert (= ((_ to_fp 11 53) a-bv) a))
+(declare-const b-bv (_ BitVec 80))
+(assert (= ((_ to_fp 15 65) b-bv) b))
+
+;(push)
+;(assert (fp.isNormal a))
+;(declare-const c Float80)
+;(assert (= c ((_ to_fp 15 65) (concat 
+;  ((_ extract 63 63) a-bv)
+;  ((_ sign_extend 4) ((_ extract 62 52) a-bv))
+;  ((_ extract 51 0) a-bv)
+;  #b000000000000))))
+;(assert (not (= b c)))
+;(check-sat)
+;(get-model)
+;(pop)
+
+(push)
+(declare-const c (_ BitVec 16))
+(declare-const real Bool) (assert (= real (bvult (bvadd c #xC3FF) (bvadd c #xBC01))))
+(declare-const fake Bool) (assert (= fake (and (bvsgt (bvsub c #x3FFF) #xFC01) (bvsle (bvsub c #x3FFF) #x03FF))))
+(assert (not (= real fake)))
+(check-sat)
+(get-model)
+(pop)
