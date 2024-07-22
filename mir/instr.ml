@@ -30,6 +30,7 @@ type uni_op =
   | LongToInt32
   | CountOnes
   | VecInt8SignBitmask
+  | CountLeadingZeros
   (* Float-valued *)
   | FloatNeg
   | FloatAbs
@@ -43,10 +44,13 @@ type uni_op =
   | Int32ToFloatSigned
   | Int64ToFloatUnsigned
   | Int64ToFloatSigned
+  | BitcastInt64ToFloat
   (* Long-valued *)
   | FloatToLong
   | Int32ToLongUnsigned
   | Int32ToLongSigned
+  | BitcastFloatToLong
+  | LongCountLeadingZeros
   (* Vec-valued *)
   | VecConvertLow32BitsToFloatsSigned
 [@@deriving sexp]
@@ -89,6 +93,7 @@ type bi_op =
   | LongRotateLeft
   | LongAnd
   | LongOr
+  | LongXor
   (* Vec-valued *)
   | VecAnd
   | VecOr
@@ -294,33 +299,36 @@ let value_type = function
       match op with
       | EqualsZero | LongEqualsZero | SignExtendLow8 | SignExtendHigh8
       | SignExtend16 | ZeroExtendLow8 | ZeroExtendHigh8 | ZeroExtend16
-      | FloatToInt32 | LongToInt32 | CountOnes | VecInt8SignBitmask ->
+      | FloatToInt32 | LongToInt32 | CountOnes | VecInt8SignBitmask
+      | CountLeadingZeros ->
           Int
       | FloatNeg | FloatAbs | FloatRound | FloatTrunc | FloatSqrt | FloatSine
       | FloatCosine | FloatTangent | Int32ToFloatSigned | Int32ToFloatUnsigned
-      | Int64ToFloatSigned | Int64ToFloatUnsigned ->
+      | Int64ToFloatSigned | Int64ToFloatUnsigned | BitcastInt64ToFloat ->
           Float
-      | FloatToLong | Int32ToLongSigned | Int32ToLongUnsigned -> Long
+      | BitcastFloatToLong | FloatToLong | Int32ToLongSigned
+      | LongCountLeadingZeros | Int32ToLongUnsigned ->
+          Long
       | VecConvertLow32BitsToFloatsSigned -> Vec)
   | VecExtend _ -> Vec
   | BiOp { op; _ } -> (
       match op with
       | Add | Subtract | Multiply | Equal | NotEqual | And | Or | Xor
-      | ShiftLeft | RotateLeft |RotateRight | LongEq | LongNotEq | FloatEq | FloatNotEq
-      | FloatGreaterThan | FloatLessThan | FloatGreaterThanEqual
+      | ShiftLeft | RotateLeft | RotateRight | LongEq | LongNotEq | FloatEq
+      | FloatNotEq | FloatGreaterThan | FloatLessThan | FloatGreaterThanEqual
       | FloatLessThanEqual | MergeTruncLow8 | MergeTruncHigh8 | MergeTrunc16 ->
           Int
       | FloatAdd | FloatSub | FloatMult | FloatDiv | FloatAtan2 -> Float
       | LongShiftLeft | LongAdd | LongSub | LongMultiply | LongRotateLeft
-      | LongAnd | LongOr ->
+      | LongAnd | LongOr | LongXor ->
           Long
       | VecAnd | VecOr | VecXor | VecMulAdd16Bit -> Vec)
   | VecLaneBiOp _ -> Vec
   | SignedBiOp { op; _ } -> (
       match op with
-      | Divide | Remainder | ShiftRight |  LessThan | LessThanEqual
-      | GreaterThan | GreaterThanEqual | LongGreaterThan | LongGreaterThanEqual
-      | LongLessThan | LongLessThanEqual ->
+      | Divide | Remainder | ShiftRight | LessThan | LessThanEqual | GreaterThan
+      | GreaterThanEqual | LongGreaterThan | LongGreaterThanEqual | LongLessThan
+      | LongLessThanEqual ->
           Int
       | LongDivide | LongRemainder | LongShiftRight | LongRotateRight -> Long
       | VecNarrow16Bit | VecNarrow32Bit -> Vec)

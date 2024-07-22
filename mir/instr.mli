@@ -27,6 +27,7 @@ type uni_op =
   | LongToInt32
   | CountOnes
   | VecInt8SignBitmask
+  | CountLeadingZeros
   (* Float-valued *)
   | FloatNeg
   | FloatAbs
@@ -40,10 +41,13 @@ type uni_op =
   | Int32ToFloatSigned
   | Int64ToFloatUnsigned
   | Int64ToFloatSigned
+  | BitcastInt64ToFloat
   (* Long-valued *)
   | FloatToLong
   | Int32ToLongUnsigned
   | Int32ToLongSigned
+  | BitcastFloatToLong
+  | LongCountLeadingZeros
   (* Vec-valued *)
   | VecConvertLow32BitsToFloatsSigned
 [@@deriving sexp]
@@ -86,6 +90,7 @@ type bi_op =
   | LongRotateLeft
   | LongAnd
   | LongOr
+  | LongXor
   (* Vec-valued *)
   | VecAnd
   | VecOr

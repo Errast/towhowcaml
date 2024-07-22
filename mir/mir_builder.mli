@@ -91,6 +91,10 @@ val sign_extend_high8 : uni_op_add
 val sign_extend_16 : uni_op_add
 val float_to_int32 : uni_op_add
 val long_to_int32 : uni_op_add
+val count_leading_zeros : uni_op_add
+val long_count_leading_zeros : uni_op_add
+val bitcast_long_to_float : uni_op_add
+val bitcast_float_to_long: uni_op_add
 val count_ones : uni_op_add
 val float_neg : uni_op_add
 val float_abs : uni_op_add
@@ -151,6 +155,7 @@ val long_shift_left : bi_op_add
 val long_rotate_left : bi_op_add
 val long_and : bi_op_add
 val long_or : bi_op_add
+val long_xor : bi_op_add
 val vec_and : bi_op_add
 val vec_or : bi_op_add
 val vec_xor : bi_op_add

@@ -19,6 +19,7 @@ type bi_op =
   | Mul
   | BitAnd
   | BitOr
+  | BitXor
   | Eq
   | NotEq
   | ShiftLeft
@@ -27,12 +28,21 @@ type bi_op =
   | LongMul
   | LongAnd
   | LongOr
+  | LongXor
   | LongEq
   | LongNotEq
   | LongShiftLeft
 [@@deriving sexp]
 
-type uni_op = Not | TruncLongToInt | SextIntToLong | ZextIntToLong
+type uni_op =
+  | Not
+  | TruncLongToInt
+  | SextIntToLong
+  | ZextIntToLong
+  | BitcastLongToFloat
+  | BitcastFloatToLong
+  | CountLeadingZeros
+  | LongCountLeadingZeros
 [@@deriving sexp]
 
 type expr =
@@ -55,6 +65,7 @@ type statement =
   | Alias of { lhs : string; rhs : expr }
   | Store of { addr : expr; offset : int; value : expr; size : Mir.local_type }
   | Store8 of { addr : expr; offset : int; value : expr }
+  | Store16 of { addr : expr; offset : int; value : expr }
   | If of { cond : expr; t : statement list; f : statement list }
   | Label of string
   | Goto of string

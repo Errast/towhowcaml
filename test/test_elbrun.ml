@@ -6,9 +6,125 @@ let compile str =
   |> sexp_of_list Mir.Func.sexp_of_t
   |> print_s
 
+ let%expect_test "store_big_float" = compile Towhowcaml.store_big_float;
+  [%expect {|
+    (((name __store_big_float__)
+      (signature
+       ((args (((name arg) (typ Float)) ((name dest_ptr) (typ Int))))
+        (returns ())))
+      (blocks
+       (((id 0)
+         (instrs
+          ((0 (OutsideContext (var arg) (typ Float)))
+           (1 (UniOp (var f) (op BitcastFloatToLong) (operand (Ref 0))))
+           (2 (LongConst __i64 9223372036854775807))
+           (3 (BiOp (var abs_f) (op LongAnd) (lhs (Ref 1)) (rhs (Ref 2))))
+           (4 (LongConst __i64 -4503599627370496))
+           (5 (BiOp (var __i64) (op LongAdd) (lhs (Ref 3)) (rhs (Ref 4))))
+           (6 (LongConst __i64 9214364837600034816))
+           (7
+            (SignedBiOp (var __i32) (op LongLessThan) (signed false)
+             (lhs (Ref 5)) (rhs (Ref 6))))))
+         (terminator
+          (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 7))))
+         (roots ()))
+        ((id 1)
+         (instrs
+          ((0 (OutsideContext (var f) (typ Long))) (1 (LongConst __i64 11))
+           (2 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 0)) (rhs (Ref 1))))
+           (3 (LongConst __i64 -9223372036854775808))
+           (4 (BiOp (var res_mantissa) (op LongOr) (lhs (Ref 2)) (rhs (Ref 3))))
+           (5 (LongConst __i64 52))
+           (6
+            (SignedBiOp (var __i64) (op LongShiftRight) (signed false)
+             (lhs (Ref 0)) (rhs (Ref 5))))
+           (7 (UniOp (var __i32) (op LongToInt32) (operand (Ref 6))))
+           (8 (Const __i32 15360))
+           (9 (BiOp (var res_exp) (op Add) (lhs (Ref 7)) (rhs (Ref 8))))))
+         (terminator (Goto (Block 4))) (roots ()))
+        ((id 2)
+         (instrs
+          ((0 (OutsideContext (var abs_f) (typ Long)))
+           (1 (LongConst __i64 9218868437227405312))
+           (2
+            (SignedBiOp (var __i32) (op LongGreaterThanEqual) (signed false)
+             (lhs (Ref 0)) (rhs (Ref 1))))))
+         (terminator
+          (Branch (succeed (Block 3)) (fail (Block 4)) (condition (Ref 2))))
+         (roots ()))
+        ((id 3)
+         (instrs
+          ((0 (OutsideContext (var f) (typ Long))) (1 (LongConst __i64 11))
+           (2 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 0)) (rhs (Ref 1))))
+           (3 (LongConst __i64 -9223372036854775808))
+           (4 (BiOp (var res_mantissa) (op LongOr) (lhs (Ref 2)) (rhs (Ref 3))))
+           (5 (Const res_exp 32767))))
+         (terminator (Goto (Block 4))) (roots ()))
+        ((id 4)
+         (instrs
+          ((0 (OutsideContext (var abs_f) (typ Long))) (1 (LongConst __i64 0))
+           (2 (BiOp (var __i32) (op LongNotEq) (lhs (Ref 0)) (rhs (Ref 1))))))
+         (terminator
+          (Branch (succeed (Block 5)) (fail (Block 6)) (condition (Ref 2))))
+         (roots ()))
+        ((id 5)
+         (instrs
+          ((0 (OutsideContext (var abs_f) (typ Long)))
+           (1 (UniOp (var __i64) (op LongCountLeadingZeros) (operand (Ref 0))))
+           (2 (UniOp (var __i32) (op LongToInt32) (operand (Ref 1))))
+           (3 (Const __i32 117))
+           (4 (BiOp (var __i32) (op Add) (lhs (Ref 2)) (rhs (Ref 3))))
+           (5 (Const __i32 127))
+           (6 (BiOp (var __i32) (op And) (lhs (Ref 4)) (rhs (Ref 5))))
+           (7 (Const __i32 52))
+           (8 (BiOp (var __i32) (op Subtract) (lhs (Ref 7)) (rhs (Ref 6))))
+           (9 (UniOp (var __i64) (op Int32ToLongUnsigned) (operand (Ref 8))))
+           (10 (LongConst __i64 65535))
+           (11 (BiOp (var __i64) (op LongAnd) (lhs (Ref 9)) (rhs (Ref 10))))
+           (12
+            (SignedBiOp (var __i64) (op LongShiftRight) (signed false)
+             (lhs (Ref 0)) (rhs (Ref 11))))
+           (13 (UniOp (var res_exp) (op LongToInt32) (operand (Ref 12))))
+           (14 (Const __i32 1))
+           (15 (BiOp (var res_exp) (op Xor) (lhs (Ref 13)) (rhs (Ref 14))))
+           (16 (Const __i32 15361))
+           (17 (BiOp (var __i32) (op Subtract) (lhs (Ref 16)) (rhs (Ref 6))))
+           (18 (BiOp (var res_exp) (op Or) (lhs (Ref 15)) (rhs (Ref 17))))
+           (19 (OutsideContext (var f) (typ Long)))
+           (20
+            (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 19)) (rhs (Ref 1))))
+           (21 (LongConst __i64 -9223372036854775808))
+           (22
+            (BiOp (var res_mantissa) (op LongOr) (lhs (Ref 20)) (rhs (Ref 21))))))
+         (terminator (Goto (Block 7))) (roots ()))
+        ((id 6) (instrs ((0 (Const res_exp 0)) (1 (LongConst res_mantissa 0))))
+         (terminator (Goto (Block 7))) (roots ()))
+        ((id 7)
+         (instrs
+          ((0 (OutsideContext (var dest_ptr) (typ Int)))
+           (1 (OutsideContext (var res_mantissa) (typ Long)))
+           (2 (StoreOp (op LongStore64) (addr (Ref 0)) (value (Ref 1))))
+           (3 (OutsideContext (var res_exp) (typ Int)))
+           (4 (OutsideContext (var f) (typ Long))) (5 (LongConst __i64 48))
+           (6
+            (SignedBiOp (var __i64) (op LongShiftRight) (signed false)
+             (lhs (Ref 4)) (rhs (Ref 5))))
+           (7 (UniOp (var __i32) (op LongToInt32) (operand (Ref 6))))
+           (8 (Const __i32 32768))
+           (9 (BiOp (var __i32) (op And) (lhs (Ref 7)) (rhs (Ref 8))))
+           (10 (BiOp (var res_exp) (op Or) (lhs (Ref 3)) (rhs (Ref 9))))
+           (11 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 10)) (offset 8)))))
+         (terminator Return) (roots ((Ref 2) (Ref 11))))))
+      (locals
+       ((abs_f ((name abs_f) (typ Long))) (f ((name f) (typ Long)))
+        (res_exp ((name res_exp) (typ Int)))
+        (res_mantissa ((name res_mantissa) (typ Long)))))))
+    |}]
+ 
+
  let%expect_test "load_big_float" = compile Towhowcaml.load_big_float;
   [%expect {|
-    (((name __load_bit_float__)
+    (((name __load_big_float__)
       (signature
        ((args (((name float_ptr) (typ Int))))
         (returns (((name res) (typ Float))))))
@@ -17,67 +133,187 @@ let compile str =
          (instrs
           ((0 (OutsideContext (var float_ptr) (typ Int)))
            (1 (LoadOp (var lower_bits) (op LongLoad64) (addr (Ref 0))))
-           (2
-            (SignedLoadOp (var __i32) (op Load16) (addr (Ref 0)) (signed false)
-             (offset 8)))
-           (3
-            (UniOp (var upper_bits) (op Int32ToLongUnsigned) (operand (Ref 2))))
-           (4 (LongConst __i64 9223372036854775807))
-           (5 (BiOp (var significand) (op LongAnd) (lhs (Ref 1)) (rhs (Ref 4))))
-           (6 (LongConst __i64 65535))
-           (7 (BiOp (var upper_bits) (op LongAnd) (lhs (Ref 3)) (rhs (Ref 6))))
-           (8 (UniOp (var upper_int) (op LongToInt32) (operand (Ref 7))))
-           (9 (Const __i32 32767))
-           (10 (BiOp (var exponent) (op And) (lhs (Ref 8)) (rhs (Ref 9))))
-           (11 (Const __i32 15361))
-           (12 (BiOp (var __i32) (op Subtract) (lhs (Ref 10)) (rhs (Ref 11))))
+           (2 (LongConst __i64 9223372036854775807))
+           (3 (BiOp (var mantissa) (op LongAnd) (lhs (Ref 1)) (rhs (Ref 2))))
+           (4
+            (SignedLoadOp (var upper_bits) (op Load16) (addr (Ref 0))
+             (signed false) (offset 8)))
+           (5 (Const __i32 32767))
+           (6 (BiOp (var exponent) (op And) (lhs (Ref 4)) (rhs (Ref 5))))
+           (7 (Const __i32 15361))
+           (8 (BiOp (var __i32) (op Subtract) (lhs (Ref 6)) (rhs (Ref 7))))
+           (9 (Const __i32 65535))
+           (10 (BiOp (var __i32) (op And) (lhs (Ref 8)) (rhs (Ref 9))))
+           (11 (Const __i32 17407))
+           (12 (BiOp (var __i32) (op Subtract) (lhs (Ref 6)) (rhs (Ref 11))))
            (13 (Const __i32 65535))
            (14 (BiOp (var __i32) (op And) (lhs (Ref 12)) (rhs (Ref 13))))
-           (15 (Const __i32 17407))
-           (16 (BiOp (var __i32) (op Subtract) (lhs (Ref 10)) (rhs (Ref 15))))
-           (17 (Const __i32 65535))
-           (18 (BiOp (var __i32) (op And) (lhs (Ref 16)) (rhs (Ref 17))))
-           (19
-            (SignedBiOp (var __i32) (op LessThan) (signed false) (lhs (Ref 14))
-             (rhs (Ref 18))))))
+           (15
+            (SignedBiOp (var __i32) (op LessThan) (signed false) (lhs (Ref 10))
+             (rhs (Ref 14))))))
          (terminator
-          (Branch (succeed (Block 1)) (fail (Block 3)) (condition (Ref 19))))
+          (Branch (succeed (Block 1)) (fail (Block 5)) (condition (Ref 15))))
          (roots ()))
         ((id 1)
          (instrs
-          ((0 (OutsideContext (var upper_bits) (typ Long)))
-           (1 (LongConst __i64 52))
-           (2 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 0)) (rhs (Ref 1))))
-           (3 (OutsideContext (var significand) (typ Long)))
-           (4 (LongConst __i64 11))
-           (5
-            (SignedBiOp (var __i64) (op LongShiftRight) (signed false)
-             (lhs (Ref 3)) (rhs (Ref 4))))
-           (6 (BiOp (var result) (op LongOr) (lhs (Ref 2)) (rhs (Ref 5))))
-           (7 (OutsideContext (var lower_bits) (typ Long)))
-           (8 (LongConst __i64 2047))
-           (9 (BiOp (var __i64) (op LongAnd) (lhs (Ref 7)) (rhs (Ref 8))))
-           (10 (LongConst __i64 0))
-           (11
+          ((0 (OutsideContext (var upper_bits) (typ Int)))
+           (1 (UniOp (var __i64) (op Int32ToLongUnsigned) (operand (Ref 0))))
+           (2 (LongConst __i64 52))
+           (3 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 1)) (rhs (Ref 2))))
+           (4 (OutsideContext (var mantissa) (typ Long)))
+           (5 (LongConst __i64 11))
+           (6
+            (SignedBiOp (var res_mantissa) (op LongShiftRight) (signed false)
+             (lhs (Ref 4)) (rhs (Ref 5))))
+           (7 (BiOp (var result) (op LongOr) (lhs (Ref 3)) (rhs (Ref 6))))
+           (8 (OutsideContext (var lower_bits) (typ Long)))
+           (9 (LongConst __i64 2047))
+           (10
+            (BiOp (var rounded_part) (op LongAnd) (lhs (Ref 8)) (rhs (Ref 9))))
+           (11 (LongConst __i64 1024))
+           (12
             (SignedBiOp (var __i32) (op LongGreaterThan) (signed false)
-             (lhs (Ref 9)) (rhs (Ref 10))))))
+             (lhs (Ref 10)) (rhs (Ref 11))))))
          (terminator
-          (Branch (succeed (Block 2)) (fail (Block 3)) (condition (Ref 11))))
+          (Branch (succeed (Block 2)) (fail (Block 3)) (condition (Ref 12))))
          (roots ()))
         ((id 2)
          (instrs
           ((0 (OutsideContext (var result) (typ Long)))
            (1 (LongConst __i64 4611686018427387905))
-           (2 (BiOp (var lower_bits) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 1))))))
+           (2 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 1))))))
+         (terminator (Goto (Block 15))) (roots ()))
+        ((id 3)
+         (instrs
+          ((0 (OutsideContext (var result) (typ Long)))
+           (1 (LongConst __i64 4611686018427387904))
+           (2 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 1))))
+           (3 (OutsideContext (var rounded_part) (typ Long)))
+           (4 (LongConst __i64 1024))
+           (5 (BiOp (var __i64) (op LongEq) (lhs (Ref 3)) (rhs (Ref 4))))))
+         (terminator
+          (Branch (succeed (Block 4)) (fail (Block 15)) (condition (Ref 5))))
+         (roots ()))
+        ((id 4)
+         (instrs
+          ((0 (OutsideContext (var result) (typ Long)))
+           (1 (OutsideContext (var res_mantissa) (typ Long)))
+           (2 (LongConst __i64 1))
+           (3 (BiOp (var __i64) (op LongAnd) (lhs (Ref 1)) (rhs (Ref 2))))
+           (4 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 3))))))
+         (terminator (Goto (Block 15))) (roots ()))
+        ((id 5)
+         (instrs
+          ((0 (OutsideContext (var lower_bits) (typ Long)))
+           (1 (LongConst __i64 0))
+           (2 (BiOp (var __i32) (op LongNotEq) (lhs (Ref 0)) (rhs (Ref 1))))
+           (3 (OutsideContext (var exponent) (typ Int))) (4 (Const __i32 32767))
+           (5 (BiOp (var __i32) (op Equal) (lhs (Ref 3)) (rhs (Ref 4))))
+           (6 (BiOp (var __i32) (op And) (lhs (Ref 2)) (rhs (Ref 5))))))
+         (terminator
+          (Branch (succeed (Block 6)) (fail (Block 7)) (condition (Ref 6))))
+         (roots ()))
+        ((id 6)
+         (instrs
+          ((0 (OutsideContext (var lower_bits) (typ Long)))
+           (1 (LongConst __i64 11))
+           (2 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 0)) (rhs (Ref 1))))
+           (3 (LongConst __i64 9221120237041090560))
+           (4 (BiOp (var result) (op LongOr) (lhs (Ref 2)) (rhs (Ref 3))))))
+         (terminator (Goto (Block 15))) (roots ()))
+        ((id 7)
+         (instrs
+          ((0 (OutsideContext (var exponent) (typ Int))) (1 (Const __i32 17406))
+           (2
+            (SignedBiOp (var __i32) (op GreaterThan) (signed false) (lhs (Ref 0))
+             (rhs (Ref 1))))))
+         (terminator
+          (Branch (succeed (Block 8)) (fail (Block 9)) (condition (Ref 2))))
+         (roots ()))
+        ((id 8) (instrs ((0 (LongConst result 9218868437227405312))))
+         (terminator (Goto (Block 15))) (roots ()))
+        ((id 9)
+         (instrs
+          ((0 (OutsideContext (var exponent) (typ Int))) (1 (Const __i32 15297))
+           (2
+            (SignedBiOp (var __i32) (op LessThan) (signed false) (lhs (Ref 0))
+             (rhs (Ref 1))))))
+         (terminator
+          (Branch (succeed (Block 10)) (fail (Block 11)) (condition (Ref 2))))
+         (roots ()))
+        ((id 10) (instrs ((0 (LongConst result 0))))
+         (terminator (Goto (Block 15))) (roots ()))
+        ((id 11)
+         (instrs
+          ((0 (Const __i32 0)) (1 (OutsideContext (var upper_bits) (typ Int)))
+           (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))
+           (3 (Const __i32 63))
+           (4 (BiOp (var __i32) (op And) (lhs (Ref 2)) (rhs (Ref 3))))
+           (5 (UniOp (var __i64) (op Int32ToLongUnsigned) (operand (Ref 4))))
+           (6 (OutsideContext (var mantissa) (typ Long)))
+           (7
+            (SignedBiOp (var __i64) (op LongShiftRight) (signed false)
+             (lhs (Ref 6)) (rhs (Ref 5))))
+           (8 (LongConst __i64 11))
+           (9
+            (SignedBiOp (var result) (op LongShiftRight) (signed false)
+             (lhs (Ref 7)) (rhs (Ref 8))))
+           (10 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 6)) (rhs (Ref 5))))
+           (11 (LongConst __i64 0))
+           (12 (BiOp (var __i64) (op LongEq) (lhs (Ref 10)) (rhs (Ref 11))))
+           (13 (UniOp (var __i64) (op Int32ToLongUnsigned) (operand (Ref 12))))
+           (14 (LongConst __i64 2047))
+           (15 (BiOp (var __i64) (op LongAnd) (lhs (Ref 7)) (rhs (Ref 14))))
+           (16
+            (BiOp (var rounded_part) (op LongOr) (lhs (Ref 13)) (rhs (Ref 15))))
+           (17 (LongConst __i64 1024))
+           (18
+            (SignedBiOp (var __i32) (op LongGreaterThan) (signed false)
+             (lhs (Ref 16)) (rhs (Ref 17))))))
+         (terminator
+          (Branch (succeed (Block 12)) (fail (Block 13)) (condition (Ref 18))))
+         (roots ()))
+        ((id 12)
+         (instrs
+          ((0 (OutsideContext (var result) (typ Long))) (1 (LongConst __i64 1))
+           (2 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 1))))))
+         (terminator (Goto (Block 15))) (roots ()))
+        ((id 13)
+         (instrs
+          ((0 (OutsideContext (var rounded_part) (typ Long)))
+           (1 (LongConst __i64 1024))
+           (2 (BiOp (var __i64) (op LongEq) (lhs (Ref 0)) (rhs (Ref 1))))))
+         (terminator
+          (Branch (succeed (Block 14)) (fail (Block 15)) (condition (Ref 2))))
+         (roots ()))
+        ((id 14)
+         (instrs
+          ((0 (OutsideContext (var result) (typ Long))) (1 (LongConst __i64 1))
+           (2 (BiOp (var __i64) (op LongAnd) (lhs (Ref 0)) (rhs (Ref 1))))
+           (3 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 2))))))
+         (terminator (Goto (Block 15))) (roots ()))
+        ((id 15)
+         (instrs
+          ((0 (OutsideContext (var result) (typ Long)))
+           (1 (OutsideContext (var upper_bits) (typ Int)))
+           (2 (UniOp (var __i64) (op Int32ToLongUnsigned) (operand (Ref 1))))
+           (3 (LongConst __i64 32768))
+           (4 (BiOp (var __i64) (op LongAnd) (lhs (Ref 2)) (rhs (Ref 3))))
+           (5 (LongConst __i64 48))
+           (6 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 4)) (rhs (Ref 5))))
+           (7 (BiOp (var result) (op LongOr) (lhs (Ref 0)) (rhs (Ref 6))))
+           (8 (UniOp (var res) (op BitcastInt64ToFloat) (operand (Ref 7))))))
          (terminator Return) (roots ()))))
       (locals
        ((exponent ((name exponent) (typ Int)))
         (lower_bits ((name lower_bits) (typ Long)))
+        (mantissa ((name mantissa) (typ Long)))
+        (res_mantissa ((name res_mantissa) (typ Long)))
         (result ((name result) (typ Long)))
-        (significand ((name significand) (typ Long)))
-        (upper_bits ((name upper_bits) (typ Long)))
-        (upper_int ((name upper_int) (typ Int)))))))
+        (rounded_part ((name rounded_part) (typ Long)))
+        (upper_bits ((name upper_bits) (typ Int)))))))
     |}]
+ 
 
 let%expect_test "memset" = compile Towhowcaml.elbrun_code;
   [%expect {|
@@ -311,11 +547,12 @@ let%expect_test "basic" =
   fn test(int a1 a2 a3) -> (int r1 r2) {
     if a1 - 1 {
       r1 = a2
+    } else if load a1 {
+        r1 = a3
+        store:4 a1, a2 * a3 - 4
     } else {
       r1 = a3
-      if load a1 {
-        store:4 a1, a2 * a3 - 4
-      }
+   
     }
     r2 = a1 + (load a1 * 3) - a2 + a3
   }
@@ -338,27 +575,31 @@ let%expect_test "basic" =
          (instrs
           ((0 (OutsideContext (var a2) (typ Int)))
            (1 (DupVar (var r1) (src (Ref 0)) (typ Int)))))
-         (terminator (Goto (Block 4))) (roots ()))
+         (terminator (Goto (Block 5))) (roots ()))
         ((id 2)
+         (instrs
+          ((0 (OutsideContext (var a1) (typ Int)))
+           (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))))
+         (terminator
+          (Branch (succeed (Block 3)) (fail (Block 4)) (condition (Ref 1))))
+         (roots ()))
+        ((id 3)
          (instrs
           ((0 (OutsideContext (var a3) (typ Int)))
            (1 (DupVar (var r1) (src (Ref 0)) (typ Int)))
            (2 (OutsideContext (var a1) (typ Int)))
-           (3 (LoadOp (var __i32) (op Load32) (addr (Ref 2))))))
-         (terminator
-          (Branch (succeed (Block 3)) (fail (Block 4)) (condition (Ref 3))))
-         (roots ()))
-        ((id 3)
-         (instrs
-          ((0 (OutsideContext (var a1) (typ Int)))
-           (1 (OutsideContext (var a2) (typ Int)))
-           (2 (OutsideContext (var a3) (typ Int)))
-           (3 (BiOp (var __i32) (op Multiply) (lhs (Ref 1)) (rhs (Ref 2))))
-           (4 (Const __i32 4))
-           (5 (BiOp (var __i32) (op Subtract) (lhs (Ref 3)) (rhs (Ref 4))))
-           (6 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 5)) (offset 4)))))
-         (terminator (Goto (Block 4))) (roots ((Ref 6))))
+           (3 (OutsideContext (var a2) (typ Int)))
+           (4 (BiOp (var __i32) (op Multiply) (lhs (Ref 3)) (rhs (Ref 0))))
+           (5 (Const __i32 4))
+           (6 (BiOp (var __i32) (op Subtract) (lhs (Ref 4)) (rhs (Ref 5))))
+           (7 (StoreOp (op Store32) (addr (Ref 2)) (value (Ref 6)) (offset 4)))))
+         (terminator (Goto (Block 5))) (roots ((Ref 7))))
         ((id 4)
+         (instrs
+          ((0 (OutsideContext (var a3) (typ Int)))
+           (1 (DupVar (var r1) (src (Ref 0)) (typ Int)))))
+         (terminator (Goto (Block 5))) (roots ()))
+        ((id 5)
          (instrs
           ((0 (OutsideContext (var a1) (typ Int)))
            (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))

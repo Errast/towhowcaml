@@ -43,7 +43,7 @@ let fresh = let i = ref 0 in fun () -> i := !i + 1; string_of_int !i
 %token LOAD
 %token SHIFT_LEFT "<<" SHIFT_RIGHT ">>"
 %token I8 I16 I32 I64 F32 F64 V128
-%token VSPLAT TRUNC EXTEND
+%token VSPLAT TRUNC EXTEND BITCAST CLZ XOR
 %token EOF
 
 %start <func_def list> main
@@ -76,6 +76,7 @@ statement:
     | lhs=REF_IDENT; "=" rhs=expr { [Alias {lhs;rhs}] }
 	| STORE offset=preceded(":", NUMBER)? size=size addr=expr "," value=expr { [Store {addr=addr;offset=or_zero offset;value;size}] }
 	| STORE offset=preceded(":", NUMBER)? I8 addr=expr "," value=expr { [Store8 {addr=addr;offset=or_zero offset;value}] }
+	| STORE offset=preceded(":", NUMBER)? I16 addr=expr "," value=expr { [Store16 {addr=addr;offset=or_zero offset;value}] }
     | if_statement { $1 }
 	| LABEL_IDENT COLON { [Label $1] }
     | GO LABEL_IDENT { [Goto $2] }
@@ -84,6 +85,7 @@ statement:
          If{cond;t=[Goto l];f=[]}::(body @ [Label l]) }
 
 if_statement:
+  | IF cond=expr; t=if_true_body ELSE f=if_statement { [If {cond;t;f}] }
   | IF cond=expr; t=if_true_body  ELSE f=if_body { [If {cond;t;f}] }
   | IF cond=expr; t=if_true_body { [If {cond;t;f=[]}]}
 
@@ -100,6 +102,8 @@ expr: eq_expr { $1 }
 eq_expr: 
   | lhs=bit_expr1 "==" rhs=bit_expr1 { BiOp(Eq,lhs,rhs) }
   | lhs=bit_expr1 "!=" rhs=bit_expr1 { BiOp(NotEq,lhs,rhs) }
+  | lhs=bit_expr1 "==" LONG rhs=bit_expr1 { BiOp(LongEq,lhs,rhs) }
+  | lhs=bit_expr1 "!=" LONG rhs=bit_expr1 { BiOp(LongNotEq,lhs,rhs) }
   | lhs=bit_expr1 op=comp_op signed=boption("!") rhs=bit_expr1 { SignBiOp {op;lhs;rhs;signed} }
   | lhs=bit_expr1 op=long_comp_op LONG signed=boption("!") rhs=bit_expr1 { SignBiOp {op;lhs;rhs;signed} }
   | bit_expr1 { $1 }
@@ -119,6 +123,11 @@ long_comp_op:
 bit_expr1:
   | lhs=bit_expr1 "|" rhs=bit_expr2 { BiOp(BitOr,lhs,rhs) }
   | lhs=bit_expr1 "|" LONG rhs=bit_expr2 { BiOp(LongOr,lhs,rhs) }
+  | bit_expr1_2 { $1 }
+
+bit_expr1_2:
+  | lhs=bit_expr1_2 XOR rhs=bit_expr2 { BiOp(BitXor,lhs,rhs) }
+  | lhs=bit_expr1_2 XOR LONG rhs=bit_expr2 { BiOp(LongXor,lhs,rhs) }
   | bit_expr2 { $1 }
 
 bit_expr2:
@@ -159,6 +168,10 @@ expr_atomic:
   | TRUNC expr_atomic { UniOp(TruncLongToInt, $2) }
   | EXTEND expr_atomic { UniOp(ZextIntToLong, $2) }
   | EXTEND "!" expr_atomic { UniOp(SextIntToLong, $3) }
+  | BITCAST expr_atomic { UniOp(BitcastLongToFloat, $2) }
+  | BITCAST FLOAT "->" LONG expr=expr_atomic { UniOp(BitcastFloatToLong, expr) }
+  | CLZ expr_atomic { UniOp(CountLeadingZeros, $2) }
+  | CLZ LONG expr_atomic { UniOp(LongCountLeadingZeros, $3) }
 
 size: { Int }
   | INT { Int }

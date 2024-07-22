@@ -99,7 +99,11 @@ let lower_block max_block block_map local_vars block : Block.t =
         | Not -> B.equals_zero b operand
         | TruncLongToInt -> B.long_to_int32 b operand
         | SextIntToLong -> B.int32_to_long b operand ~signed:true
-        | ZextIntToLong -> B.int32_to_long b operand ~signed:false)
+        | ZextIntToLong -> B.int32_to_long b operand ~signed:false
+        | BitcastLongToFloat -> B.bitcast_long_to_float b operand
+        | BitcastFloatToLong -> B.bitcast_float_to_long b operand
+        | CountLeadingZeros -> B.count_leading_zeros b operand
+        | LongCountLeadingZeros -> B.long_count_leading_zeros b operand)
     | BiOp (op, lhs, rhs) -> (
         let lhs = lower_expr aliases lhs in
         let rhs = lower_expr aliases rhs in
@@ -111,6 +115,7 @@ let lower_block max_block block_map local_vars block : Block.t =
         | NotEq -> B.not_equal b ~lhs ~rhs
         | BitAnd -> B.int_and b ~lhs ~rhs
         | BitOr -> B.int_or b ~lhs ~rhs
+        | BitXor -> B.xor b ~lhs ~rhs
         | ShiftLeft -> B.shift_left b ~lhs ~rhs
         | LongAdd -> B.long_add b ~lhs ~rhs
         | LongSub -> B.long_sub b ~lhs ~rhs
@@ -119,7 +124,8 @@ let lower_block max_block block_map local_vars block : Block.t =
         | LongNotEq -> B.long_not_equal b ~lhs ~rhs
         | LongAnd -> B.long_and b ~lhs ~rhs
         | LongOr -> B.long_or b ~lhs ~rhs
-        | LongShiftLeft -> B.long_shift_left b ~lhs ~rhs)
+        | LongShiftLeft -> B.long_shift_left b ~lhs ~rhs
+        | LongXor -> B.long_xor b ~lhs ~rhs)
     | Deref { addr; offset; size = Int } ->
         B.load32 b ~offset @@ lower_expr aliases addr
     | Deref { addr; offset; size = Float } ->
@@ -150,35 +156,40 @@ let lower_block max_block block_map local_vars block : Block.t =
   in
   let aliases =
     List.fold block.body ~init:StrMap.empty ~f:(fun aliases stmt ->
-        match stmt with
-        | Let { lhs; rhs } ->
-            B.try_change_var b lhs @@ lower_expr aliases rhs |> ignore;
-            aliases
-        | Alias { lhs; rhs } ->
-            Map.add_exn aliases ~key:lhs ~data:(lower_expr aliases rhs)
-        | Store { addr; offset; value; size = Int } ->
-            let addr = lower_expr aliases addr in
-            B.store32 b ~offset ~value:(lower_expr aliases value) ~addr;
-            aliases
-        | Store { addr; offset; value; size = Float } ->
-            let addr = lower_expr aliases addr in
-            B.float_store64 b ~offset ~value:(lower_expr aliases value) ~addr;
-            aliases
-        | Store { addr; offset; value; size = Long } ->
-            let addr = lower_expr aliases addr in
-            B.long_store64 b ~offset ~value:(lower_expr aliases value) ~addr;
-            aliases
-        | Store { addr; offset; value; size = Vec } ->
-            let addr = lower_expr aliases addr in
-            B.vec_store128 b ~offset ~value:(lower_expr aliases value) ~addr;
-            aliases
-        | Store8 { addr; offset; value } ->
-            let addr = lower_expr aliases addr in
-            B.store8 b ~offset ~value:(lower_expr aliases value) ~addr;
-            aliases
-        | If _ | Label _ | Goto _ | GotoId _ | Return ->
-            print_s @@ sexp_of_statement stmt;
-            failwith "bad")
+        try
+          match stmt with
+          | Let { lhs; rhs } ->
+              B.try_change_var b lhs @@ lower_expr aliases rhs |> ignore;
+              aliases
+          | Alias { lhs; rhs } ->
+              Map.add_exn aliases ~key:lhs ~data:(lower_expr aliases rhs)
+          | Store { addr; offset; value; size = Int } ->
+              let addr = lower_expr aliases addr in
+              B.store32 b ~offset ~value:(lower_expr aliases value) ~addr;
+              aliases
+          | Store { addr; offset; value; size = Float } ->
+              let addr = lower_expr aliases addr in
+              B.float_store64 b ~offset ~value:(lower_expr aliases value) ~addr;
+              aliases
+          | Store { addr; offset; value; size = Long } ->
+              let addr = lower_expr aliases addr in
+              B.long_store64 b ~offset ~value:(lower_expr aliases value) ~addr;
+              aliases
+          | Store { addr; offset; value; size = Vec } ->
+              let addr = lower_expr aliases addr in
+              B.vec_store128 b ~offset ~value:(lower_expr aliases value) ~addr;
+              aliases
+          | Store8 { addr; offset; value } ->
+              let addr = lower_expr aliases addr in
+              B.store8 b ~offset ~value:(lower_expr aliases value) ~addr;
+              aliases
+          | Store16 { addr; offset; value } ->
+              let addr = lower_expr aliases addr in
+              B.store16 b ~offset ~value:(lower_expr aliases value) ~addr;
+              aliases
+          | If _ | Label _ | Goto _ | GotoId _ | Return -> failwith "bad"
+        with e ->
+          Exn.reraise e @@ Sexp.to_string_hum @@ sexp_of_statement stmt)
   in
   let terminator : Block.terminator =
     match block.terminator with

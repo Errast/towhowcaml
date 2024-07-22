@@ -50,6 +50,9 @@ let string_of_token = function
   | WHILE -> "while"
   | TRUNC -> "trunc"
   | EXTEND -> "extend"
+  | BITCAST -> "bitcast"
+  | CLZ -> "clz"
+  | XOR -> "^"
   | REF_IDENT s | IDENT s | LABEL_IDENT s | GLOBAL_IDENT s -> s
 
 let token buf =
@@ -108,6 +111,9 @@ let token buf =
     | "while" -> WHILE
     | "trunc" -> TRUNC
     | "extend" -> EXTEND
+    | "bitcast" -> BITCAST
+    | "clz" -> CLZ
+    | '^' -> XOR
     | '%', Star ident_continue -> REF_IDENT (Utf8.lexeme buf)
     | '.', Star ident_continue -> LABEL_IDENT (Utf8.lexeme buf)
     | '@', Star ident_continue -> GLOBAL_IDENT (Utf8.lexeme buf)
