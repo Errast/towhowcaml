@@ -3,6 +3,7 @@ module T_Util = Util
 open Radatnet
 open Mir
 module B = Builder
+
 let vcount = ref 0
 
 type term_trans_result =
@@ -264,16 +265,28 @@ let load_operand_typed c src : Instr.ref * [> X86reg.gpr_type ] =
 let extend_unsigned c (instr, typ) =
   match typ with
   | `Reg32Bit -> instr
-  | `Reg16Bit -> vcount := !vcount + 1; B.zero_extend_16 c.builder instr
-  | `RegHigh8Bit -> vcount := !vcount + 1; B.zero_extend_high8 c.builder instr
-  | `RegLow8Bit -> vcount := !vcount + 1; B.zero_extend_low8 c.builder instr
+  | `Reg16Bit ->
+      vcount := !vcount + 1;
+      B.zero_extend_16 c.builder instr
+  | `RegHigh8Bit ->
+      vcount := !vcount + 1;
+      B.zero_extend_high8 c.builder instr
+  | `RegLow8Bit ->
+      vcount := !vcount + 1;
+      B.zero_extend_low8 c.builder instr
 
 let extend_signed c (instr, typ) =
   match typ with
   | `Reg32Bit -> instr
-  | `Reg16Bit -> vcount := !vcount + 1; B.sign_extend_16 c.builder instr
-  | `RegHigh8Bit -> vcount := !vcount + 1; B.sign_extend_high8 c.builder instr
-  | `RegLow8Bit -> vcount := !vcount + 1; B.sign_extend_low8 c.builder instr
+  | `Reg16Bit ->
+      vcount := !vcount + 1;
+      B.sign_extend_16 c.builder instr
+  | `RegHigh8Bit ->
+      vcount := !vcount + 1;
+      B.sign_extend_high8 c.builder instr
+  | `RegLow8Bit ->
+      vcount := !vcount + 1;
+      B.sign_extend_low8 c.builder instr
 
 let load_operand_s c src = load_operand_typed c src |> extend_signed c
 let load_operand_u c src = load_operand_typed c src |> extend_unsigned c
@@ -423,12 +436,13 @@ let write_fpu_stack_changes ~state ~builder =
       B.add builder ~varName:Util.fpu_stack_pointer
         ~lhs:(B.newest_var builder Util.fpu_stack_pointer)
         ~rhs:(B.const builder @@ (stack_head * int_of_float_size))
-      |> ignore)
+      |> ignore;
+    state.local_fpu_stack_height <- 0)
+  else assert (state.local_fpu_stack_height = 0)
 
 let write_globals state builder =
   write_fpu_stack_changes ~state ~builder;
-  B.store_globals builder;
-  state.local_fpu_stack_height <- 0
+  B.store_globals builder
 
 let translate_mov c =
   match operands c with
@@ -627,7 +641,7 @@ let translate_call_start c ~push_addr =
      B.store32 c.builder ~addr:esp ~value:(B.const c.builder c.opcode.address));
   write_globals c.state c.builder
 
-let translate_call_end _ = () 
+let translate_call_end _ = ()
 
 let translate_direct_call c func_name func_sig ~push_addr =
   translate_call_start c ~push_addr;
@@ -2280,8 +2294,12 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
         Nothing
   in
 
-  (* maybe this is not the right way to do this *)
-  write_globals state builder;
+  write_fpu_stack_changes ~state ~builder;
+  B.store_globals builder;
+  (* doesn't work *)
+  (* (match result with *)
+  (* | Return -> B.store_globals builder *)
+  (* | Nothing | Conditional _ | Unconditional _ | Switch _ -> ()); *)
   result
 
 let translate_output_condition builder state condition_opcode =
@@ -2290,4 +2308,7 @@ let translate_output_condition builder state condition_opcode =
   |> B.dup_var builder ~varName:Util.input_compare_arg Int
   |> ignore
 
-let print () = let c = !vcount in vcount := 0; c
+let print () =
+  let c = !vcount in
+  vcount := 0;
+  c

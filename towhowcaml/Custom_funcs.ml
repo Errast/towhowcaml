@@ -1,3 +1,9 @@
+let special = {|
+  fn func0x00461aa2(int esp) -> (int esp) {
+    
+  }
+|}
+
 let elbrun_code = {|
   fn __int_memset__(int dest val count) {
     int back_count back_dest main_count main_i, vec splat ->
@@ -29,12 +35,9 @@ let elbrun_code = {|
     } while back_count
   }
 
-  fn __int_diff__(int src dest count) -> (int s2 d2 c) {
+  fn __int_diff__(int src dest count) -> (int src dest count) {
     int src_end dest_end ->
-    if not count {
-      s2 = src
-      d2 = dest
-      c = 0
+    if eqz count {
       return
     }
 
@@ -44,9 +47,6 @@ let elbrun_code = {|
 
     loop {
       if load src != load dest {
-        s2 = src
-        d2 = dest
-        c = count
         return
       }
       src = src + 4
@@ -54,17 +54,14 @@ let elbrun_code = {|
       count = count - 1
     } while count
 
-    s2 = src_end
-    d2 = dest_end
-    c = 0
+    src = src_end
+    dest = dest_end
+    count = 0
   }
 
-  fn __byte_diff__(int src dest count) -> (int s2 d2 c) {
+  fn __byte_diff__(int src dest count) -> (int src dest count) {
     int src_end dest_end ->
-    if not count {
-      s2 = src
-      d2 = dest
-      c = 0
+    if eqz count {
       return
     }
 
@@ -73,9 +70,6 @@ let elbrun_code = {|
 
     loop {
       if load i8 src != load i8 dest { 
-        s2 = src
-        d2 = dest
-        c = count
         return
       }
 
@@ -84,9 +78,9 @@ let elbrun_code = {|
       count = count - 1
     } while count
     
-    s2 = src_end
-    d2 = dest_end
-    c = 0
+    src = src_end
+    dest = dest_end
+    count = 0
   }
 |}
 

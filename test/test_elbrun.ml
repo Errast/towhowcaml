@@ -27,7 +27,7 @@ let compile str =
              (lhs (Ref 5)) (rhs (Ref 6))))))
          (terminator
           (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 7))))
-         (roots ()))
+         (roots ((Ref 0) (Ref 1) (Ref 3))))
         ((id 1)
          (instrs
           ((0 (OutsideContext (var f) (typ Long))) (1 (LongConst __i64 11))
@@ -41,7 +41,7 @@ let compile str =
            (7 (UniOp (var __i32) (op LongToInt32) (operand (Ref 6))))
            (8 (Const __i32 15360))
            (9 (BiOp (var res_exp) (op Add) (lhs (Ref 7)) (rhs (Ref 8))))))
-         (terminator (Goto (Block 4))) (roots ()))
+         (terminator (Goto (Block 4))) (roots ((Ref 0) (Ref 4) (Ref 9))))
         ((id 2)
          (instrs
           ((0 (OutsideContext (var abs_f) (typ Long)))
@@ -51,7 +51,7 @@ let compile str =
              (lhs (Ref 0)) (rhs (Ref 1))))))
          (terminator
           (Branch (succeed (Block 3)) (fail (Block 4)) (condition (Ref 2))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 3)
          (instrs
           ((0 (OutsideContext (var f) (typ Long))) (1 (LongConst __i64 11))
@@ -59,14 +59,14 @@ let compile str =
            (3 (LongConst __i64 -9223372036854775808))
            (4 (BiOp (var res_mantissa) (op LongOr) (lhs (Ref 2)) (rhs (Ref 3))))
            (5 (Const res_exp 32767))))
-         (terminator (Goto (Block 4))) (roots ()))
+         (terminator (Goto (Block 4))) (roots ((Ref 0) (Ref 4) (Ref 5))))
         ((id 4)
          (instrs
           ((0 (OutsideContext (var abs_f) (typ Long))) (1 (LongConst __i64 0))
            (2 (BiOp (var __i32) (op LongNotEq) (lhs (Ref 0)) (rhs (Ref 1))))))
          (terminator
           (Branch (succeed (Block 5)) (fail (Block 6)) (condition (Ref 2))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 5)
          (instrs
           ((0 (OutsideContext (var abs_f) (typ Long)))
@@ -96,9 +96,10 @@ let compile str =
            (21 (LongConst __i64 -9223372036854775808))
            (22
             (BiOp (var res_mantissa) (op LongOr) (lhs (Ref 20)) (rhs (Ref 21))))))
-         (terminator (Goto (Block 7))) (roots ()))
+         (terminator (Goto (Block 7)))
+         (roots ((Ref 0) (Ref 18) (Ref 19) (Ref 22))))
         ((id 6) (instrs ((0 (Const res_exp 0)) (1 (LongConst res_mantissa 0))))
-         (terminator (Goto (Block 7))) (roots ()))
+         (terminator (Goto (Block 7))) (roots ((Ref 0) (Ref 1))))
         ((id 7)
          (instrs
           ((0 (OutsideContext (var dest_ptr) (typ Int)))
@@ -114,7 +115,7 @@ let compile str =
            (9 (BiOp (var __i32) (op And) (lhs (Ref 7)) (rhs (Ref 8))))
            (10 (BiOp (var res_exp) (op Or) (lhs (Ref 3)) (rhs (Ref 9))))
            (11 (StoreOp (op Store16) (addr (Ref 0)) (value (Ref 10)) (offset 8)))))
-         (terminator Return) (roots ((Ref 2) (Ref 11))))))
+         (terminator Return) (roots ((Ref 0) (Ref 1) (Ref 4) (Ref 10))))))
       (locals
        ((abs_f ((name abs_f) (typ Long))) (f ((name f) (typ Long)))
         (res_exp ((name res_exp) (typ Int)))
@@ -153,7 +154,7 @@ let compile str =
              (rhs (Ref 14))))))
          (terminator
           (Branch (succeed (Block 1)) (fail (Block 5)) (condition (Ref 15))))
-         (roots ()))
+         (roots ((Ref 0) (Ref 1) (Ref 3) (Ref 4) (Ref 6))))
         ((id 1)
          (instrs
           ((0 (OutsideContext (var upper_bits) (typ Int)))
@@ -176,13 +177,13 @@ let compile str =
              (lhs (Ref 10)) (rhs (Ref 11))))))
          (terminator
           (Branch (succeed (Block 2)) (fail (Block 3)) (condition (Ref 12))))
-         (roots ()))
+         (roots ((Ref 0) (Ref 4) (Ref 6) (Ref 7) (Ref 8) (Ref 10))))
         ((id 2)
          (instrs
           ((0 (OutsideContext (var result) (typ Long)))
            (1 (LongConst __i64 4611686018427387905))
            (2 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 1))))))
-         (terminator (Goto (Block 15))) (roots ()))
+         (terminator (Goto (Block 15))) (roots ((Ref 2))))
         ((id 3)
          (instrs
           ((0 (OutsideContext (var result) (typ Long)))
@@ -193,7 +194,7 @@ let compile str =
            (5 (BiOp (var __i64) (op LongEq) (lhs (Ref 3)) (rhs (Ref 4))))))
          (terminator
           (Branch (succeed (Block 4)) (fail (Block 15)) (condition (Ref 5))))
-         (roots ()))
+         (roots ((Ref 2) (Ref 3))))
         ((id 4)
          (instrs
           ((0 (OutsideContext (var result) (typ Long)))
@@ -201,7 +202,7 @@ let compile str =
            (2 (LongConst __i64 1))
            (3 (BiOp (var __i64) (op LongAnd) (lhs (Ref 1)) (rhs (Ref 2))))
            (4 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 3))))))
-         (terminator (Goto (Block 15))) (roots ()))
+         (terminator (Goto (Block 15))) (roots ((Ref 1) (Ref 4))))
         ((id 5)
          (instrs
           ((0 (OutsideContext (var lower_bits) (typ Long)))
@@ -212,7 +213,7 @@ let compile str =
            (6 (BiOp (var __i32) (op And) (lhs (Ref 2)) (rhs (Ref 5))))))
          (terminator
           (Branch (succeed (Block 6)) (fail (Block 7)) (condition (Ref 6))))
-         (roots ()))
+         (roots ((Ref 0) (Ref 3))))
         ((id 6)
          (instrs
           ((0 (OutsideContext (var lower_bits) (typ Long)))
@@ -220,7 +221,7 @@ let compile str =
            (2 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 0)) (rhs (Ref 1))))
            (3 (LongConst __i64 9221120237041090560))
            (4 (BiOp (var result) (op LongOr) (lhs (Ref 2)) (rhs (Ref 3))))))
-         (terminator (Goto (Block 15))) (roots ()))
+         (terminator (Goto (Block 15))) (roots ((Ref 0) (Ref 4))))
         ((id 7)
          (instrs
           ((0 (OutsideContext (var exponent) (typ Int))) (1 (Const __i32 17406))
@@ -229,9 +230,9 @@ let compile str =
              (rhs (Ref 1))))))
          (terminator
           (Branch (succeed (Block 8)) (fail (Block 9)) (condition (Ref 2))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 8) (instrs ((0 (LongConst result 9218868437227405312))))
-         (terminator (Goto (Block 15))) (roots ()))
+         (terminator (Goto (Block 15))) (roots ((Ref 0))))
         ((id 9)
          (instrs
           ((0 (OutsideContext (var exponent) (typ Int))) (1 (Const __i32 15297))
@@ -240,9 +241,9 @@ let compile str =
              (rhs (Ref 1))))))
          (terminator
           (Branch (succeed (Block 10)) (fail (Block 11)) (condition (Ref 2))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 10) (instrs ((0 (LongConst result 0))))
-         (terminator (Goto (Block 15))) (roots ()))
+         (terminator (Goto (Block 15))) (roots ((Ref 0))))
         ((id 11)
          (instrs
           ((0 (Const __i32 0)) (1 (OutsideContext (var upper_bits) (typ Int)))
@@ -272,12 +273,12 @@ let compile str =
              (lhs (Ref 16)) (rhs (Ref 17))))))
          (terminator
           (Branch (succeed (Block 12)) (fail (Block 13)) (condition (Ref 18))))
-         (roots ()))
+         (roots ((Ref 1) (Ref 6) (Ref 9) (Ref 16))))
         ((id 12)
          (instrs
           ((0 (OutsideContext (var result) (typ Long))) (1 (LongConst __i64 1))
            (2 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 1))))))
-         (terminator (Goto (Block 15))) (roots ()))
+         (terminator (Goto (Block 15))) (roots ((Ref 2))))
         ((id 13)
          (instrs
           ((0 (OutsideContext (var rounded_part) (typ Long)))
@@ -285,13 +286,13 @@ let compile str =
            (2 (BiOp (var __i64) (op LongEq) (lhs (Ref 0)) (rhs (Ref 1))))))
          (terminator
           (Branch (succeed (Block 14)) (fail (Block 15)) (condition (Ref 2))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 14)
          (instrs
           ((0 (OutsideContext (var result) (typ Long))) (1 (LongConst __i64 1))
            (2 (BiOp (var __i64) (op LongAnd) (lhs (Ref 0)) (rhs (Ref 1))))
            (3 (BiOp (var result) (op LongAdd) (lhs (Ref 0)) (rhs (Ref 2))))))
-         (terminator (Goto (Block 15))) (roots ()))
+         (terminator (Goto (Block 15))) (roots ((Ref 3))))
         ((id 15)
          (instrs
           ((0 (OutsideContext (var result) (typ Long)))
@@ -303,11 +304,11 @@ let compile str =
            (6 (BiOp (var __i64) (op LongShiftLeft) (lhs (Ref 4)) (rhs (Ref 5))))
            (7 (BiOp (var result) (op LongOr) (lhs (Ref 0)) (rhs (Ref 6))))
            (8 (UniOp (var res) (op BitcastInt64ToFloat) (operand (Ref 7))))))
-         (terminator Return) (roots ()))))
+         (terminator Return) (roots ((Ref 1) (Ref 7) (Ref 8))))))
       (locals
        ((exponent ((name exponent) (typ Int)))
         (lower_bits ((name lower_bits) (typ Long)))
-        (mantissa ((name mantissa) (typ Long)))
+        (mantissa ((name mantissa) (typ Long))) (res ((name res) (typ Float)))
         (res_mantissa ((name res_mantissa) (typ Long)))
         (result ((name result) (typ Long)))
         (rounded_part ((name rounded_part) (typ Long)))
@@ -329,7 +330,7 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
           ((0 (OutsideContext (var count) (typ Int)))
            (1 (UniOp (var __i32) (op EqualsZero) (operand (Ref 0))))))
          (terminator (BranchReturn (fail (Block 1)) (condition (Ref 1))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 1)
          (instrs
           ((0 (OutsideContext (var count) (typ Int))) (1 (Const __i32 4))
@@ -338,14 +339,14 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
              (rhs (Ref 1))))))
          (terminator
           (Branch (succeed (Block 2)) (fail (Block 3)) (condition (Ref 2))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 2)
          (instrs
           ((0 (OutsideContext (var count) (typ Int)))
            (1 (DupVar (var back_count) (src (Ref 0)) (typ Int)))
            (2 (OutsideContext (var dest) (typ Int)))
            (3 (DupVar (var back_dest) (src (Ref 2)) (typ Int)))))
-         (terminator (Goto (Block 6))) (roots ()))
+         (terminator (Goto (Block 6))) (roots ((Ref 0) (Ref 1) (Ref 2) (Ref 3))))
         ((id 3)
          (instrs
           ((0 (OutsideContext (var count) (typ Int))) (1 (Const __i32 3))
@@ -359,7 +360,9 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
            (9 (OutsideContext (var val) (typ Int)))
            (10 (VecSplatOp (var splat) (value (Ref 9)) (shape I32)))
            (11 (DupVar (var main_i) (src (Ref 4)) (typ Int)))))
-         (terminator (Goto (Block 4))) (roots ()))
+         (terminator (Goto (Block 4)))
+         (roots
+          ((Ref 0) (Ref 2) (Ref 4) (Ref 7) (Ref 8) (Ref 9) (Ref 10) (Ref 11))))
         ((id 4)
          (instrs
           ((0 (OutsideContext (var dest) (typ Int)))
@@ -371,14 +374,14 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
            (7 (BiOp (var main_i) (op Subtract) (lhs (Ref 5)) (rhs (Ref 6))))))
          (terminator
           (Branch (succeed (Block 4)) (fail (Block 5)) (condition (Ref 7))))
-         (roots ((Ref 2))))
+         (roots ((Ref 1) (Ref 4) (Ref 7))))
         ((id 5)
          (instrs
           ((0 (OutsideContext (var main_count) (typ Int)))
            (1 (OutsideContext (var count) (typ Int)))
            (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
          (terminator (BranchReturn (fail (Block 6)) (condition (Ref 2))))
-         (roots ()))
+         (roots ((Ref 0) (Ref 1))))
         ((id 6)
          (instrs
           ((0 (OutsideContext (var back_dest) (typ Int)))
@@ -390,7 +393,7 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
            (7 (BiOp (var back_count) (op Subtract) (lhs (Ref 5)) (rhs (Ref 6))))))
          (terminator
           (Branch (succeed (Block 6)) (fail (Block 7)) (condition (Ref 7))))
-         (roots ((Ref 2))))))
+         (roots ((Ref 1) (Ref 4) (Ref 7))))))
       (locals
        ((back_count ((name back_count) (typ Int)))
         (back_dest ((name back_dest) (typ Int)))
@@ -402,23 +405,16 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
          (((name src) (typ Int)) ((name dest) (typ Int))
           ((name count) (typ Int))))
         (returns
-         (((name s2) (typ Int)) ((name d2) (typ Int)) ((name c) (typ Int))))))
+         (((name src) (typ Int)) ((name dest) (typ Int))
+          ((name count) (typ Int))))))
       (blocks
        (((id 0)
          (instrs
           ((0 (OutsideContext (var count) (typ Int)))
            (1 (UniOp (var __i32) (op EqualsZero) (operand (Ref 0))))))
-         (terminator
-          (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 1))))
-         (roots ()))
+         (terminator (BranchReturn (fail (Block 1)) (condition (Ref 1))))
+         (roots ((Ref 0))))
         ((id 1)
-         (instrs
-          ((0 (OutsideContext (var src) (typ Int)))
-           (1 (DupVar (var s2) (src (Ref 0)) (typ Int)))
-           (2 (OutsideContext (var dest) (typ Int)))
-           (3 (DupVar (var d2) (src (Ref 2)) (typ Int))) (4 (Const c 0))))
-         (terminator Return) (roots ()))
-        ((id 2)
          (instrs
           ((0 (OutsideContext (var count) (typ Int))) (1 (Const __i32 2))
            (2 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 0)) (rhs (Ref 1))))
@@ -426,27 +422,18 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
            (4 (BiOp (var src_end) (op Add) (lhs (Ref 3)) (rhs (Ref 2))))
            (5 (OutsideContext (var dest) (typ Int)))
            (6 (BiOp (var dest_end) (op Add) (lhs (Ref 5)) (rhs (Ref 2))))))
-         (terminator (Goto (Block 3))) (roots ()))
-        ((id 3)
+         (terminator (Goto (Block 2)))
+         (roots ((Ref 0) (Ref 3) (Ref 4) (Ref 5) (Ref 6))))
+        ((id 2)
          (instrs
           ((0 (OutsideContext (var src) (typ Int)))
            (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))
            (2 (OutsideContext (var dest) (typ Int)))
            (3 (LoadOp (var __i32) (op Load32) (addr (Ref 2))))
            (4 (BiOp (var __i32) (op NotEqual) (lhs (Ref 1)) (rhs (Ref 3))))))
-         (terminator
-          (Branch (succeed (Block 4)) (fail (Block 5)) (condition (Ref 4))))
-         (roots ()))
-        ((id 4)
-         (instrs
-          ((0 (OutsideContext (var src) (typ Int)))
-           (1 (DupVar (var s2) (src (Ref 0)) (typ Int)))
-           (2 (OutsideContext (var dest) (typ Int)))
-           (3 (DupVar (var d2) (src (Ref 2)) (typ Int)))
-           (4 (OutsideContext (var count) (typ Int)))
-           (5 (DupVar (var c) (src (Ref 4)) (typ Int)))))
-         (terminator Return) (roots ()))
-        ((id 5)
+         (terminator (BranchReturn (fail (Block 3)) (condition (Ref 4))))
+         (roots ((Ref 0) (Ref 2))))
+        ((id 3)
          (instrs
           ((0 (OutsideContext (var src) (typ Int))) (1 (Const __i32 4))
            (2 (BiOp (var src) (op Add) (lhs (Ref 0)) (rhs (Ref 1))))
@@ -455,15 +442,15 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
            (6 (OutsideContext (var count) (typ Int))) (7 (Const __i32 1))
            (8 (BiOp (var count) (op Subtract) (lhs (Ref 6)) (rhs (Ref 7))))))
          (terminator
-          (Branch (succeed (Block 3)) (fail (Block 6)) (condition (Ref 8))))
-         (roots ()))
-        ((id 6)
+          (Branch (succeed (Block 2)) (fail (Block 4)) (condition (Ref 8))))
+         (roots ((Ref 2) (Ref 5) (Ref 8))))
+        ((id 4)
          (instrs
           ((0 (OutsideContext (var src_end) (typ Int)))
-           (1 (DupVar (var s2) (src (Ref 0)) (typ Int)))
+           (1 (DupVar (var src) (src (Ref 0)) (typ Int)))
            (2 (OutsideContext (var dest_end) (typ Int)))
-           (3 (DupVar (var d2) (src (Ref 2)) (typ Int))) (4 (Const c 0))))
-         (terminator Return) (roots ()))))
+           (3 (DupVar (var dest) (src (Ref 2)) (typ Int))) (4 (Const count 0))))
+         (terminator Return) (roots ((Ref 0) (Ref 1) (Ref 2) (Ref 3) (Ref 4))))))
       (locals
        ((dest_end ((name dest_end) (typ Int)))
         (src_end ((name src_end) (typ Int))))))
@@ -473,31 +460,25 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
          (((name src) (typ Int)) ((name dest) (typ Int))
           ((name count) (typ Int))))
         (returns
-         (((name s2) (typ Int)) ((name d2) (typ Int)) ((name c) (typ Int))))))
+         (((name src) (typ Int)) ((name dest) (typ Int))
+          ((name count) (typ Int))))))
       (blocks
        (((id 0)
          (instrs
           ((0 (OutsideContext (var count) (typ Int)))
            (1 (UniOp (var __i32) (op EqualsZero) (operand (Ref 0))))))
-         (terminator
-          (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 1))))
-         (roots ()))
+         (terminator (BranchReturn (fail (Block 1)) (condition (Ref 1))))
+         (roots ((Ref 0))))
         ((id 1)
-         (instrs
-          ((0 (OutsideContext (var src) (typ Int)))
-           (1 (DupVar (var s2) (src (Ref 0)) (typ Int)))
-           (2 (OutsideContext (var dest) (typ Int)))
-           (3 (DupVar (var d2) (src (Ref 2)) (typ Int))) (4 (Const c 0))))
-         (terminator Return) (roots ()))
-        ((id 2)
          (instrs
           ((0 (OutsideContext (var src) (typ Int)))
            (1 (OutsideContext (var count) (typ Int)))
            (2 (BiOp (var src_end) (op Add) (lhs (Ref 0)) (rhs (Ref 1))))
            (3 (OutsideContext (var dest) (typ Int)))
            (4 (BiOp (var dest_end) (op Add) (lhs (Ref 3)) (rhs (Ref 1))))))
-         (terminator (Goto (Block 3))) (roots ()))
-        ((id 3)
+         (terminator (Goto (Block 2)))
+         (roots ((Ref 0) (Ref 1) (Ref 2) (Ref 3) (Ref 4))))
+        ((id 2)
          (instrs
           ((0 (OutsideContext (var src) (typ Int)))
            (1
@@ -506,19 +487,9 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
            (3
             (SignedLoadOp (var __i32) (op Load8) (addr (Ref 2)) (signed false)))
            (4 (BiOp (var __i32) (op NotEqual) (lhs (Ref 1)) (rhs (Ref 3))))))
-         (terminator
-          (Branch (succeed (Block 4)) (fail (Block 5)) (condition (Ref 4))))
-         (roots ()))
-        ((id 4)
-         (instrs
-          ((0 (OutsideContext (var src) (typ Int)))
-           (1 (DupVar (var s2) (src (Ref 0)) (typ Int)))
-           (2 (OutsideContext (var dest) (typ Int)))
-           (3 (DupVar (var d2) (src (Ref 2)) (typ Int)))
-           (4 (OutsideContext (var count) (typ Int)))
-           (5 (DupVar (var c) (src (Ref 4)) (typ Int)))))
-         (terminator Return) (roots ()))
-        ((id 5)
+         (terminator (BranchReturn (fail (Block 3)) (condition (Ref 4))))
+         (roots ((Ref 0) (Ref 2))))
+        ((id 3)
          (instrs
           ((0 (OutsideContext (var src) (typ Int))) (1 (Const __i32 1))
            (2 (BiOp (var src) (op Add) (lhs (Ref 0)) (rhs (Ref 1))))
@@ -527,15 +498,15 @@ let%expect_test "memset" = compile Towhowcaml.elbrun_code;
            (6 (OutsideContext (var count) (typ Int))) (7 (Const __i32 1))
            (8 (BiOp (var count) (op Subtract) (lhs (Ref 6)) (rhs (Ref 7))))))
          (terminator
-          (Branch (succeed (Block 3)) (fail (Block 6)) (condition (Ref 8))))
-         (roots ()))
-        ((id 6)
+          (Branch (succeed (Block 2)) (fail (Block 4)) (condition (Ref 8))))
+         (roots ((Ref 2) (Ref 5) (Ref 8))))
+        ((id 4)
          (instrs
           ((0 (OutsideContext (var src_end) (typ Int)))
-           (1 (DupVar (var s2) (src (Ref 0)) (typ Int)))
+           (1 (DupVar (var src) (src (Ref 0)) (typ Int)))
            (2 (OutsideContext (var dest_end) (typ Int)))
-           (3 (DupVar (var d2) (src (Ref 2)) (typ Int))) (4 (Const c 0))))
-         (terminator Return) (roots ()))))
+           (3 (DupVar (var dest) (src (Ref 2)) (typ Int))) (4 (Const count 0))))
+         (terminator Return) (roots ((Ref 0) (Ref 1) (Ref 2) (Ref 3) (Ref 4))))))
       (locals
        ((dest_end ((name dest_end) (typ Int)))
         (src_end ((name src_end) (typ Int)))))))
@@ -570,19 +541,19 @@ let%expect_test "basic" =
            (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))))
          (terminator
           (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 2))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 1)
          (instrs
           ((0 (OutsideContext (var a2) (typ Int)))
            (1 (DupVar (var r1) (src (Ref 0)) (typ Int)))))
-         (terminator (Goto (Block 5))) (roots ()))
+         (terminator (Goto (Block 5))) (roots ((Ref 0) (Ref 1))))
         ((id 2)
          (instrs
           ((0 (OutsideContext (var a1) (typ Int)))
            (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))))
          (terminator
           (Branch (succeed (Block 3)) (fail (Block 4)) (condition (Ref 1))))
-         (roots ()))
+         (roots ((Ref 0))))
         ((id 3)
          (instrs
           ((0 (OutsideContext (var a3) (typ Int)))
@@ -593,12 +564,12 @@ let%expect_test "basic" =
            (5 (Const __i32 4))
            (6 (BiOp (var __i32) (op Subtract) (lhs (Ref 4)) (rhs (Ref 5))))
            (7 (StoreOp (op Store32) (addr (Ref 2)) (value (Ref 6)) (offset 4)))))
-         (terminator (Goto (Block 5))) (roots ((Ref 7))))
+         (terminator (Goto (Block 5))) (roots ((Ref 0) (Ref 1) (Ref 2) (Ref 3))))
         ((id 4)
          (instrs
           ((0 (OutsideContext (var a3) (typ Int)))
            (1 (DupVar (var r1) (src (Ref 0)) (typ Int)))))
-         (terminator (Goto (Block 5))) (roots ()))
+         (terminator (Goto (Block 5))) (roots ((Ref 0) (Ref 1))))
         ((id 5)
          (instrs
           ((0 (OutsideContext (var a1) (typ Int)))
@@ -610,6 +581,6 @@ let%expect_test "basic" =
            (6 (BiOp (var __i32) (op Subtract) (lhs (Ref 4)) (rhs (Ref 5))))
            (7 (OutsideContext (var a3) (typ Int)))
            (8 (BiOp (var r2) (op Add) (lhs (Ref 6)) (rhs (Ref 7))))))
-         (terminator Return) (roots ()))))
-      (locals ())))
+         (terminator Return) (roots ((Ref 0) (Ref 5) (Ref 7) (Ref 8))))))
+      (locals ((r1 ((name r1) (typ Int))) (r2 ((name r2) (typ Int)))))))
     |}]

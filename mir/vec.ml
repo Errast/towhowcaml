@@ -20,6 +20,10 @@ let init length ?(cap = length) f =
   done;
   { array; length }
 
+let clear vec = 
+  Option_array.clear vec.array;
+  vec.length <- 0
+
 let length vec = vec.length
 let valid_index vec i = i < length vec
 

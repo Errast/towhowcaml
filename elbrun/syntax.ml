@@ -76,7 +76,7 @@ type statement =
 type func_def = {
   name : string;
   signature : Mir.func_sig;
-  locals : Mir.variable list;
+  locals : Mir.Builder.local list;
   body : statement list;
 }
 [@@deriving sexp]

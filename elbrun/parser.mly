@@ -53,13 +53,19 @@ main: defs = list(func_def); EOF { defs }
 func_def: FN; name=IDENT; 
   "(" args=separated_list(COMMA,var_decl); ")" 
   rets=func_def_return
-  "{" locals=loption(terminated(separated_list(COMMA,var_decl), "->")) 
+  "{" locals=loption(terminated(separated_list(COMMA,local_decl), "->")) 
   body=statements "}" 
   { {name;signature={args=List.concat args;returns=List.concat rets};locals=List.concat locals;body} }
 
 func_def_return: { [] } | "->" "(" rets=separated_list(COMMA,var_decl) ")" { rets }
 
 var_decl: typ=prim_typ; vars=list(IDENT) { List.map vars ~f:(fun i -> {typ;name=i}) }
+
+local_decl: typ=prim_typ; vars=nonempty_list(local_ident) { List.map vars ~f:(fun (s,i) -> {Mir.Builder.typ;name=i;scope=s}) }
+local_ident:
+  | IDENT { (`Local, $1) }
+  | GLOBAL_IDENT { (`Global, $1) }
+
 
 prim_typ:
   | INT { Int }
@@ -73,16 +79,20 @@ statements:
 
 statement:
 	| lhs=IDENT; "=" rhs=expr  { [Let {lhs;rhs}] }
+	| lhs=GLOBAL_IDENT; "=" rhs=expr  { [Let {lhs;rhs}] }
     | lhs=REF_IDENT; "=" rhs=expr { [Alias {lhs;rhs}] }
 	| STORE offset=preceded(":", NUMBER)? size=size addr=expr "," value=expr { [Store {addr=addr;offset=or_zero offset;value;size}] }
 	| STORE offset=preceded(":", NUMBER)? I8 addr=expr "," value=expr { [Store8 {addr=addr;offset=or_zero offset;value}] }
 	| STORE offset=preceded(":", NUMBER)? I16 addr=expr "," value=expr { [Store16 {addr=addr;offset=or_zero offset;value}] }
     | if_statement { $1 }
 	| LABEL_IDENT COLON { [Label $1] }
+    | return { $1 }
     | GO LABEL_IDENT { [Goto $2] }
-    | RETURN { [Return] }
     | LOOP "{" body=statements "}" WHILE cond=expr { let l = fresh () in 
          If{cond;t=[Goto l];f=[]}::(body @ [Label l]) }
+
+return:
+  | RETURN { [Return] }
 
 if_statement:
   | IF cond=expr; t=if_true_body ELSE f=if_statement { [If {cond;t;f}] }
@@ -90,7 +100,7 @@ if_statement:
   | IF cond=expr; t=if_true_body { [If {cond;t;f=[]}]}
 
 if_true_body: 
-  | RETURN { [Return] }
+  | return { $1 }
   | if_body { $1 }
 
 if_body:
@@ -158,6 +168,7 @@ expr_atomic:
   | NUMBER { Const $1 }
   | NUMBER LONG { LongConst $1 }
   | v=IDENT { Var v }
+  | v=GLOBAL_IDENT { Var v }
   | v=REF_IDENT { Use v }
   | LOAD offset=preceded(":", NUMBER)? size=size addr=expr_atomic { Deref {addr;offset=or_zero offset;size} }
   | LOAD offset=preceded(":",NUMBER)? I8 signed=boption("!") addr=expr_atomic { Deref8 (addr,signed,or_zero offset) }

@@ -94,7 +94,7 @@ let token buf =
     | "!=" -> NOT_EQ
     | '&' -> AMPERSAND
     | '|' -> PIPE
-    | "not" -> NOT
+    | "not"| "eqz" -> NOT
     | "<<" -> SHIFT_LEFT
     | ">>" -> SHIFT_RIGHT
     | '<' -> LANGLE

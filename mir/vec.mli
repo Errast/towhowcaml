@@ -5,6 +5,7 @@ type !'a t
 val empty : unit -> 'a t
 val create : ?cap:int -> unit -> 'a t
 val init : int -> ?cap:int -> (int -> 'a) -> 'a t
+val clear : 'a t -> unit
 val get : 'a t -> int -> 'a
 val get_opt : 'a t -> int -> 'a option
 val unsafe_get : 'a t -> int -> 'a

@@ -80,7 +80,7 @@ let separate_blocks statements =
     count,
     block_map )
 
-let lower_block max_block block_map local_vars block : Block.t =
+let lower_block max_block block_map local_vars used_locals block : Block.t =
   let b = B.create local_vars in
   let bind_block : unbound_branch_target -> branch_target = function
     | Block i -> Block (max_block - i)
@@ -207,7 +207,11 @@ let lower_block max_block block_map local_vars block : Block.t =
           { condition = lower_expr aliases cond; fail = bind_block f }
   in
   if Poly.(terminator = Return) then B.store_globals b;
-  let instrs, _, _, roots = B.deconstruct b in
+  let instrs, locals, _, roots = B.deconstruct b in
+  Hashtbl.iteri locals ~f:(fun ~key ~data ->
+      if not @@ B.is_temp key then
+        Hashtbl.add used_locals ~key ~data:{ name = key; typ = data.typ }
+        |> ignore);
   { id = max_block - block.id; instrs; roots; terminator }
 
 let lower : func_def -> Mir.Func.t =
@@ -217,21 +221,21 @@ let lower : func_def -> Mir.Func.t =
     Map.of_alist_exn (module String)
     @@ List.map
          ~f:(fun v ->
-           (v.name, { B.name = v.name; scope = `Local; typ = v.typ }))
-         (func_def.signature.returns @ func_def.signature.args @ func_def.locals)
+           (v.name, { B.name = v.name; typ = v.typ; scope = `Local }))
+         (func_def.signature.returns @ func_def.signature.args |> List.stable_dedup ~compare:(Mir.compare_variable))
+    @ List.map ~f:(fun v -> (v.name, v)) func_def.locals
   in
+  let used_locals = Hashtbl.create (module String) in
   let blocks =
     Array.Permissioned.of_list_map
-      ~f:(lower_block max_block block_map local_vars)
+      ~f:(lower_block max_block block_map local_vars used_locals)
       blocks
   in
+  List.iter func_def.signature.args ~f:(fun v ->
+      Hashtbl.remove used_locals v.name);
   {
     name = func_def.name;
     blocks;
     signature = func_def.signature;
-    locals =
-      Map.of_list_with_key_exn
-        (module String)
-        ~get_key:(fun v -> v.name)
-        func_def.locals;
+    locals = Map.of_hashtbl_exn (module String) used_locals;
   }

@@ -226,15 +226,8 @@ let add_used_local used_locals ident typ =
 
 let to_mir_block used_locals b =
   let instrs, current_vars, _, roots = Mir.Builder.deconstruct b.builder in
-  let roots =
-    Hashtbl.fold
-      ~f:(fun ~key ~data roots ->
-        if Mir.Builder.is_temp key then roots
-        else (
-          add_used_local used_locals key data.typ;
-          Set.add roots data.index))
-      ~init:roots current_vars
-  in
+  Hashtbl.iteri current_vars ~f:(fun ~key ~data ->
+      add_used_local used_locals key data.typ);
   let roots =
     match b.terminator with
     | Branch { condition; _ } | Switch { switch_on = condition; _ } ->
@@ -339,8 +332,6 @@ let translate ~intrinsics ~name ~(blocks : block array) =
   let mir_blocks =
     AP.of_array_id block_data |> AP.map ~f:(to_mir_block used_locals)
   in
-  (let c = Instr_translator.print () in
-   if c > 0 then printf "%s %d  |  " name c);
   Func.
     {
       name;

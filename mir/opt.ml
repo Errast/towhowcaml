@@ -14,10 +14,18 @@ let unref (Ref i) = i
 let decref uses (Ref i) = uses.(i) <- uses.(i) - 1
 let incref uses (Ref i) = uses.(i) <- uses.(i) + 1
 
-let count_uses instrs roots =
+let count_uses instrs roots terminator =
   let use_map = Array.create ~len:(Array.length instrs) 0 in
-  Array.iter instrs ~f:(Instr.iter (incref use_map));
+  Array.iteri instrs ~f:(fun i instr ->
+      Instr.iter (incref use_map) instr;
+      if not @@ is_pure instr then use_map.(i) <- use_map.(i) + 1);
   Set.iter roots ~f:(incref use_map);
+  (match terminator with
+  | Block.Goto _ | Return -> ()
+  | Branch { condition = i; _ }
+  | BranchReturn { condition = i; _ }
+  | Switch { switch_on = i; _ } ->
+      incref use_map i);
   use_map
 
 let wl_append wl a = wl := a :: !wl
@@ -104,9 +112,6 @@ let peephole_const c instr =
         | GreaterThan -> const_s lhs > const_s rhs |> int_of_bool |> mk
         | GreaterThanEqual -> const_s lhs >= const_s rhs |> int_of_bool |> mk
         | _ -> instr)
-    | AssertOp { condition } ->
-        if const condition <> 0 then Nop
-        else raise_s [%message "always-fail assert" (instr : Instr.t)]
     | _ -> instr
   with Escape -> instr
 
@@ -296,21 +301,21 @@ let peephole_opts c wl i =
       in
       match c.instrs.(unref r.lane_value) with
       (* | VecExtractLaneOp ({ shape = `I64 | `F64; _ } as e) -> *)
-          (* let ctrl_h, ctrl_l = *)
-            (* match (r.lane, e.lane) with *)
-            (* | 0, 0 -> (0x0F_0E_0D_0C_0B_0A_09_08L, 0x17_16_15_14_13_12_11_10L) *)
-            (* | _, 0 -> (0x17_16_15_14_13_12_11_10L, 0x07_06_05_04_03_02_01_00L) *)
-            (* | 0, _ -> (0x0F_0E_0D_0C_0B_0A_09_08L, 0x1F_1E_1D_1C_1B_1A_19_18L) *)
-            (* | _, _ -> (0x1F_1E_1D_1C_1B_1A_19_18L, 0x07_06_05_04_03_02_01_00L) *)
-          (* in *)
-          (* VecShuffleOp *)
-            (* { *)
-              (* var = r.var; *)
-              (* arg1 = new_dest; *)
-              (* arg2 = e.src; *)
-              (* control_upper_bits = ctrl_h; *)
-              (* control_lower_bits = ctrl_l; *)
-            (* } *)
+      (* let ctrl_h, ctrl_l = *)
+      (* match (r.lane, e.lane) with *)
+      (* | 0, 0 -> (0x0F_0E_0D_0C_0B_0A_09_08L, 0x17_16_15_14_13_12_11_10L) *)
+      (* | _, 0 -> (0x17_16_15_14_13_12_11_10L, 0x07_06_05_04_03_02_01_00L) *)
+      (* | 0, _ -> (0x0F_0E_0D_0C_0B_0A_09_08L, 0x1F_1E_1D_1C_1B_1A_19_18L) *)
+      (* | _, _ -> (0x1F_1E_1D_1C_1B_1A_19_18L, 0x07_06_05_04_03_02_01_00L) *)
+      (* in *)
+      (* VecShuffleOp *)
+      (* { *)
+      (* var = r.var; *)
+      (* arg1 = new_dest; *)
+      (* arg2 = e.src; *)
+      (* control_upper_bits = ctrl_h; *)
+      (* control_lower_bits = ctrl_l; *)
+      (* } *)
       | _ ->
           if Ref.equal new_dest dest then peephole_const c i
           else VecReplaceLaneOp { r with dest = new_dest })
@@ -359,10 +364,25 @@ let dead_instrs c =
 let opt (block : Block.t) =
   let instrs = AP.to_array block.instrs in
   let c =
-    { instrs; uses = count_uses instrs block.roots; roots = block.roots }
+    {
+      instrs;
+      uses = count_uses instrs block.roots block.terminator;
+      roots = block.roots;
+    }
   in
   peephole c;
-  assert (equal_array equal_int c.uses @@ count_uses instrs block.roots);
+  if
+    not
+    @@ equal_array equal_int c.uses
+    @@ count_uses instrs block.roots block.terminator
+  then (
+    print_s @@ sexp_of_array sexp_of_int c.uses;
+    print_s @@ sexp_of_array sexp_of_int
+    @@ count_uses instrs block.roots block.terminator;
+    print_s @@ sexp_of_array Instr.sexp_of_t instrs;
+    failwith "bcc");
   dead_instrs c;
-  assert (equal_array equal_int c.uses @@ count_uses instrs block.roots);
+  assert (
+    equal_array equal_int c.uses
+    @@ count_uses instrs block.roots block.terminator);
   { block with instrs = AP.of_array instrs }

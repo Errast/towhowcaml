@@ -7,7 +7,7 @@ val vec_temp : ident
 val int_temp : ident
 val is_temp : ident -> bool
 
-type local = { name : string; scope : [ `Local | `Global ]; typ : local_type }
+type local = { name : string; scope : [ `Local | `Global ]; typ : local_type } [@@deriving sexp]
 
 type t [@@deriving sexp_of]
 

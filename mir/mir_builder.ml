@@ -2,18 +2,15 @@ open! Core
 open Types
 
 type local = { name : string; scope : [ `Local | `Global ]; typ : local_type }
+[@@deriving sexp]
 
 type t = {
   instrs : Instr_list.builder;
   currentVar : (ident, Local_info.t) Hashtbl.t;
   locals : (local Map.M(String).t[@sexp.opaque]);
-  mutable roots : Set.M(Instr.Ref).t;
   mutable check_var_is_latest : bool;
 }
 [@@deriving sexp_of]
-
-let deconstruct { instrs; currentVar; locals; roots; _ } =
-  (Vec.to_perm_array instrs, currentVar, locals, roots)
 
 let get_instr t (Instr.Ref.Ref i) = Vec.get t.instrs i
 let set_check_var_is_latest t b = t.check_var_is_latest <- b
@@ -40,17 +37,22 @@ let create locals =
         (vec_temp, mk_temp Vec `Local);
       ]
   in
-  {
-    instrs = Vec.create ();
-    currentVar;
-    locals;
-    roots = Set.empty (module Instr.Ref);
-    check_var_is_latest = true;
-  }
+  { instrs = Vec.create (); currentVar; locals; check_var_is_latest = true }
+
+let deconstruct { instrs; currentVar; locals; _ } =
+  Hashtbl.filter_keys_inplace currentVar ~f:(fun v -> not @@ is_temp v);
+  let roots =
+    Hashtbl.data currentVar
+    |> List.map ~f:(fun v -> v.index)
+    |> Set.of_list (module Instr.Ref)
+  in
+  let instr_array = Vec.to_perm_array instrs in
+  Vec.clear instrs;
+  (* hopefully break things *)
+  (instr_array, currentVar, locals, roots)
 
 let add_instr t instr =
   let instr_ref = Instr.Ref.Ref (Vec.length t.instrs) in
-  if not @@ Instr.is_pure instr then t.roots <- Set.add t.roots instr_ref;
   Vec.add t.instrs instr;
   instr_ref
 

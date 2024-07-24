@@ -14,7 +14,7 @@ type terminator =
       default : branch_target;
       switch_on : Instr.Ref.t;
     }
-  | Return
+  | Return 
 [@@deriving sexp]
 
 type t = {
