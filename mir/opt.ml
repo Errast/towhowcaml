@@ -356,6 +356,16 @@ let dead_instrs c =
   let uses = c.uses in
   for i = A.length c.instrs - 1 downto 0 do
     let instr = A.get c.instrs i in
+    (match instr with
+    | AssertOp { condition } -> (
+        match c.instrs.(unref condition) with
+        | Const (_, const) ->
+            if const <> 0 then (
+              uses.(i) <- 0;
+              c.instrs.(i) <- Nop)
+            else raise_s [%message "always-fail assert" (instr : Instr.t)]
+        | _ -> ())
+    | _ -> ());
     if uses.(i) = 0 then (
       Instr.iter (decref c.uses) instr;
       c.instrs.(i) <- Nop)
@@ -371,16 +381,9 @@ let opt (block : Block.t) =
     }
   in
   peephole c;
-  if
-    not
-    @@ equal_array equal_int c.uses
-    @@ count_uses instrs block.roots block.terminator
-  then (
-    print_s @@ sexp_of_array sexp_of_int c.uses;
-    print_s @@ sexp_of_array sexp_of_int
-    @@ count_uses instrs block.roots block.terminator;
-    print_s @@ sexp_of_array Instr.sexp_of_t instrs;
-    failwith "bcc");
+  assert (
+    equal_array equal_int c.uses
+    @@ count_uses instrs block.roots block.terminator);
   dead_instrs c;
   assert (
     equal_array equal_int c.uses
