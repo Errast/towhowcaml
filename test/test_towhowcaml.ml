@@ -2005,7 +2005,7 @@ let%expect_test "rcr" =
        (2
         (SignedBiOp (var ecx) (op ShiftRight) (signed false) (lhs (Ref 0))
          (rhs (Ref 1))))
-       (3 Nop) (4 (AssertOp (condition (Ref 1)))) (5 (Const __i32 31))
+       (3 Nop) (4 Nop) (5 (Const __i32 31))
        (6 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 0)) (rhs (Ref 5))))
        (7 (GetGlobalOp (var ebx) (global ((name ebx) (typ Int)))))
        (8 (Const __i32 1))
@@ -2018,7 +2018,7 @@ let%expect_test "rcr" =
        (13
         (SignedBiOp (var edx) (op ShiftRight) (signed false) (lhs (Ref 11))
          (rhs (Ref 12))))
-       (14 Nop) (15 (AssertOp (condition (Ref 12)))) (16 (Const __i32 31))
+       (14 Nop) (15 Nop) (16 (Const __i32 31))
        (17 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 11)) (rhs (Ref 16))))
        (18 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
        (19 (Const __i32 1))
