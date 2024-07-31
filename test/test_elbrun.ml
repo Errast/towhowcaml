@@ -516,7 +516,7 @@ let%expect_test "basic" =
   compile
     {|
   fn test(int a1 a2 a3) -> (int r1 r2) {
-    if a1 - 1 {
+    if (a1 - 1) >> 2 {
       r1 = a2
     } else if load a1 {
         r1 = a3
@@ -525,7 +525,7 @@ let%expect_test "basic" =
       r1 = a3
    
     }
-    r2 = a1 + (load a1 * 3) - a2 + a3
+    r2 = a1 + load a1 * 3 - a2 + a3
   }
   |};
   [%expect {|
@@ -538,9 +538,13 @@ let%expect_test "basic" =
        (((id 0)
          (instrs
           ((0 (OutsideContext (var a1) (typ Int))) (1 (Const __i32 1))
-           (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))))
+           (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))
+           (3 (Const __i32 2))
+           (4
+            (SignedBiOp (var __i32) (op ShiftRight) (signed false) (lhs (Ref 2))
+             (rhs (Ref 3))))))
          (terminator
-          (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 2))))
+          (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 4))))
          (roots ((Ref 0))))
         ((id 1)
          (instrs

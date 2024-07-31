@@ -48,6 +48,12 @@ let fresh = let i = ref 0 in fun () -> i := !i + 1; string_of_int !i
 
 %start <func_def list> main
 %%
+
+(* something of a hack to have partial precedence ordering *)
+%inline or_atom(X):
+  | expr_atomic { $1 }
+  | X { $1 }
+
 main: defs = list(func_def); EOF { defs }
 
 func_def: FN; name=IDENT; 
@@ -107,16 +113,20 @@ if_body:
   | GO LABEL_IDENT { [Goto $2] }
   | "{" stmts=statements "}" { stmts }
 
-expr: eq_expr { $1 }
+expr: 
+  | eq_expr { $1 }
+  | bit_expr1 { $1 }
+  | arith_expr1 { $1 }
+  | shift_expr { $1 }
+  | expr_atomic { $1 }
 
 eq_expr: 
-  | lhs=bit_expr1 "==" rhs=bit_expr1 { BiOp(Eq,lhs,rhs) }
-  | lhs=bit_expr1 "!=" rhs=bit_expr1 { BiOp(NotEq,lhs,rhs) }
-  | lhs=bit_expr1 "==" LONG rhs=bit_expr1 { BiOp(LongEq,lhs,rhs) }
-  | lhs=bit_expr1 "!=" LONG rhs=bit_expr1 { BiOp(LongNotEq,lhs,rhs) }
-  | lhs=bit_expr1 op=comp_op signed=boption("!") rhs=bit_expr1 { SignBiOp {op;lhs;rhs;signed} }
-  | lhs=bit_expr1 op=long_comp_op LONG signed=boption("!") rhs=bit_expr1 { SignBiOp {op;lhs;rhs;signed} }
-  | bit_expr1 { $1 }
+  | lhs=expr_atomic "==" rhs=expr_atomic { BiOp(Eq,lhs,rhs) }
+  | lhs=expr_atomic "!=" rhs=expr_atomic { BiOp(NotEq,lhs,rhs) }
+  | lhs=expr_atomic "==" LONG rhs=expr_atomic { BiOp(LongEq,lhs,rhs) }
+  | lhs=expr_atomic "!=" LONG rhs=expr_atomic { BiOp(LongNotEq,lhs,rhs) }
+  | lhs=expr_atomic op=comp_op signed=boption("!") rhs=expr_atomic { SignBiOp {op;lhs;rhs;signed} }
+  | lhs=expr_atomic op=long_comp_op LONG signed=boption("!") rhs=expr_atomic { SignBiOp {op;lhs;rhs;signed} }
 
 comp_op: 
   | "<" { IntLT }
@@ -131,38 +141,35 @@ long_comp_op:
   | ">" "=" { LongGTE }
 
 bit_expr1:
-  | lhs=bit_expr1 "|" rhs=bit_expr2 { BiOp(BitOr,lhs,rhs) }
-  | lhs=bit_expr1 "|" LONG rhs=bit_expr2 { BiOp(LongOr,lhs,rhs) }
+  | lhs=or_atom(bit_expr1) "|" rhs=or_atom(bit_expr2) { BiOp(BitOr,lhs,rhs) }
+  | lhs=or_atom(bit_expr1) "|" LONG rhs=or_atom(bit_expr2) { BiOp(LongOr,lhs,rhs) }
   | bit_expr1_2 { $1 }
 
 bit_expr1_2:
-  | lhs=bit_expr1_2 XOR rhs=bit_expr2 { BiOp(BitXor,lhs,rhs) }
-  | lhs=bit_expr1_2 XOR LONG rhs=bit_expr2 { BiOp(LongXor,lhs,rhs) }
+  | lhs=or_atom(bit_expr1_2) XOR rhs=or_atom(bit_expr2) { BiOp(BitXor,lhs,rhs) }
+  | lhs=or_atom(bit_expr1_2) XOR LONG rhs=or_atom(bit_expr2) { BiOp(LongXor,lhs,rhs) }
   | bit_expr2 { $1 }
 
 bit_expr2:
-  | lhs=bit_expr2 "&" rhs=arith_expr1 { BiOp(BitAnd,lhs,rhs) }
-  | lhs=bit_expr2 "&" LONG rhs=arith_expr1 { BiOp(LongAnd,lhs,rhs) }
-  | bit_expr3 { $1 }
+  | lhs=or_atom(bit_expr2) "&" rhs=expr_atomic { BiOp(BitAnd,lhs,rhs) }
+  | lhs=or_atom(bit_expr2) "&" LONG rhs=expr_atomic { BiOp(LongAnd,lhs,rhs) }
 
-bit_expr3: 
-  | lhs=arith_expr1 "<<" rhs=arith_expr1 { BiOp(ShiftLeft,lhs,rhs) }
-  | lhs=arith_expr1 "<<" LONG rhs=arith_expr1 { BiOp(LongShiftLeft,lhs,rhs) }
-  | lhs=arith_expr1 ">>" signed=boption("!") rhs=arith_expr1 { SignBiOp{op=ShiftRight;lhs;rhs;signed} }
-  | lhs=arith_expr1 ">>" LONG signed=boption("!") rhs=arith_expr1 { SignBiOp{op=LongShiftRight;lhs;rhs;signed} }
-  | arith_expr1 { $1 }
+shift_expr: 
+  | lhs=or_atom(shift_expr) "<<" rhs=expr_atomic { BiOp(ShiftLeft,lhs,rhs) }
+  | lhs=or_atom(shift_expr) "<<" LONG rhs=expr_atomic { BiOp(LongShiftLeft,lhs,rhs) }
+  | lhs=or_atom(shift_expr) ">>" signed=boption("!") rhs=expr_atomic { SignBiOp{op=ShiftRight;lhs;rhs;signed} }
+  | lhs=or_atom(shift_expr) ">>" LONG signed=boption("!") rhs=expr_atomic { SignBiOp{op=LongShiftRight;lhs;rhs;signed} }
 
 arith_expr1:
-  | lhs=arith_expr1; "+" rhs=arith_expr2 { BiOp(Add, lhs,rhs) }
-  | lhs=arith_expr1; "+" LONG rhs=arith_expr2 { BiOp(LongAdd, lhs,rhs) }
-  | lhs=arith_expr1; "-" rhs=arith_expr2 { BiOp(Sub, lhs,rhs) }
-  | lhs=arith_expr1; "-" LONG rhs=arith_expr2 { BiOp(LongSub, lhs,rhs) }
+  | lhs=or_atom(arith_expr1) "+" rhs=or_atom(arith_expr2) { BiOp(Add, lhs,rhs) }
+  | lhs=or_atom(arith_expr1) "+" LONG rhs=or_atom(arith_expr2) { BiOp(LongAdd, lhs,rhs) }
+  | lhs=or_atom(arith_expr1) "-" rhs=or_atom(arith_expr2) { BiOp(Sub, lhs,rhs) }
+  | lhs=or_atom(arith_expr1) "-" LONG rhs=or_atom(arith_expr2) { BiOp(LongSub, lhs,rhs) }
   | arith_expr2 { $1 }
 
 arith_expr2: 
-  | lhs=arith_expr2; "*" rhs=expr_atomic { BiOp(Mul, lhs,rhs) }
-  | lhs=arith_expr2; "*" LONG rhs=expr_atomic { BiOp(LongMul, lhs,rhs) }
-  | expr_atomic { $1 }
+  | lhs=or_atom(arith_expr2) "*" rhs=expr_atomic { BiOp(Mul, lhs,rhs) }
+  | lhs=or_atom(arith_expr2) "*" LONG rhs=expr_atomic { BiOp(LongMul, lhs,rhs) }
 
 expr_atomic:
   | NUMBER { Const $1 }
