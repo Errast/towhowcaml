@@ -8,6 +8,7 @@ module Vec = Vec
 module Func = Func
 module Instr_list = Instr_list
 module Bits= Bits
+module Structure_cfg = Structure_cfg
 include Opt
 
 let float_size : [ `Single | `Double ] = `Double

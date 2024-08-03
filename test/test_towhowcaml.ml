@@ -10,13 +10,20 @@ let c =
      C.analyze_all c LevelFour;
      c)
 
-let intrinsics = make_intrinsics  @@ force c
-let translate = translate_func  ~intrinsics@@ force c
-let test_trans addr = print_s @@ Mir.Func.sexp_of_t @@ translate addr
+let intrinsics = make_intrinsics @@ force c
+let translate = translate_func ~intrinsics @@ force c
+
+let test_trans addr =
+  let func = translate addr in
+  print_s @@ Mir.Func.sexp_of_t @@ func;
+  print_s @@ Mir.Structure_cfg.sexp_of_wasm_control
+  @@ Mir.Structure_cfg.structure_cfg func
 
 let test_trans_block addr =
   let name = func_name (force c) addr in
-  let blocks = C.get_func_blocks (force c) addr |> Array.map ~f:(make_block @@ force c) in
+  let blocks =
+    C.get_func_blocks (force c) addr |> Array.map ~f:(make_block @@ force c)
+  in
   let index =
     Option.value_exn
     @@ Array.binary_search
@@ -1997,7 +2004,8 @@ let%expect_test "double fadd" =
 
 let%expect_test "rcr" =
   test_trans_block 0x00482a92;
-  [%expect {|
+  [%expect
+    {|
     ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
@@ -2038,7 +2046,8 @@ let%expect_test "rcr" =
 
 let%expect_test "dumb div" =
   test_trans_block 0x00482a7c;
-  [%expect {|
+  [%expect
+    {|
     ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
