@@ -15,11 +15,13 @@ type wasm_control =
   | WasmBlock of wasm_control
   | WasmLoop of wasm_control
   | WasmIf of int * wasm_control * wasm_control
+  | WasmCodeReturn of int
   | WasmReturn
   | WasmBr of int
   | WasmBrTable of { bb_id : int; targets : int list; default : int }
   | WasmSeq of wasm_control * wasm_control
   | WasmCode of int
+  | WasmFallthrough
 [@@deriving sexp]
 
 let create_graph : (Block.t, immutable) AP.t -> graph =
@@ -133,6 +135,7 @@ let find_idoms : graph -> int array * IntSet.t array =
   print_s [%message "" ~idoms1:(idoms : preorder_num iarray)];
 
   let idoms = Array.map ~f:get_preorder idoms in
+  idoms.(0) <- -1;
   print_s [%message "" ~idoms2:(idoms : int iarray)];
 
   (idoms, preds)
@@ -147,12 +150,13 @@ let is_reducible : (IntSet.t, _) AP.t -> int array -> (int, _) AP.t -> bool =
           AP.get rpnum target > AP.get rpnum from || dominates target from))
 
 type containing_syntax =
-  | IfThenElse
+  | IfThenElse of int option
   | LoopHeadedBy of int
   | BlockFollowedBy of int
 [@@deriving sexp]
 
-type context = containing_syntax list
+type context = { enclosing : containing_syntax list; fallthrough : int }
+[@@deriving sexp]
 
 let f : Func.t -> graph -> (int, _) AP.t -> IntSet.t array -> _ =
  fun func graph rpnum preds idoms ->
@@ -179,33 +183,60 @@ let f : Func.t -> graph -> (int, _) AP.t -> IntSet.t array -> _ =
   in
   let br_index : int -> context -> int =
    fun l c ->
-    List.findi_exn c ~f:(fun _ f ->
+    List.findi_exn c.enclosing ~f:(fun _ f ->
         match f with
-        | (LoopHeadedBy ll | BlockFollowedBy ll) when l = ll -> true
+        | (LoopHeadedBy ll | BlockFollowedBy ll | IfThenElse (Some ll))
+          when l = ll ->
+            true
         | _ -> false)
     |> fst
   in
   let is_merge_node = Set.mem merge_blocks in
   let is_loop_header = Set.mem loop_headers in
-  let[@tail_mod_cons] rec node_within : int -> int list -> context -> _ =
-   fun x ys c ->
-    print_s [%message "" (x : int) (ys : int list) (c : containing_syntax list)];
-    match ys with
-    | y :: ys ->
+  let generates_if b =
+    match (AP.get func.blocks b).terminator with
+    | Branch _ | BranchReturn _ -> true
+    | _ -> false
+  in
+  let inside c syntax = { c with enclosing = syntax :: c.enclosing } in
+  let[@tail_mod_cons] rec node_within :
+      int -> int list -> int option -> context -> _ =
+   fun x ys prev_within c ->
+    match (ys, prev_within) with
+    | _ :: _, Some node ->
+        print_s [%message "blk" (x : int) (ys : int list) (c : context)];
+        WasmBlock (node_within x ys None @@ inside c (BlockFollowedBy node))
+    | y :: ys, None ->
+        print_s [%message "seq" (x : int) (ys : int list) (c : context)];
         WasmSeq
-          ( WasmBlock (node_within x ys (BlockFollowedBy y :: c)),
-            (do_tree [@tailcall]) y c )
-    | [] -> (
+          ( (node_within [@tailcall]) x ys (Some y) { c with fallthrough = y },
+            do_tree y c )
+    | [], Some prev_within when not @@ generates_if x ->
+        print_s
+          [%message
+            "blk" (x : int) (ys : int list) (prev_within : int) (c : context)];
+        WasmBlock
+          (node_within x [] None @@ inside c (BlockFollowedBy prev_within))
+    | [], _ -> (
+        print_s
+          [%message
+            ""
+              (x : int)
+              (ys : int list)
+              (prev_within : int option)
+              (c : context)];
         match (AP.get func.blocks x).terminator with
         | Goto (Block l) -> WasmSeq (WasmCode x, do_branch x l c)
         | Branch { succeed = Block t; fail = Block f; _ } ->
+            let context = inside c @@ IfThenElse prev_within in
+            WasmIf
+              (x, do_branch x t context, (do_branch [@tailcall]) x f context)
+        | Return -> WasmCodeReturn x
+        | BranchReturn { fail = Block fail; _ } ->
             WasmIf
               ( x,
-                do_branch x t (IfThenElse :: c),
-                (do_branch [@tailcall]) x f (IfThenElse :: c) )
-        | Return -> WasmSeq (WasmCode x, WasmReturn)
-        | BranchReturn { fail = Block fail; _ } ->
-            WasmIf (x, WasmReturn, do_branch x fail (IfThenElse :: c))
+                WasmReturn,
+                do_branch x fail @@ inside c @@ IfThenElse prev_within )
         | Switch { cases; default = Block default; _ } ->
             WasmBrTable
               {
@@ -215,10 +246,10 @@ let f : Func.t -> graph -> (int, _) AP.t -> IntSet.t array -> _ =
               })
   and[@tail_mod_cons] do_branch : int -> int -> context -> wasm_control =
    fun src target c ->
-    if is_back_edge src target || is_merge_node target then
+    if c.fallthrough = target then WasmFallthrough
+    else if is_back_edge src target || is_merge_node target then
       WasmBr
-        (print_s
-           [%message "" (src : int) (target : int) (c : containing_syntax list)];
+        (print_s [%message "" (src : int) (target : int) (c : context)];
          br_index target c)
     else do_tree target c
   and[@tail_mod_cons] do_tree : int -> context -> wasm_control =
@@ -232,12 +263,12 @@ let f : Func.t -> graph -> (int, _) AP.t -> IntSet.t array -> _ =
     print_s
       [%message "" (x : int) (children : int list) (children_within : int list)];
     if is_loop_header x then
-      WasmLoop (node_within x children_within @@ (LoopHeadedBy x :: c))
-    else node_within x children_within c
+      WasmLoop (node_within x children_within None @@ inside c (LoopHeadedBy x))
+    else node_within x children_within None c
   in
   print_s [%message "" (preds : IntSet.t iarray)];
   print_s [%message "" (merge_blocks : IntSet.t)];
-  do_tree 0 []
+  do_tree 0 { enclosing = []; fallthrough = -1 }
 
 let structure_cfg : Func.t -> wasm_control =
  fun func ->

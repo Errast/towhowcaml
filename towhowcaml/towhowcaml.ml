@@ -94,6 +94,7 @@ let contig_exceptions =
   Set.of_list
     (module Int)
     [
+      0x0047d820;
       0x0047d285;
       4724623;
       0x0047ea7d;
