@@ -2539,6 +2539,22 @@ let%expect_test "tail call" =
      (locals
       ((__ret_addr__ ((name __ret_addr__) (typ Int)))
        (esp ((name esp) (typ Int))))))
+    (parent ((0 -1)))
+    (preorder ((0 0)))
+    (inv_preorder ((0 0)))
+    (semidom ((0 -1)))
+    (ancestor ((0 -1)))
+    (label ((0 0)))
+    (graph ((0 ())))
+    (preds ((0 ())))
+    (idoms1 ((0 0)))
+    (idoms2 ((0 0)))
+    ((rpnum ((0 0))) (dom_tree ((0 (0)))))
+    (preds ((0 ())))
+    (merge_blocks ())
+    ((x 0) (children (0)) (children_within ()))
+    ((x 0) (ys ()) (c ()))
+    (WasmSeq (WasmCode 0) WasmReturn)
     |}]
 
 let%expect_test "shl reg" =
@@ -3574,8 +3590,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   test_trans 0x47ea7d;
-  [%expect
-    {|
+  [%expect {|
     ((name func_47ea7d)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -4147,6 +4162,249 @@ let%expect_test _ =
       ((__input_compare_arg__ ((name __input_compare_arg__) (typ Int)))
        (__ret_addr__ ((name __ret_addr__) (typ Int)))
        (esp ((name esp) (typ Int))))))
+    (parent
+     ((0 -1) (1 0) (2 1) (3 2) (4 3) (5 4) (6 5) (7 5) (8 26) (9 4) (10 29)
+      (11 27) (12 6) (13 7) (14 8) (15 9) (16 10) (17 11) (18 12) (19 13)
+      (20 14) (21 15) (22 16) (23 17) (24 18) (25 19) (26 19) (27 20) (28 21)
+      (29 22) (30 23)))
+    (preorder
+     ((0 0) (1 1) (2 2) (3 3) (4 4) (5 5) (6 6) (7 12) (8 13) (9 14) (10 15)
+      (11 16) (12 17) (13 18) (14 19) (15 20) (16 21) (17 22) (18 23) (19 24)
+      (20 25) (21 27) (22 28) (23 29) (24 30) (25 26) (26 7) (27 8) (28 11)
+      (29 9) (30 10)))
+    (inv_preorder
+     ((0 0) (1 1) (2 2) (3 3) (4 4) (5 5) (6 6) (7 26) (8 27) (9 29) (10 30)
+      (11 28) (12 7) (13 8) (14 9) (15 10) (16 11) (17 12) (18 13) (19 14)
+      (20 15) (21 16) (22 17) (23 18) (24 19) (25 20) (26 25) (27 21) (28 22)
+      (29 23) (30 24)))
+    (semidom
+     ((0 -1) (1 0) (2 0) (3 2) (4 3) (5 4) (6 2) (7 5) (8 26) (9 4) (10 29)
+      (11 4) (12 4) (13 7) (14 7) (15 9) (16 9) (17 11) (18 11) (19 13) (20 13)
+      (21 15) (22 15) (23 17) (24 17) (25 19) (26 19) (27 19) (28 21) (29 21)
+      (30 23)))
+    (ancestor
+     ((0 -1) (1 0) (2 1) (3 2) (4 3) (5 4) (6 5) (7 3) (8 4) (9 2) (10 3)
+      (11 4) (12 6) (13 7) (14 8) (15 9) (16 10) (17 11) (18 12) (19 13)
+      (20 14) (21 15) (22 16) (23 17) (24 18) (25 19) (26 18) (27 20) (28 21)
+      (29 22) (30 23)))
+    (label
+     ((0 0) (1 0) (2 0) (3 2) (4 3) (5 4) (6 2) (7 4) (8 7) (9 7) (10 9)
+      (11 9) (12 11) (13 11) (14 13) (15 13) (16 15) (17 15) (18 17) (19 17)
+      (20 19) (21 19) (22 21) (23 21) (24 23) (25 19) (26 4) (27 5) (28 4)
+      (29 3) (30 4)))
+    (graph
+     ((0 (1 2)) (1 (2)) (2 (3 6)) (3 (4 6)) (4 (5 9)) (5 (6 7)) (6 (12))
+      (7 (6 8)) (8 (11)) (9 (6 10)) (10 (11)) (11 (12)) (12 (13 14)) (13 (14))
+      (14 (15 16)) (15 (16)) (16 (17 18)) (17 (18)) (18 (19 20)) (19 (20))
+      (20 (21 22)) (21 (22)) (22 (23 24)) (23 (24)) (24 (25 26)) (25 (27))
+      (26 (27)) (27 (28 29)) (28 (29)) (29 (30)) (30 ())))
+    (preds
+     ((0 ()) (1 (0)) (2 (0 1)) (3 (2)) (4 (3)) (5 (4)) (6 (2 3 5 7 9)) (7 (5))
+      (8 (7)) (9 (4)) (10 (9)) (11 (8 10)) (12 (6 11)) (13 (12)) (14 (12 13))
+      (15 (14)) (16 (14 15)) (17 (16)) (18 (16 17)) (19 (18)) (20 (18 19))
+      (21 (20)) (22 (20 21)) (23 (22)) (24 (22 23)) (25 (24)) (26 (24))
+      (27 (25 26)) (28 (27)) (29 (27 28)) (30 (29))))
+    (idoms1
+     ((0 0) (1 0) (2 0) (3 2) (4 3) (5 4) (6 2) (7 5) (8 26) (9 4) (10 29)
+      (11 4) (12 2) (13 7) (14 7) (15 9) (16 9) (17 11) (18 11) (19 13) (20 13)
+      (21 15) (22 15) (23 17) (24 17) (25 19) (26 19) (27 19) (28 21) (29 21)
+      (30 23)))
+    (idoms2
+     ((0 0) (1 0) (2 0) (3 2) (4 3) (5 4) (6 2) (7 5) (8 7) (9 4) (10 9)
+      (11 4) (12 2) (13 12) (14 12) (15 14) (16 14) (17 16) (18 16) (19 18)
+      (20 18) (21 20) (22 20) (23 22) (24 22) (25 24) (26 24) (27 24) (28 27)
+      (29 27) (30 29)))
+    ((rpnum
+      ((0 0) (1 1) (2 2) (3 3) (4 4) (5 7) (6 11) (7 8) (8 9) (9 5) (10 6)
+       (11 10) (12 12) (13 13) (14 14) (15 15) (16 16) (17 17) (18 18) (19 19)
+       (20 20) (21 21) (22 22) (23 23) (24 24) (25 26) (26 25) (27 27) (28 28)
+       (29 29) (30 30)))
+     (dom_tree
+      ((0 (2 1 0)) (1 ()) (2 (12 6 3)) (3 (4)) (4 (11 5 9)) (5 (7)) (6 ())
+       (7 (8)) (8 ()) (9 (10)) (10 ()) (11 ()) (12 (14 13)) (13 ()) (14 (16 15))
+       (15 ()) (16 (18 17)) (17 ()) (18 (20 19)) (19 ()) (20 (22 21)) (21 ())
+       (22 (24 23)) (23 ()) (24 (27 25 26)) (25 ()) (26 ()) (27 (29 28))
+       (28 ()) (29 (30)) (30 ()))))
+    (preds
+     ((0 ()) (1 (0)) (2 (0 1)) (3 (2)) (4 (3)) (5 (4)) (6 (2 3 5 7 9)) (7 (5))
+      (8 (7)) (9 (4)) (10 (9)) (11 (8 10)) (12 (6 11)) (13 (12)) (14 (12 13))
+      (15 (14)) (16 (14 15)) (17 (16)) (18 (16 17)) (19 (18)) (20 (18 19))
+      (21 (20)) (22 (20 21)) (23 (22)) (24 (22 23)) (25 (24)) (26 (24))
+      (27 (25 26)) (28 (27)) (29 (27 28)) (30 (29))))
+    (merge_blocks (2 6 11 12 14 16 18 20 22 24 27 29))
+    ((x 0) (children (2 1 0)) (children_within (2)))
+    ((x 0) (ys (2)) (c ()))
+    ((x 0) (ys ()) (c ((BlockFollowedBy 2))))
+    ((src 0) (target 2) (c (IfThenElse (BlockFollowedBy 2))))
+    ((x 1) (children ()) (children_within ()))
+    ((x 1) (ys ()) (c (IfThenElse (BlockFollowedBy 2))))
+    ((src 1) (target 2) (c (IfThenElse (BlockFollowedBy 2))))
+    ((x 2) (children (12 6 3)) (children_within (12 6)))
+    ((x 2) (ys (12 6)) (c ()))
+    ((x 2) (ys (6)) (c ((BlockFollowedBy 12))))
+    ((x 2) (ys ()) (c ((BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((src 2) (target 6)
+     (c (IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((x 3) (children (4)) (children_within ()))
+    ((x 3) (ys ()) (c (IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((src 3) (target 6)
+     (c (IfThenElse IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((x 4) (children (11 5 9)) (children_within (11)))
+    ((x 4) (ys (11))
+     (c (IfThenElse IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((x 4) (ys ())
+     (c
+      ((BlockFollowedBy 11) IfThenElse IfThenElse (BlockFollowedBy 6)
+       (BlockFollowedBy 12))))
+    ((x 9) (children (10)) (children_within ()))
+    ((x 9) (ys ())
+     (c
+      (IfThenElse (BlockFollowedBy 11) IfThenElse IfThenElse (BlockFollowedBy 6)
+       (BlockFollowedBy 12))))
+    ((src 9) (target 6)
+     (c
+      (IfThenElse IfThenElse (BlockFollowedBy 11) IfThenElse IfThenElse
+       (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((x 10) (children ()) (children_within ()))
+    ((x 10) (ys ())
+     (c
+      (IfThenElse IfThenElse (BlockFollowedBy 11) IfThenElse IfThenElse
+       (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((src 10) (target 11)
+     (c
+      (IfThenElse IfThenElse (BlockFollowedBy 11) IfThenElse IfThenElse
+       (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((x 5) (children (7)) (children_within ()))
+    ((x 5) (ys ())
+     (c
+      (IfThenElse (BlockFollowedBy 11) IfThenElse IfThenElse (BlockFollowedBy 6)
+       (BlockFollowedBy 12))))
+    ((x 7) (children (8)) (children_within ()))
+    ((x 7) (ys ())
+     (c
+      (IfThenElse IfThenElse (BlockFollowedBy 11) IfThenElse IfThenElse
+       (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((src 7) (target 6)
+     (c
+      (IfThenElse IfThenElse IfThenElse (BlockFollowedBy 11) IfThenElse
+       IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((x 8) (children ()) (children_within ()))
+    ((x 8) (ys ())
+     (c
+      (IfThenElse IfThenElse IfThenElse (BlockFollowedBy 11) IfThenElse
+       IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((src 8) (target 11)
+     (c
+      (IfThenElse IfThenElse IfThenElse (BlockFollowedBy 11) IfThenElse
+       IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((src 5) (target 6)
+     (c
+      (IfThenElse IfThenElse (BlockFollowedBy 11) IfThenElse IfThenElse
+       (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((x 11) (children ()) (children_within ()))
+    ((x 11) (ys ())
+     (c (IfThenElse IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((src 11) (target 12)
+     (c (IfThenElse IfThenElse (BlockFollowedBy 6) (BlockFollowedBy 12))))
+    ((x 6) (children ()) (children_within ()))
+    ((x 6) (ys ()) (c ((BlockFollowedBy 12))))
+    ((src 6) (target 12) (c ((BlockFollowedBy 12))))
+    ((x 12) (children (14 13)) (children_within (14)))
+    ((x 12) (ys (14)) (c ()))
+    ((x 12) (ys ()) (c ((BlockFollowedBy 14))))
+    ((src 12) (target 14) (c (IfThenElse (BlockFollowedBy 14))))
+    ((x 13) (children ()) (children_within ()))
+    ((x 13) (ys ()) (c (IfThenElse (BlockFollowedBy 14))))
+    ((src 13) (target 14) (c (IfThenElse (BlockFollowedBy 14))))
+    ((x 14) (children (16 15)) (children_within (16)))
+    ((x 14) (ys (16)) (c ()))
+    ((x 14) (ys ()) (c ((BlockFollowedBy 16))))
+    ((src 14) (target 16) (c (IfThenElse (BlockFollowedBy 16))))
+    ((x 15) (children ()) (children_within ()))
+    ((x 15) (ys ()) (c (IfThenElse (BlockFollowedBy 16))))
+    ((src 15) (target 16) (c (IfThenElse (BlockFollowedBy 16))))
+    ((x 16) (children (18 17)) (children_within (18)))
+    ((x 16) (ys (18)) (c ()))
+    ((x 16) (ys ()) (c ((BlockFollowedBy 18))))
+    ((src 16) (target 18) (c (IfThenElse (BlockFollowedBy 18))))
+    ((x 17) (children ()) (children_within ()))
+    ((x 17) (ys ()) (c (IfThenElse (BlockFollowedBy 18))))
+    ((src 17) (target 18) (c (IfThenElse (BlockFollowedBy 18))))
+    ((x 18) (children (20 19)) (children_within (20)))
+    ((x 18) (ys (20)) (c ()))
+    ((x 18) (ys ()) (c ((BlockFollowedBy 20))))
+    ((src 18) (target 20) (c (IfThenElse (BlockFollowedBy 20))))
+    ((x 19) (children ()) (children_within ()))
+    ((x 19) (ys ()) (c (IfThenElse (BlockFollowedBy 20))))
+    ((src 19) (target 20) (c (IfThenElse (BlockFollowedBy 20))))
+    ((x 20) (children (22 21)) (children_within (22)))
+    ((x 20) (ys (22)) (c ()))
+    ((x 20) (ys ()) (c ((BlockFollowedBy 22))))
+    ((src 20) (target 22) (c (IfThenElse (BlockFollowedBy 22))))
+    ((x 21) (children ()) (children_within ()))
+    ((x 21) (ys ()) (c (IfThenElse (BlockFollowedBy 22))))
+    ((src 21) (target 22) (c (IfThenElse (BlockFollowedBy 22))))
+    ((x 22) (children (24 23)) (children_within (24)))
+    ((x 22) (ys (24)) (c ()))
+    ((x 22) (ys ()) (c ((BlockFollowedBy 24))))
+    ((src 22) (target 24) (c (IfThenElse (BlockFollowedBy 24))))
+    ((x 23) (children ()) (children_within ()))
+    ((x 23) (ys ()) (c (IfThenElse (BlockFollowedBy 24))))
+    ((src 23) (target 24) (c (IfThenElse (BlockFollowedBy 24))))
+    ((x 24) (children (27 25 26)) (children_within (27)))
+    ((x 24) (ys (27)) (c ()))
+    ((x 24) (ys ()) (c ((BlockFollowedBy 27))))
+    ((x 26) (children ()) (children_within ()))
+    ((x 26) (ys ()) (c (IfThenElse (BlockFollowedBy 27))))
+    ((src 26) (target 27) (c (IfThenElse (BlockFollowedBy 27))))
+    ((x 25) (children ()) (children_within ()))
+    ((x 25) (ys ()) (c (IfThenElse (BlockFollowedBy 27))))
+    ((src 25) (target 27) (c (IfThenElse (BlockFollowedBy 27))))
+    ((x 27) (children (29 28)) (children_within (29)))
+    ((x 27) (ys (29)) (c ()))
+    ((x 27) (ys ()) (c ((BlockFollowedBy 29))))
+    ((src 27) (target 29) (c (IfThenElse (BlockFollowedBy 29))))
+    ((x 28) (children ()) (children_within ()))
+    ((x 28) (ys ()) (c (IfThenElse (BlockFollowedBy 29))))
+    ((src 28) (target 29) (c (IfThenElse (BlockFollowedBy 29))))
+    ((x 29) (children (30)) (children_within ()))
+    ((x 29) (ys ()) (c ()))
+    ((x 30) (children ()) (children_within ()))
+    ((x 30) (ys ()) (c ()))
+    (WasmSeq (WasmBlock (WasmIf 0 (WasmBr 1) (WasmSeq (WasmCode 1) (WasmBr 1))))
+     (WasmSeq
+      (WasmBlock
+       (WasmSeq
+        (WasmBlock
+         (WasmIf 2 (WasmBr 1)
+          (WasmIf 3 (WasmBr 2)
+           (WasmSeq
+            (WasmBlock
+             (WasmIf 4 (WasmIf 9 (WasmBr 5) (WasmSeq (WasmCode 10) (WasmBr 2)))
+              (WasmIf 5 (WasmIf 7 (WasmBr 6) (WasmSeq (WasmCode 8) (WasmBr 3)))
+               (WasmBr 5))))
+            (WasmSeq (WasmCode 11) (WasmBr 3))))))
+        (WasmSeq (WasmCode 6) (WasmBr 0))))
+      (WasmSeq
+       (WasmBlock (WasmIf 12 (WasmBr 1) (WasmSeq (WasmCode 13) (WasmBr 1))))
+       (WasmSeq
+        (WasmBlock (WasmIf 14 (WasmBr 1) (WasmSeq (WasmCode 15) (WasmBr 1))))
+        (WasmSeq
+         (WasmBlock (WasmIf 16 (WasmBr 1) (WasmSeq (WasmCode 17) (WasmBr 1))))
+         (WasmSeq
+          (WasmBlock (WasmIf 18 (WasmBr 1) (WasmSeq (WasmCode 19) (WasmBr 1))))
+          (WasmSeq
+           (WasmBlock (WasmIf 20 (WasmBr 1) (WasmSeq (WasmCode 21) (WasmBr 1))))
+           (WasmSeq
+            (WasmBlock (WasmIf 22 (WasmBr 1) (WasmSeq (WasmCode 23) (WasmBr 1))))
+            (WasmSeq
+             (WasmBlock
+              (WasmIf 24 (WasmSeq (WasmCode 26) (WasmBr 1))
+               (WasmSeq (WasmCode 25) (WasmBr 1))))
+             (WasmSeq
+              (WasmBlock
+               (WasmIf 27 (WasmBr 1) (WasmSeq (WasmCode 28) (WasmBr 1))))
+              (WasmSeq (WasmCode 29) (WasmSeq (WasmCode 30) WasmReturn))))))))))))
     |}]
 
 let%expect_test _ =
@@ -4253,4 +4511,82 @@ let%expect_test _ =
      (locals
       ((__ret_addr__ ((name __ret_addr__) (typ Int)))
        (esp ((name esp) (typ Int))))))
+    (parent ((0 -1) (1 0) (2 1) (3 2) (4 0) (5 3)))
+    (preorder ((0 0) (1 1) (2 2) (3 3) (4 5) (5 4)))
+    (inv_preorder ((0 0) (1 1) (2 2) (3 3) (4 5) (5 4)))
+    (semidom ((0 -1) (1 0) (2 1) (3 1) (4 0) (5 0)))
+    (ancestor ((0 -1) (1 0) (2 1) (3 2) (4 -1) (5 3)))
+    (label ((0 0) (1 0) (2 1) (3 1) (4 0) (5 0)))
+    (graph ((0 (1 4)) (1 (2 3)) (2 (3)) (3 (5)) (4 (5)) (5 ())))
+    (preds ((0 ()) (1 (0)) (2 (1)) (3 (1 2)) (4 (0)) (5 (3 4))))
+    (idoms1 ((0 0) (1 0) (2 1) (3 1) (4 0) (5 0)))
+    (idoms2 ((0 0) (1 0) (2 1) (3 1) (4 0) (5 0)))
+    ((rpnum ((0 0) (1 2) (2 3) (3 4) (4 1) (5 5)))
+     (dom_tree ((0 (5 1 4 0)) (1 (3 2)) (2 ()) (3 ()) (4 ()) (5 ()))))
+    (preds ((0 ()) (1 (0)) (2 (1)) (3 (1 2)) (4 (0)) (5 (3 4))))
+    (merge_blocks (3 5))
+    ((x 0) (children (5 1 4 0)) (children_within (5)))
+    ((x 0) (ys (5)) (c ()))
+    ((x 0) (ys ()) (c ((BlockFollowedBy 5))))
+    ((x 4) (children ()) (children_within ()))
+    ((x 4) (ys ()) (c (IfThenElse (BlockFollowedBy 5))))
+    ((src 4) (target 5) (c (IfThenElse (BlockFollowedBy 5))))
+    ((x 1) (children (3 2)) (children_within (3)))
+    ((x 1) (ys (3)) (c (IfThenElse (BlockFollowedBy 5))))
+    ((x 1) (ys ()) (c ((BlockFollowedBy 3) IfThenElse (BlockFollowedBy 5))))
+    ((src 1) (target 3)
+     (c (IfThenElse (BlockFollowedBy 3) IfThenElse (BlockFollowedBy 5))))
+    ((x 2) (children ()) (children_within ()))
+    ((x 2) (ys ())
+     (c (IfThenElse (BlockFollowedBy 3) IfThenElse (BlockFollowedBy 5))))
+    ((src 2) (target 3)
+     (c (IfThenElse (BlockFollowedBy 3) IfThenElse (BlockFollowedBy 5))))
+    ((x 3) (children ()) (children_within ()))
+    ((x 3) (ys ()) (c (IfThenElse (BlockFollowedBy 5))))
+    ((src 3) (target 5) (c (IfThenElse (BlockFollowedBy 5))))
+    ((x 5) (children ()) (children_within ()))
+    ((x 5) (ys ()) (c ()))
+    (WasmSeq
+     (WasmBlock
+      (WasmIf 0 (WasmSeq (WasmCode 4) (WasmBr 1))
+       (WasmSeq
+        (WasmBlock (WasmIf 1 (WasmBr 1) (WasmSeq (WasmCode 2) (WasmBr 1))))
+        (WasmSeq (WasmCode 3) (WasmBr 1)))))
+     (WasmSeq (WasmCode 5) WasmReturn))
+    |}]
+
+let%expect_test "graph" =
+  let module IntSet = Set.Make (Int) in
+  let graph =
+    [
+      [1];
+      [ 2; 3 ];
+      [ 4; 5 ];
+      [ 8 ];
+      [ 3; 7 ];
+      [ 6 ];
+      [ 7 ];
+      [ 8 ];
+      [];
+    ]
+    |> Array.Permissioned.of_list_map ~f:IntSet.of_list
+  in
+  print_s @@ sexp_of_array sexp_of_int @@ fst
+  @@ Mir.Structure_cfg.find_idoms graph;
+  [%expect {|
+    (parent ((0 -1) (1 0) (2 1) (3 3) (4 2) (5 2) (6 7) (7 3) (8 4)))
+    (preorder ((0 0) (1 1) (2 2) (3 4) (4 3) (5 8) (6 7) (7 5) (8 6)))
+    (inv_preorder ((0 0) (1 1) (2 2) (3 4) (4 3) (5 7) (6 8) (7 6) (8 5)))
+    (semidom ((0 -1) (1 0) (2 1) (3 1) (4 2) (5 2) (6 7) (7 2) (8 2)))
+    (ancestor ((0 -1) (1 0) (2 1) (3 3) (4 2) (5 1) (6 1) (7 2) (8 4)))
+    (label ((0 0) (1 0) (2 1) (3 2) (4 1) (5 2) (6 2) (7 2) (8 2)))
+    (graph
+     ((0 (1)) (1 (2 3)) (2 (4 5)) (3 (8)) (4 (3 7)) (5 (6)) (6 (7)) (7 (8))
+      (8 ())))
+    (preds
+     ((0 ()) (1 (0)) (2 (1)) (3 (1 4)) (4 (2)) (5 (2)) (6 (5)) (7 (4 6))
+      (8 (3 7))))
+    (idoms1 ((0 0) (1 0) (2 1) (3 1) (4 2) (5 2) (6 7) (7 2) (8 1)))
+    (idoms2 ((0 0) (1 0) (2 1) (3 1) (4 2) (5 2) (6 5) (7 2) (8 1)))
+    (0 0 1 1 2 2 5 2 1)
     |}]
