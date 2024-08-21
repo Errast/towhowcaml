@@ -30,9 +30,10 @@ let test_trans_block addr =
          ~compare:(fun b addr -> compare_int b.offset addr)
          blocks `Last_less_than_or_equal_to addr
   in
+  let translated = Func_translator.translate ~blocks ~name ~intrinsics in
+  Mir.Structure_cfg.structure_cfg translated |> ignore;
   print_s @@ Mir.Block.sexp_of_t
-  @@ Array.Permissioned.get
-       (Func_translator.translate ~blocks ~name ~intrinsics).blocks index
+  @@ Array.Permissioned.get translated.blocks index
 
 let%expect_test "small regs" =
   test_trans_block 0x0047bd35;
@@ -1161,8 +1162,7 @@ let%expect_test "movsd" =
 
 let%expect_test "backward direction" =
   test_trans_block 0x0047d9d7;
-  [%expect
-    {|
+  [%expect {|
     ((id 23)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
@@ -1550,18 +1550,1721 @@ let%expect_test "nonzero switch" =
   test_trans 0x0046af8f;
   [%expect
     {|
-    ((id 5)
-     (instrs
-      ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
-       (1 (Const __i32 20))
-       (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))))
-     (terminator
-      (Switch
-       (cases
-        ((Block 6) (Block 8) (Block 10) (Block 12) (Block 14) (Block 16)
-         (Block 18) (Block 20) (Block 22) (Block 24) (Block 26)))
-       (default (Block 84)) (switch_on (Ref 2))))
-     (roots ((Ref 2))))
+    ((name func_46af4f)
+     (signature
+      ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
+     (blocks
+      (((id 0)
+        (instrs
+         ((0 (OutsideContext (var esp) (typ Int)))
+          (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
+          (2 (Const eax 4768762)) (3 (Const __i32 4))
+          (4 (BiOp (var esp) (op Subtract) (lhs (Ref 0)) (rhs (Ref 3))))
+          (5 (Const __i32 4632404))
+          (6 (StoreOp (op Store32) (addr (Ref 4)) (value (Ref 5))))
+          (7 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))
+          (8 (CallOp (func __func47f830__) (args ((Ref 4)))))
+          (9 (ReturnedOp (var esp) (typ Int)))
+          (10 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (11 (Const __i32 4))
+          (12 (BiOp (var esp) (op Subtract) (lhs (Ref 9)) (rhs (Ref 11))))
+          (13 (StoreOp (op Store32) (addr (Ref 12)) (value (Ref 10))))
+          (14 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 12)) (rhs (Ref 15))))
+          (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 14))))
+          (18 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (19 (LoadOp (var edi) (op Load32) (addr (Ref 18)) (offset 8)))
+          (20 (LoadOp (var eax) (op Load32) (addr (Ref 19)) (offset 4)))
+          (21 (Const ecx 827611204))
+          (22
+           (SignedBiOp (var __i32) (op GreaterThan) (signed true) (lhs (Ref 20))
+            (rhs (Ref 21))))
+          (23 (SetGlobalOp (value (Ref 21)) (global ((name ecx) (typ Int)))))
+          (24 (SetGlobalOp (value (Ref 20)) (global ((name eax) (typ Int)))))
+          (25 (SetGlobalOp (value (Ref 19)) (global ((name edi) (typ Int)))))
+          (26 (BiOp (var __i32) (op Equal) (lhs (Ref 20)) (rhs (Ref 21))))
+          (27 (DupVar (var __input_compare_arg__) (src (Ref 26)) (typ Int)))))
+        (terminator
+         (Branch (succeed (Block 63)) (fail (Block 1)) (condition (Ref 22))))
+        (roots ((Ref 1) (Ref 16) (Ref 22) (Ref 27))))
+       ((id 1)
+        (instrs ((0 (OutsideContext (var __input_compare_arg__) (typ Int)))))
+        (terminator
+         (Branch (succeed (Block 61)) (fail (Block 2)) (condition (Ref 0))))
+        (roots ((Ref 0))))
+       ((id 2)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 40))
+          (2
+           (SignedBiOp (var __i32) (op GreaterThan) (signed true) (lhs (Ref 0))
+            (rhs (Ref 1))))
+          (3 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))
+          (4 (DupVar (var __input_compare_arg__) (src (Ref 3)) (typ Int)))))
+        (terminator
+         (Branch (succeed (Block 30)) (fail (Block 3)) (condition (Ref 2))))
+        (roots ((Ref 2) (Ref 4))))
+       ((id 3)
+        (instrs ((0 (OutsideContext (var __input_compare_arg__) (typ Int)))))
+        (terminator
+         (Branch (succeed (Block 28)) (fail (Block 4)) (condition (Ref 0))))
+        (roots ((Ref 0))))
+       ((id 4)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 20))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))
+          (3 (Const __i32 10))
+          (4
+           (SignedBiOp (var __i32) (op GreaterThan) (signed false) (lhs (Ref 2))
+            (rhs (Ref 3))))
+          (5 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 5)) (condition (Ref 4))))
+        (roots ((Ref 4))))
+       ((id 5)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 20))
+          (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))))
+        (terminator
+         (Switch
+          (cases
+           ((Block 6) (Block 8) (Block 10) (Block 12) (Block 14) (Block 16)
+            (Block 18) (Block 20) (Block 22) (Block 24) (Block 26)))
+          (default (Block 84)) (switch_on (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 6)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632475))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 7)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 7)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 24)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632498))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773744))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 8)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632519))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 9)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 9)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 32)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632542))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773756))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 10)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632563))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 11)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 11)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 32)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632586))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773768))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 12)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632607))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 13)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 13)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632630))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773780))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 14)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632651))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 15)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 15)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632674))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773792))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 16)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632695))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 17)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 17)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632718))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773804))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 18)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632739))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 19)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 19)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632762))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773816))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 20)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632783))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 21)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 21)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 8)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632806))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773828))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 22)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632827))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 23)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 23)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 8)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632850))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773840))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 24)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632871))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 25)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 25)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632894))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773852))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 26)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632915))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 27)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 27)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632938))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773864))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 28)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4632959))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 29)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 29)
+        (instrs
+         ((0 (Const __i32 2)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4632982))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773876))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 30)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 61))
+          (2
+           (SignedBiOp (var __i32) (op GreaterThan) (signed true) (lhs (Ref 0))
+            (rhs (Ref 1))))
+          (3 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))
+          (4 (DupVar (var __input_compare_arg__) (src (Ref 3)) (typ Int)))))
+        (terminator
+         (Branch (succeed (Block 49)) (fail (Block 31)) (condition (Ref 2))))
+        (roots ((Ref 2) (Ref 4))))
+       ((id 31)
+        (instrs ((0 (OutsideContext (var __input_compare_arg__) (typ Int)))))
+        (terminator
+         (Branch (succeed (Block 47)) (fail (Block 32)) (condition (Ref 0))))
+        (roots ((Ref 0))))
+       ((id 32)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 41))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))
+          (3 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))
+          (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 45)) (fail (Block 33)) (condition (Ref 3))))
+        (roots ((Ref 3))))
+       ((id 33)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 9))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))
+          (3 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))
+          (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 43)) (fail (Block 34)) (condition (Ref 3))))
+        (roots ((Ref 3))))
+       ((id 34)
+        (instrs
+         ((0 (Const __i32 1))
+          (1 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 1)) (rhs (Ref 0))))
+          (3 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))
+          (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 41)) (fail (Block 35)) (condition (Ref 3))))
+        (roots ((Ref 3))))
+       ((id 35)
+        (instrs
+         ((0 (Const __i32 1))
+          (1 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 1)) (rhs (Ref 0))))
+          (3 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))
+          (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 39)) (fail (Block 36)) (condition (Ref 3))))
+        (roots ((Ref 3))))
+       ((id 36)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 8))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))
+          (3 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 37)) (condition (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 37)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633051))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 38)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 38)
+        (instrs
+         ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633074))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773936))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 39)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633095))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 40)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 40)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 8)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633118))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773924))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 41)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633139))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 42)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 42)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633162))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773912))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 43)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633183))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 44)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 44)
+        (instrs
+         ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 8)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633206))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773900))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 45)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633227))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 46)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 46)
+        (instrs
+         ((0 (Const __i32 2)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 8)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633250))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773888))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 47)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633271))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 48)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 48)
+        (instrs
+         ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 16)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633294))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773948))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 49)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 62))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))
+          (3 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))
+          (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 59)) (fail (Block 50)) (condition (Ref 3))))
+        (roots ((Ref 3))))
+       ((id 50)
+        (instrs
+         ((0 (Const __i32 1))
+          (1 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 1)) (rhs (Ref 0))))
+          (3 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))
+          (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 57)) (fail (Block 51)) (condition (Ref 3))))
+        (roots ((Ref 3))))
+       ((id 51)
+        (instrs
+         ((0 (Const __i32 1))
+          (1 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 1)) (rhs (Ref 0))))
+          (3 (UniOp (var __i32) (op EqualsZero) (operand (Ref 2))))
+          (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 55)) (fail (Block 52)) (condition (Ref 3))))
+        (roots ((Ref 3))))
+       ((id 52)
+        (instrs
+         ((0 (Const __i32 1))
+          (1 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (2 (BiOp (var eax) (op Subtract) (lhs (Ref 1)) (rhs (Ref 0))))
+          (3 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 53)) (condition (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 53)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633337))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 54)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 54)
+        (instrs
+         ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 32)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633360))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773996))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 55)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633381))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 56)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 56)
+        (instrs
+         ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 32)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633404))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773984))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 57)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633425))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 58)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 58)
+        (instrs
+         ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 32)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633448))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773972))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 59)
+        (instrs
+         ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633469))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (17 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 60)) (condition (Ref 16))))
+        (roots ((Ref 15) (Ref 16))))
+       ((id 60)
+        (instrs
+         ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 32)) (6 (Const __i32 4))
+          (7 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 6))))
+          (8 (StoreOp (op Store32) (addr (Ref 7)) (value (Ref 5))))
+          (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (10 (Const __i32 4))
+          (11 (BiOp (var esp) (op Subtract) (lhs (Ref 7)) (rhs (Ref 10))))
+          (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
+          (13 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (14 Nop)
+          (15 (Const __i32 4))
+          (16 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 15))))
+          (17 (Const __i32 4633492))
+          (18 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 17))))
+          (19 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (20 (CallOp (func __func468224__) (args ((Ref 16)))))
+          (21 (ReturnedOp (var esp) (typ Int))) (22 (Const __i32 4773960))
+          (23 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (24 (StoreOp (op Store32) (addr (Ref 23)) (value (Ref 22))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 21))))
+       ((id 61)
+        (instrs
+         ((0 (Const __i32 4264)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633513))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 11)) (offset 8)))
+          (18 (Const __i32 2))
+          (19
+           (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 18)) (offset -4)))
+          (20 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (21 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 62)) (condition (Ref 20))))
+        (roots ((Ref 15) (Ref 20))))
+       ((id 62)
+        (instrs
+         ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (1 (OutsideContext (var esp) (typ Int))) (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (6 Nop)
+          (7 (Const __i32 4))
+          (8 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 7))))
+          (9 (Const __i32 4633542))
+          (10 (StoreOp (op Store32) (addr (Ref 8)) (value (Ref 9))))
+          (11 (SetGlobalOp (value (Ref 5)) (global ((name ecx) (typ Int)))))
+          (12 (CallOp (func __func46a6b0__) (args ((Ref 8)))))
+          (13 (ReturnedOp (var esp) (typ Int))) (14 (Const __i32 4774020))
+          (15 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (16 (StoreOp (op Store32) (addr (Ref 15)) (value (Ref 14))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 13))))
+       ((id 63)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 844388420))
+          (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
+        (terminator
+         (Branch (succeed (Block 79)) (fail (Block 64)) (condition (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 64)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 844715353))
+          (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
+        (terminator
+         (Branch (succeed (Block 77)) (fail (Block 65)) (condition (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 65)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 861165636))
+          (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
+        (terminator
+         (Branch (succeed (Block 75)) (fail (Block 66)) (condition (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 66)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 877942852))
+          (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
+        (terminator
+         (Branch (succeed (Block 73)) (fail (Block 67)) (condition (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 67)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 894720068))
+          (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
+        (terminator
+         (Branch (succeed (Block 71)) (fail (Block 68)) (condition (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 68)
+        (instrs
+         ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
+          (1 (Const __i32 1498831189))
+          (2 (BiOp (var __i32) (op NotEqual) (lhs (Ref 0)) (rhs (Ref 1))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 69)) (condition (Ref 2))))
+        (roots ((Ref 2))))
+       ((id 69)
+        (instrs
+         ((0 (Const __i32 4244)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633621))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 11)) (offset 8)))
+          (18 (LoadOp (var __i32) (op Load32) (addr (Ref 16)) (offset -4)))
+          (19 (Const __i32 0))
+          (20 (BiOp (var __i32) (op And) (lhs (Ref 18)) (rhs (Ref 19))))
+          (21
+           (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 20)) (offset -4)))
+          (22 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (23 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (24 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 70)) (condition (Ref 22))))
+        (roots ((Ref 15) (Ref 22))))
+       ((id 70)
+        (instrs
+         ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (1 (OutsideContext (var esp) (typ Int))) (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (6 Nop)
+          (7 (Const __i32 4))
+          (8 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 7))))
+          (9 (Const __i32 4633647))
+          (10 (StoreOp (op Store32) (addr (Ref 8)) (value (Ref 9))))
+          (11 (SetGlobalOp (value (Ref 5)) (global ((name ecx) (typ Int)))))
+          (12 (CallOp (func __func46a034__) (args ((Ref 8)))))
+          (13 (ReturnedOp (var esp) (typ Int))) (14 (Const __i32 4774008))
+          (15 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (16 (StoreOp (op Store32) (addr (Ref 15)) (value (Ref 14))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 13))))
+       ((id 71)
+        (instrs
+         ((0 (Const __i32 4264)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633668))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 11)) (offset 8)))
+          (18 (Const __i32 6))
+          (19
+           (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 18)) (offset -4)))
+          (20 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (21 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 72)) (condition (Ref 20))))
+        (roots ((Ref 15) (Ref 20))))
+       ((id 72)
+        (instrs
+         ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (1 (OutsideContext (var esp) (typ Int))) (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (6 Nop)
+          (7 (Const __i32 4))
+          (8 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 7))))
+          (9 (Const __i32 4633697))
+          (10 (StoreOp (op Store32) (addr (Ref 8)) (value (Ref 9))))
+          (11 (SetGlobalOp (value (Ref 5)) (global ((name ecx) (typ Int)))))
+          (12 (CallOp (func __func46a6b0__) (args ((Ref 8)))))
+          (13 (ReturnedOp (var esp) (typ Int))) (14 (Const __i32 4774020))
+          (15 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (16 (StoreOp (op Store32) (addr (Ref 15)) (value (Ref 14))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 13))))
+       ((id 73)
+        (instrs
+         ((0 (Const __i32 4264)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633718))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 11)) (offset 8)))
+          (18 (Const __i32 5))
+          (19
+           (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 18)) (offset -4)))
+          (20 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (21 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 74)) (condition (Ref 20))))
+        (roots ((Ref 15) (Ref 20))))
+       ((id 74)
+        (instrs
+         ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (1 (OutsideContext (var esp) (typ Int))) (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (6 Nop)
+          (7 (Const __i32 4))
+          (8 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 7))))
+          (9 (Const __i32 4633747))
+          (10 (StoreOp (op Store32) (addr (Ref 8)) (value (Ref 9))))
+          (11 (SetGlobalOp (value (Ref 5)) (global ((name ecx) (typ Int)))))
+          (12 (CallOp (func __func46a6b0__) (args ((Ref 8)))))
+          (13 (ReturnedOp (var esp) (typ Int))) (14 (Const __i32 4774020))
+          (15 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (16 (StoreOp (op Store32) (addr (Ref 15)) (value (Ref 14))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 13))))
+       ((id 75)
+        (instrs
+         ((0 (Const __i32 4264)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633765))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 11)) (offset 8)))
+          (18 (Const __i32 4))
+          (19
+           (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 18)) (offset -4)))
+          (20 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (21 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 76)) (condition (Ref 20))))
+        (roots ((Ref 15) (Ref 20))))
+       ((id 76)
+        (instrs
+         ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (1 (OutsideContext (var esp) (typ Int))) (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (6 Nop)
+          (7 (Const __i32 4))
+          (8 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 7))))
+          (9 (Const __i32 4633790))
+          (10 (StoreOp (op Store32) (addr (Ref 8)) (value (Ref 9))))
+          (11 (SetGlobalOp (value (Ref 5)) (global ((name ecx) (typ Int)))))
+          (12 (CallOp (func __func46a6b0__) (args ((Ref 8)))))
+          (13 (ReturnedOp (var esp) (typ Int))) (14 (Const __i32 4774020))
+          (15 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (16 (StoreOp (op Store32) (addr (Ref 15)) (value (Ref 14))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 13))))
+       ((id 77)
+        (instrs
+         ((0 (Const __i32 4244)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633808))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 11)) (offset 8)))
+          (18 (Const __i32 1))
+          (19
+           (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 18)) (offset -4)))
+          (20 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (21 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 78)) (condition (Ref 20))))
+        (roots ((Ref 15) (Ref 20))))
+       ((id 78)
+        (instrs
+         ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (1 (OutsideContext (var esp) (typ Int))) (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (6 Nop)
+          (7 (Const __i32 4))
+          (8 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 7))))
+          (9 (Const __i32 4633833))
+          (10 (StoreOp (op Store32) (addr (Ref 8)) (value (Ref 9))))
+          (11 (SetGlobalOp (value (Ref 5)) (global ((name ecx) (typ Int)))))
+          (12 (CallOp (func __func46a034__) (args ((Ref 8)))))
+          (13 (ReturnedOp (var esp) (typ Int))) (14 (Const __i32 4774008))
+          (15 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (16 (StoreOp (op Store32) (addr (Ref 15)) (value (Ref 14))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 13))))
+       ((id 79)
+        (instrs
+         ((0 (Const __i32 4264)) (1 (OutsideContext (var esp) (typ Int)))
+          (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (Const __i32 4))
+          (6 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 5))))
+          (7 (Const __i32 4633851))
+          (8 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 7))))
+          (9 (CallOp (func __func47d441__) (args ((Ref 6)))))
+          (10 (ReturnedOp (var esp) (typ Int)))
+          (11 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (12 Nop)
+          (13 (LoadOp (var ecx) (op Load32) (addr (Ref 10))))
+          (14 (Const __i32 4))
+          (15 (BiOp (var esp) (op Add) (lhs (Ref 10)) (rhs (Ref 14))))
+          (16 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (17 (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 11)) (offset 8)))
+          (18 (Const __i32 3))
+          (19
+           (StoreOp (op Store32) (addr (Ref 16)) (value (Ref 18)) (offset -4)))
+          (20 (UniOp (var __i32) (op EqualsZero) (operand (Ref 11))))
+          (21 (SetGlobalOp (value (Ref 13)) (global ((name ecx) (typ Int)))))
+          (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
+        (terminator
+         (Branch (succeed (Block 82)) (fail (Block 80)) (condition (Ref 20))))
+        (roots ((Ref 15) (Ref 20))))
+       ((id 80)
+        (instrs
+         ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
+          (1 (OutsideContext (var esp) (typ Int))) (2 (Const __i32 4))
+          (3 (BiOp (var esp) (op Subtract) (lhs (Ref 1)) (rhs (Ref 2))))
+          (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 0))))
+          (5 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (6 Nop)
+          (7 (Const __i32 4))
+          (8 (BiOp (var esp) (op Subtract) (lhs (Ref 3)) (rhs (Ref 7))))
+          (9 (Const __i32 4633876))
+          (10 (StoreOp (op Store32) (addr (Ref 8)) (value (Ref 9))))
+          (11 (SetGlobalOp (value (Ref 5)) (global ((name ecx) (typ Int)))))
+          (12 (CallOp (func __func46a6b0__) (args ((Ref 8)))))
+          (13 (ReturnedOp (var esp) (typ Int))) (14 (Const __i32 4774020))
+          (15 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
+          (16 (StoreOp (op Store32) (addr (Ref 15)) (value (Ref 14))))))
+        (terminator (Goto (Block 81))) (roots ((Ref 13))))
+       ((id 81)
+        (instrs
+         ((0 (GetGlobalOp (var esi) (global ((name esi) (typ Int))))) (1 Nop)
+          (2 (SetGlobalOp (value (Ref 0)) (global ((name eax) (typ Int)))))))
+        (terminator (Goto (Block 83))) (roots ()))
+       ((id 82)
+        (instrs
+         ((0 (Const eax 0))
+          (1 (SetGlobalOp (value (Ref 0)) (global ((name eax) (typ Int)))))))
+        (terminator (Goto (Block 83))) (roots ()))
+       ((id 83)
+        (instrs
+         ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+          (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -12)))
+          (2 (OutsideContext (var esp) (typ Int)))
+          (3 (LoadOp (var edi) (op Load32) (addr (Ref 2)))) (4 (Const __i32 4))
+          (5 (BiOp (var esp) (op Add) (lhs (Ref 2)) (rhs (Ref 4))))
+          (6 (LoadOp (var esi) (op Load32) (addr (Ref 5)))) (7 Nop) (8 Nop)
+          (9
+           (SetGlobalOp (value (Ref 1))
+            (global ((name __seh_frame__) (typ Int)))))
+          (10 Nop) (11 (LoadOp (var ebp) (op Load32) (addr (Ref 0))))
+          (12 (Const __i32 4))
+          (13 (BiOp (var esp) (op Add) (lhs (Ref 0)) (rhs (Ref 12))))
+          (14 (LoadOp (var __i32) (op Load32) (addr (Ref 13))))
+          (15 (OutsideContext (var __ret_addr__) (typ Int)))
+          (16 (BiOp (var __i32) (op Equal) (lhs (Ref 14)) (rhs (Ref 15))))
+          (17 (AssertOp (condition (Ref 16)))) (18 (Const __i32 4))
+          (19 (BiOp (var esp) (op Add) (lhs (Ref 13)) (rhs (Ref 18))))
+          (20 (SetGlobalOp (value (Ref 1)) (global ((name ecx) (typ Int)))))
+          (21 (SetGlobalOp (value (Ref 6)) (global ((name esi) (typ Int)))))
+          (22 (SetGlobalOp (value (Ref 3)) (global ((name edi) (typ Int)))))
+          (23 (SetGlobalOp (value (Ref 11)) (global ((name ebp) (typ Int)))))))
+        (terminator Return) (roots ((Ref 15) (Ref 19))))
+       ((id 84) (instrs ((0 Unreachable))) (terminator Return) (roots ()))))
+     (locals
+      ((__input_compare_arg__ ((name __input_compare_arg__) (typ Int)))
+       (__ret_addr__ ((name __ret_addr__) (typ Int)))
+       (esp ((name esp) (typ Int))))))
+    (WasmSeq
+     (WasmBlock
+      (WasmSeq
+       (WasmBlock
+        (WasmSeq
+         (WasmIf (Block 0)
+          (WasmIf (Block 63)
+           (WasmIf (Block 79) WasmFallthrough
+            (WasmSeq (WasmCode (Block 80)) (WasmBr 3)))
+           (WasmIf (Block 64)
+            (WasmIf (Block 77) WasmFallthrough
+             (WasmSeq (WasmCode (Block 78)) (WasmBr 4)))
+            (WasmIf (Block 65)
+             (WasmIf (Block 75) WasmFallthrough
+              (WasmSeq (WasmCode (Block 76)) (WasmBr 5)))
+             (WasmIf (Block 66)
+              (WasmIf (Block 73) WasmFallthrough
+               (WasmSeq (WasmCode (Block 74)) (WasmBr 6)))
+              (WasmIf (Block 67)
+               (WasmIf (Block 71) WasmFallthrough
+                (WasmSeq (WasmCode (Block 72)) (WasmBr 7)))
+               (WasmIf (Block 68) WasmFallthrough
+                (WasmIf (Block 69) WasmFallthrough
+                 (WasmSeq (WasmCode (Block 70)) (WasmBr 8)))))))))
+          (WasmIf (Block 1)
+           (WasmIf (Block 61) WasmFallthrough
+            (WasmSeq (WasmCode (Block 62)) (WasmBr 3)))
+           (WasmIf (Block 2)
+            (WasmIf (Block 30)
+             (WasmIf (Block 49)
+              (WasmIf (Block 59) WasmFallthrough
+               (WasmSeq (WasmCode (Block 60)) (WasmBr 6)))
+              (WasmIf (Block 50)
+               (WasmIf (Block 57) WasmFallthrough
+                (WasmSeq (WasmCode (Block 58)) (WasmBr 7)))
+               (WasmIf (Block 51)
+                (WasmIf (Block 55) WasmFallthrough
+                 (WasmSeq (WasmCode (Block 56)) (WasmBr 8)))
+                (WasmIf (Block 52) WasmFallthrough
+                 (WasmIf (Block 53) WasmFallthrough
+                  (WasmSeq (WasmCode (Block 54)) (WasmBr 9)))))))
+             (WasmIf (Block 31)
+              (WasmIf (Block 47) WasmFallthrough
+               (WasmSeq (WasmCode (Block 48)) (WasmBr 6)))
+              (WasmIf (Block 32)
+               (WasmIf (Block 45) WasmFallthrough
+                (WasmSeq (WasmCode (Block 46)) (WasmBr 7)))
+               (WasmIf (Block 33)
+                (WasmIf (Block 43) WasmFallthrough
+                 (WasmSeq (WasmCode (Block 44)) (WasmBr 8)))
+                (WasmIf (Block 34)
+                 (WasmIf (Block 41) WasmFallthrough
+                  (WasmSeq (WasmCode (Block 42)) (WasmBr 9)))
+                 (WasmIf (Block 35)
+                  (WasmIf (Block 39) WasmFallthrough
+                   (WasmSeq (WasmCode (Block 40)) (WasmBr 10)))
+                  (WasmIf (Block 36) WasmFallthrough
+                   (WasmIf (Block 37) WasmFallthrough
+                    (WasmSeq (WasmCode (Block 38)) (WasmBr 11))))))))))
+            (WasmIf (Block 3)
+             (WasmIf (Block 28) WasmFallthrough
+              (WasmSeq (WasmCode (Block 29)) (WasmBr 5)))
+             (WasmIf (Block 4) WasmFallthrough
+              (WasmSeq
+               (WasmBlock
+                (WasmSeq
+                 (WasmBlock
+                  (WasmSeq
+                   (WasmBlock
+                    (WasmSeq
+                     (WasmBlock
+                      (WasmSeq
+                       (WasmBlock
+                        (WasmSeq
+                         (WasmBlock
+                          (WasmSeq
+                           (WasmBlock
+                            (WasmSeq
+                             (WasmBlock
+                              (WasmSeq
+                               (WasmBlock
+                                (WasmSeq
+                                 (WasmBlock
+                                  (WasmSeq
+                                   (WasmBlock
+                                    (WasmSeq
+                                     (WasmBlock
+                                      (WasmBrTable (bb_id (Block 5))
+                                       (targets (11 10 9 8 7 6 5 4 3 2 1))
+                                       (default 0)))
+                                     (WasmCodeReturn (Block 84))))
+                                   (WasmIf (Block 26) (WasmBr 15)
+                                    (WasmSeq (WasmCode (Block 27)) (WasmBr 16)))))
+                                 (WasmIf (Block 24) (WasmBr 14)
+                                  (WasmSeq (WasmCode (Block 25)) (WasmBr 15)))))
+                               (WasmIf (Block 22) (WasmBr 13)
+                                (WasmSeq (WasmCode (Block 23)) (WasmBr 14)))))
+                             (WasmIf (Block 20) (WasmBr 12)
+                              (WasmSeq (WasmCode (Block 21)) (WasmBr 13)))))
+                           (WasmIf (Block 18) (WasmBr 11)
+                            (WasmSeq (WasmCode (Block 19)) (WasmBr 12)))))
+                         (WasmIf (Block 16) (WasmBr 10)
+                          (WasmSeq (WasmCode (Block 17)) (WasmBr 11)))))
+                       (WasmIf (Block 14) (WasmBr 9)
+                        (WasmSeq (WasmCode (Block 15)) (WasmBr 10)))))
+                     (WasmIf (Block 12) (WasmBr 8)
+                      (WasmSeq (WasmCode (Block 13)) (WasmBr 9)))))
+                   (WasmIf (Block 10) (WasmBr 7)
+                    (WasmSeq (WasmCode (Block 11)) (WasmBr 8)))))
+                 (WasmIf (Block 8) (WasmBr 6)
+                  (WasmSeq (WasmCode (Block 9)) (WasmBr 7)))))
+               (WasmIf (Block 6) WasmFallthrough
+                (WasmSeq (WasmCode (Block 7)) (WasmBr 6)))))))))
+         (WasmSeq (WasmCode (Block 82)) (WasmBr 1))))
+       (WasmSeq (WasmCode (Block 81)) WasmFallthrough)))
+     (WasmCodeReturn (Block 83)))
     |}]
 
 let%expect_test "fistp dword" =
@@ -1866,28 +3569,41 @@ let%expect_test "test eax,eax jbe" =
 
 let%expect_test "shld" =
   test_trans_block 0x00481fa8;
-  [%expect
-    {|
-    ((id 211)
-     (instrs
-      ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
-       (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -92)))
-       (2 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -88)))
-       (3 (Const __i32 3))
-       (4 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 2)) (rhs (Ref 3))))
-       (5 (Const __i32 29))
-       (6
-        (SignedBiOp (var __i32) (op ShiftRight) (signed false) (lhs (Ref 1))
-         (rhs (Ref 5))))
-       (7 (BiOp (var ecx) (op Or) (lhs (Ref 4)) (rhs (Ref 6))))
-       (8 (Const __i32 3))
-       (9 (BiOp (var eax) (op ShiftLeft) (lhs (Ref 1)) (rhs (Ref 8))))
-       (10 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 9)) (offset -92)))
-       (11 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 7)) (offset -88)))
-       (12 (SetGlobalOp (value (Ref 7)) (global ((name ecx) (typ Int)))))
-       (13 (SetGlobalOp (value (Ref 9)) (global ((name eax) (typ Int)))))))
-     (terminator (Goto (Block 217))) (roots ()))
-    |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  (Not_found_s "List.findi_exn: not found")
+  Raised at Base__List.findi_exn.findi_exn in file "src/list.ml", line 357, characters 14-29
+  Called from Mir__Structure_cfg.f.br_index in file "mir/Structure_cfg.ml", line 432, characters 4-202
+  Called from Mir__Structure_cfg.f.do_branch in file "mir/Structure_cfg.ml", line 487, characters 13-32
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 463, characters 65-80
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 468, characters 16-37
+  Called from Mir__Structure_cfg.f.do_tree in file "mir/Structure_cfg.ml", line 498, characters 15-80
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 468, characters 16-37
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 469, characters 16-51
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 468, characters 16-37
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 456, characters 12-78
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 456, characters 12-78
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 469, characters 16-51
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 456, characters 12-78
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 468, characters 16-37
+  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 463, characters 65-80
+  Called from Test_towhowcaml.test_trans_block in file "test/test_towhowcaml.ml", line 34, characters 2-44
+  Called from Test_towhowcaml.(fun) in file "test/test_towhowcaml.ml", line 3561, characters 2-29
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  |}]
 
 let%expect_test "repne scasb" =
   test_trans_block 0x0047dcc4;
@@ -2422,8 +4138,7 @@ let%expect_test "and jns" =
 
 let%expect_test "fidivr" =
   test_trans_block 0x00414d50;
-  [%expect
-    {|
+  [%expect {|
     ((id 818)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -2539,22 +4254,7 @@ let%expect_test "tail call" =
      (locals
       ((__ret_addr__ ((name __ret_addr__) (typ Int)))
        (esp ((name esp) (typ Int))))))
-    (parent ((0 -1)))
-    (preorder ((0 0)))
-    (inv_preorder ((0 0)))
-    (semidom ((0 -1)))
-    (ancestor ((0 -1)))
-    (label ((0 0)))
-    (graph ((0 ())))
-    (preds ((0 ())))
-    (idoms1 ((0 0)))
-    (idoms2 ((0 -1)))
-    ((rpnum ((0 0))) (dom_tree ((0 ()))))
-    (preds ((0 ())))
-    (merge_blocks ())
-    ((x 0) (children ()) (children_within ()))
-    ((x 0) (ys ()) (prev_within ()) (c ((enclosing ()) (fallthrough -1))))
-    (WasmCodeReturn 0)
+    (WasmCodeReturn (Block 0))
     |}]
 
 let%expect_test "shl reg" =
@@ -3215,8 +4915,7 @@ let%expect_test "rep stosd (zeroed)" =
 
 let%expect_test "fild/fiadd" =
   test_trans_block 0x00453df6;
-  [%expect
-    {|
+  [%expect {|
     ((id 510)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3270,8 +4969,7 @@ let%expect_test "fild/fiadd" =
 
 let%expect_test "div" =
   test_trans_block 0x00452f62;
-  [%expect
-    {|
+  [%expect {|
     ((id 341)
      (instrs
       ((0 (Const ecx 4849184)) (1 (Const __i32 4))
@@ -3299,8 +4997,7 @@ let%expect_test "div" =
 
 let%expect_test "fdiv" =
   test_trans_block 0x00452949;
-  [%expect
-    {|
+  [%expect {|
     ((id 279)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3347,8 +5044,7 @@ let%expect_test "fdiv" =
 
 let%expect_test "cdq/idiv" =
   test_trans_block 0x004529e3;
-  [%expect
-    {|
+  [%expect {|
     ((id 286)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3396,8 +5092,7 @@ let%expect_test "cdq/idiv" =
 
 let%expect_test "imul" =
   test_trans_block 0x004539dd;
-  [%expect
-    {|
+  [%expect {|
     ((id 491)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3424,8 +5119,7 @@ let%expect_test "imul" =
 
 let%expect_test "float jp 0x5" =
   test_trans_block 0x00451bfe;
-  [%expect
-    {|
+  [%expect {|
     ((id 148)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3445,8 +5139,7 @@ let%expect_test "float jp 0x5" =
 
 let%expect_test "jle" =
   test_trans_block 0x004536f0;
-  [%expect
-    {|
+  [%expect {|
     ((id 450)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3463,8 +5156,7 @@ let%expect_test "jle" =
 
 let%expect_test "jumptable" =
   test_trans_block 0x00450dec;
-  [%expect
-    {|
+  [%expect {|
     ((id 6)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3493,8 +5185,7 @@ let%expect_test "jumptable" =
 
 let%expect_test "ja" =
   test_trans_block 0x00450de0;
-  [%expect
-    {|
+  [%expect {|
     ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3521,8 +5212,7 @@ let%expect_test "ja" =
 
 let%expect_test "jg" =
   test_trans_block 4525496;
-  [%expect
-    {|
+  [%expect {|
     ((id 4)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3590,7 +5280,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   test_trans 0x47ea7d;
-  [%expect {|
+  [%expect
+    {|
     ((name func_47ea7d)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -4162,250 +5853,49 @@ let%expect_test _ =
       ((__input_compare_arg__ ((name __input_compare_arg__) (typ Int)))
        (__ret_addr__ ((name __ret_addr__) (typ Int)))
        (esp ((name esp) (typ Int))))))
-    (parent
-     ((0 -1) (1 0) (2 1) (3 2) (4 3) (5 4) (6 5) (7 5) (8 26) (9 4) (10 29)
-      (11 27) (12 6) (13 7) (14 8) (15 9) (16 10) (17 11) (18 12) (19 13)
-      (20 14) (21 15) (22 16) (23 17) (24 18) (25 19) (26 19) (27 20) (28 21)
-      (29 22) (30 23)))
-    (preorder
-     ((0 0) (1 1) (2 2) (3 3) (4 4) (5 5) (6 6) (7 12) (8 13) (9 14) (10 15)
-      (11 16) (12 17) (13 18) (14 19) (15 20) (16 21) (17 22) (18 23) (19 24)
-      (20 25) (21 27) (22 28) (23 29) (24 30) (25 26) (26 7) (27 8) (28 11)
-      (29 9) (30 10)))
-    (inv_preorder
-     ((0 0) (1 1) (2 2) (3 3) (4 4) (5 5) (6 6) (7 26) (8 27) (9 29) (10 30)
-      (11 28) (12 7) (13 8) (14 9) (15 10) (16 11) (17 12) (18 13) (19 14)
-      (20 15) (21 16) (22 17) (23 18) (24 19) (25 20) (26 25) (27 21) (28 22)
-      (29 23) (30 24)))
-    (semidom
-     ((0 -1) (1 0) (2 0) (3 2) (4 3) (5 4) (6 2) (7 5) (8 26) (9 4) (10 29)
-      (11 4) (12 4) (13 7) (14 7) (15 9) (16 9) (17 11) (18 11) (19 13) (20 13)
-      (21 15) (22 15) (23 17) (24 17) (25 19) (26 19) (27 19) (28 21) (29 21)
-      (30 23)))
-    (ancestor
-     ((0 -1) (1 0) (2 1) (3 2) (4 3) (5 4) (6 5) (7 3) (8 4) (9 2) (10 3)
-      (11 4) (12 6) (13 7) (14 8) (15 9) (16 10) (17 11) (18 12) (19 13)
-      (20 14) (21 15) (22 16) (23 17) (24 18) (25 19) (26 18) (27 20) (28 21)
-      (29 22) (30 23)))
-    (label
-     ((0 0) (1 0) (2 0) (3 2) (4 3) (5 4) (6 2) (7 4) (8 7) (9 7) (10 9)
-      (11 9) (12 11) (13 11) (14 13) (15 13) (16 15) (17 15) (18 17) (19 17)
-      (20 19) (21 19) (22 21) (23 21) (24 23) (25 19) (26 4) (27 5) (28 4)
-      (29 3) (30 4)))
-    (graph
-     ((0 (1 2)) (1 (2)) (2 (3 6)) (3 (4 6)) (4 (5 9)) (5 (6 7)) (6 (12))
-      (7 (6 8)) (8 (11)) (9 (6 10)) (10 (11)) (11 (12)) (12 (13 14)) (13 (14))
-      (14 (15 16)) (15 (16)) (16 (17 18)) (17 (18)) (18 (19 20)) (19 (20))
-      (20 (21 22)) (21 (22)) (22 (23 24)) (23 (24)) (24 (25 26)) (25 (27))
-      (26 (27)) (27 (28 29)) (28 (29)) (29 (30)) (30 ())))
-    (preds
-     ((0 ()) (1 (0)) (2 (0 1)) (3 (2)) (4 (3)) (5 (4)) (6 (2 3 5 7 9)) (7 (5))
-      (8 (7)) (9 (4)) (10 (9)) (11 (8 10)) (12 (6 11)) (13 (12)) (14 (12 13))
-      (15 (14)) (16 (14 15)) (17 (16)) (18 (16 17)) (19 (18)) (20 (18 19))
-      (21 (20)) (22 (20 21)) (23 (22)) (24 (22 23)) (25 (24)) (26 (24))
-      (27 (25 26)) (28 (27)) (29 (27 28)) (30 (29))))
-    (idoms1
-     ((0 0) (1 0) (2 0) (3 2) (4 3) (5 4) (6 2) (7 5) (8 26) (9 4) (10 29)
-      (11 4) (12 2) (13 7) (14 7) (15 9) (16 9) (17 11) (18 11) (19 13) (20 13)
-      (21 15) (22 15) (23 17) (24 17) (25 19) (26 19) (27 19) (28 21) (29 21)
-      (30 23)))
-    (idoms2
-     ((0 -1) (1 0) (2 0) (3 2) (4 3) (5 4) (6 2) (7 5) (8 7) (9 4) (10 9)
-      (11 4) (12 2) (13 12) (14 12) (15 14) (16 14) (17 16) (18 16) (19 18)
-      (20 18) (21 20) (22 20) (23 22) (24 22) (25 24) (26 24) (27 24) (28 27)
-      (29 27) (30 29)))
-    ((rpnum
-      ((0 0) (1 1) (2 2) (3 3) (4 4) (5 7) (6 11) (7 8) (8 9) (9 5) (10 6)
-       (11 10) (12 12) (13 13) (14 14) (15 15) (16 16) (17 17) (18 18) (19 19)
-       (20 20) (21 21) (22 22) (23 23) (24 24) (25 26) (26 25) (27 27) (28 28)
-       (29 29) (30 30)))
-     (dom_tree
-      ((0 (2 1)) (1 ()) (2 (12 6 3)) (3 (4)) (4 (11 5 9)) (5 (7)) (6 ())
-       (7 (8)) (8 ()) (9 (10)) (10 ()) (11 ()) (12 (14 13)) (13 ()) (14 (16 15))
-       (15 ()) (16 (18 17)) (17 ()) (18 (20 19)) (19 ()) (20 (22 21)) (21 ())
-       (22 (24 23)) (23 ()) (24 (27 25 26)) (25 ()) (26 ()) (27 (29 28))
-       (28 ()) (29 (30)) (30 ()))))
-    (preds
-     ((0 ()) (1 (0)) (2 (0 1)) (3 (2)) (4 (3)) (5 (4)) (6 (2 3 5 7 9)) (7 (5))
-      (8 (7)) (9 (4)) (10 (9)) (11 (8 10)) (12 (6 11)) (13 (12)) (14 (12 13))
-      (15 (14)) (16 (14 15)) (17 (16)) (18 (16 17)) (19 (18)) (20 (18 19))
-      (21 (20)) (22 (20 21)) (23 (22)) (24 (22 23)) (25 (24)) (26 (24))
-      (27 (25 26)) (28 (27)) (29 (27 28)) (30 (29))))
-    (merge_blocks (2 6 11 12 14 16 18 20 22 24 27 29))
-    ((x 0) (children (2 1)) (children_within (2)))
-    (seq (x 0) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 2) (children (12 6 3)) (children_within (12 6)))
-    (seq (x 2) (ys (6)) (c ((enclosing ()) (fallthrough -1))))
-    ((x 12) (children (14 13)) (children_within (14)))
-    (seq (x 12) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 14) (children (16 15)) (children_within (16)))
-    (seq (x 14) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 16) (children (18 17)) (children_within (18)))
-    (seq (x 16) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 18) (children (20 19)) (children_within (20)))
-    (seq (x 18) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 20) (children (22 21)) (children_within (22)))
-    (seq (x 20) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 22) (children (24 23)) (children_within (24)))
-    (seq (x 22) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 24) (children (27 25 26)) (children_within (27)))
-    (seq (x 24) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 27) (children (29 28)) (children_within (29)))
-    (seq (x 27) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 29) (children (30)) (children_within ()))
-    ((x 29) (ys ()) (prev_within ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 30) (children ()) (children_within ()))
-    ((x 30) (ys ()) (prev_within ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 27) (ys ()) (prev_within (29)) (c ((enclosing ()) (fallthrough 29))))
-    ((x 28) (children ()) (children_within ()))
-    ((x 28) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (29)))) (fallthrough 29))))
-    ((x 24) (ys ()) (prev_within (27)) (c ((enclosing ()) (fallthrough 27))))
-    ((x 26) (children ()) (children_within ()))
-    ((x 26) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (27)))) (fallthrough 27))))
-    ((x 25) (children ()) (children_within ()))
-    ((x 25) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (27)))) (fallthrough 27))))
-    ((x 22) (ys ()) (prev_within (24)) (c ((enclosing ()) (fallthrough 24))))
-    ((x 23) (children ()) (children_within ()))
-    ((x 23) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (24)))) (fallthrough 24))))
-    ((x 20) (ys ()) (prev_within (22)) (c ((enclosing ()) (fallthrough 22))))
-    ((x 21) (children ()) (children_within ()))
-    ((x 21) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (22)))) (fallthrough 22))))
-    ((x 18) (ys ()) (prev_within (20)) (c ((enclosing ()) (fallthrough 20))))
-    ((x 19) (children ()) (children_within ()))
-    ((x 19) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (20)))) (fallthrough 20))))
-    ((x 16) (ys ()) (prev_within (18)) (c ((enclosing ()) (fallthrough 18))))
-    ((x 17) (children ()) (children_within ()))
-    ((x 17) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (18)))) (fallthrough 18))))
-    ((x 14) (ys ()) (prev_within (16)) (c ((enclosing ()) (fallthrough 16))))
-    ((x 15) (children ()) (children_within ()))
-    ((x 15) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (16)))) (fallthrough 16))))
-    ((x 12) (ys ()) (prev_within (14)) (c ((enclosing ()) (fallthrough 14))))
-    ((x 13) (children ()) (children_within ()))
-    ((x 13) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (14)))) (fallthrough 14))))
-    (blk (x 2) (ys (6)) (c ((enclosing ()) (fallthrough 12))))
-    (seq (x 2) (ys ()) (c ((enclosing ((BlockFollowedBy 12))) (fallthrough 12))))
-    ((x 6) (children ()) (children_within ()))
-    ((x 6) (ys ()) (prev_within ())
-     (c ((enclosing ((BlockFollowedBy 12))) (fallthrough 12))))
-    ((x 2) (ys ()) (prev_within (6))
-     (c ((enclosing ((BlockFollowedBy 12))) (fallthrough 6))))
-    ((x 3) (children (4)) (children_within ()))
-    ((x 3) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (6)) (BlockFollowedBy 12))) (fallthrough 6))))
-    ((x 4) (children (11 5 9)) (children_within (11)))
-    (seq (x 4) (ys ())
-     (c
-      ((enclosing ((IfThenElse ()) (IfThenElse (6)) (BlockFollowedBy 12)))
-       (fallthrough 6))))
-    ((x 11) (children ()) (children_within ()))
-    ((x 11) (ys ()) (prev_within ())
-     (c
-      ((enclosing ((IfThenElse ()) (IfThenElse (6)) (BlockFollowedBy 12)))
-       (fallthrough 6))))
-    ((src 11) (target 12)
-     (c
-      ((enclosing ((IfThenElse ()) (IfThenElse (6)) (BlockFollowedBy 12)))
-       (fallthrough 6))))
-    ((x 4) (ys ()) (prev_within (11))
-     (c
-      ((enclosing ((IfThenElse ()) (IfThenElse (6)) (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((x 9) (children (10)) (children_within ()))
-    ((x 9) (ys ()) (prev_within ())
-     (c
-      ((enclosing
-        ((IfThenElse (11)) (IfThenElse ()) (IfThenElse (6)) (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((src 9) (target 6)
-     (c
-      ((enclosing
-        ((IfThenElse ()) (IfThenElse (11)) (IfThenElse ()) (IfThenElse (6))
-         (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((x 10) (children ()) (children_within ()))
-    ((x 10) (ys ()) (prev_within ())
-     (c
-      ((enclosing
-        ((IfThenElse ()) (IfThenElse (11)) (IfThenElse ()) (IfThenElse (6))
-         (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((x 5) (children (7)) (children_within ()))
-    ((x 5) (ys ()) (prev_within ())
-     (c
-      ((enclosing
-        ((IfThenElse (11)) (IfThenElse ()) (IfThenElse (6)) (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((x 7) (children (8)) (children_within ()))
-    ((x 7) (ys ()) (prev_within ())
-     (c
-      ((enclosing
-        ((IfThenElse ()) (IfThenElse (11)) (IfThenElse ()) (IfThenElse (6))
-         (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((src 7) (target 6)
-     (c
-      ((enclosing
-        ((IfThenElse ()) (IfThenElse ()) (IfThenElse (11)) (IfThenElse ())
-         (IfThenElse (6)) (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((x 8) (children ()) (children_within ()))
-    ((x 8) (ys ()) (prev_within ())
-     (c
-      ((enclosing
-        ((IfThenElse ()) (IfThenElse ()) (IfThenElse (11)) (IfThenElse ())
-         (IfThenElse (6)) (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((src 5) (target 6)
-     (c
-      ((enclosing
-        ((IfThenElse ()) (IfThenElse (11)) (IfThenElse ()) (IfThenElse (6))
-         (BlockFollowedBy 12)))
-       (fallthrough 11))))
-    ((x 0) (ys ()) (prev_within (2)) (c ((enclosing ()) (fallthrough 2))))
-    ((x 1) (children ()) (children_within ()))
-    ((x 1) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (2)))) (fallthrough 2))))
-    (WasmSeq (WasmIf 0 WasmFallthrough (WasmSeq (WasmCode 1) WasmFallthrough))
+    (WasmSeq
+     (WasmIf (Block 0) WasmFallthrough
+      (WasmSeq (WasmCode (Block 1)) WasmFallthrough))
      (WasmSeq
       (WasmBlock
        (WasmSeq
-        (WasmIf 2 WasmFallthrough
-         (WasmIf 3 WasmFallthrough
+        (WasmIf (Block 2) WasmFallthrough
+         (WasmIf (Block 3) WasmFallthrough
           (WasmSeq
-           (WasmIf 4
-            (WasmIf 9 (WasmBr 3) (WasmSeq (WasmCode 10) WasmFallthrough))
-            (WasmIf 5
-             (WasmIf 7 (WasmBr 4) (WasmSeq (WasmCode 8) WasmFallthrough))
+           (WasmIf (Block 4)
+            (WasmIf (Block 9) (WasmBr 3)
+             (WasmSeq (WasmCode (Block 10)) WasmFallthrough))
+            (WasmIf (Block 5)
+             (WasmIf (Block 7) (WasmBr 4)
+              (WasmSeq (WasmCode (Block 8)) WasmFallthrough))
              (WasmBr 3)))
-           (WasmSeq (WasmCode 11) (WasmBr 2)))))
-        (WasmSeq (WasmCode 6) WasmFallthrough)))
+           (WasmSeq (WasmCode (Block 11)) (WasmBr 2)))))
+        (WasmSeq (WasmCode (Block 6)) WasmFallthrough)))
       (WasmSeq
-       (WasmIf 12 WasmFallthrough (WasmSeq (WasmCode 13) WasmFallthrough))
+       (WasmIf (Block 12) WasmFallthrough
+        (WasmSeq (WasmCode (Block 13)) WasmFallthrough))
        (WasmSeq
-        (WasmIf 14 WasmFallthrough (WasmSeq (WasmCode 15) WasmFallthrough))
+        (WasmIf (Block 14) WasmFallthrough
+         (WasmSeq (WasmCode (Block 15)) WasmFallthrough))
         (WasmSeq
-         (WasmIf 16 WasmFallthrough (WasmSeq (WasmCode 17) WasmFallthrough))
+         (WasmIf (Block 16) WasmFallthrough
+          (WasmSeq (WasmCode (Block 17)) WasmFallthrough))
          (WasmSeq
-          (WasmIf 18 WasmFallthrough (WasmSeq (WasmCode 19) WasmFallthrough))
+          (WasmIf (Block 18) WasmFallthrough
+           (WasmSeq (WasmCode (Block 19)) WasmFallthrough))
           (WasmSeq
-           (WasmIf 20 WasmFallthrough (WasmSeq (WasmCode 21) WasmFallthrough))
+           (WasmIf (Block 20) WasmFallthrough
+            (WasmSeq (WasmCode (Block 21)) WasmFallthrough))
            (WasmSeq
-            (WasmIf 22 WasmFallthrough (WasmSeq (WasmCode 23) WasmFallthrough))
+            (WasmIf (Block 22) WasmFallthrough
+             (WasmSeq (WasmCode (Block 23)) WasmFallthrough))
             (WasmSeq
-             (WasmIf 24 (WasmSeq (WasmCode 26) WasmFallthrough)
-              (WasmSeq (WasmCode 25) WasmFallthrough))
+             (WasmIf (Block 24) (WasmSeq (WasmCode (Block 26)) WasmFallthrough)
+              (WasmSeq (WasmCode (Block 25)) WasmFallthrough))
              (WasmSeq
-              (WasmIf 27 WasmFallthrough (WasmSeq (WasmCode 28) WasmFallthrough))
-              (WasmSeq (WasmCode 29) (WasmCodeReturn 30))))))))))))
+              (WasmIf (Block 27) WasmFallthrough
+               (WasmSeq (WasmCode (Block 28)) WasmFallthrough))
+              (WasmSeq (WasmCode (Block 29)) (WasmCodeReturn (Block 30)))))))))))))
     |}]
 
 let%expect_test _ =
@@ -4512,77 +6002,12 @@ let%expect_test _ =
      (locals
       ((__ret_addr__ ((name __ret_addr__) (typ Int)))
        (esp ((name esp) (typ Int))))))
-    (parent ((0 -1) (1 0) (2 1) (3 2) (4 0) (5 3)))
-    (preorder ((0 0) (1 1) (2 2) (3 3) (4 5) (5 4)))
-    (inv_preorder ((0 0) (1 1) (2 2) (3 3) (4 5) (5 4)))
-    (semidom ((0 -1) (1 0) (2 1) (3 1) (4 0) (5 0)))
-    (ancestor ((0 -1) (1 0) (2 1) (3 2) (4 -1) (5 3)))
-    (label ((0 0) (1 0) (2 1) (3 1) (4 0) (5 0)))
-    (graph ((0 (1 4)) (1 (2 3)) (2 (3)) (3 (5)) (4 (5)) (5 ())))
-    (preds ((0 ()) (1 (0)) (2 (1)) (3 (1 2)) (4 (0)) (5 (3 4))))
-    (idoms1 ((0 0) (1 0) (2 1) (3 1) (4 0) (5 0)))
-    (idoms2 ((0 -1) (1 0) (2 1) (3 1) (4 0) (5 0)))
-    ((rpnum ((0 0) (1 2) (2 3) (3 4) (4 1) (5 5)))
-     (dom_tree ((0 (5 1 4)) (1 (3 2)) (2 ()) (3 ()) (4 ()) (5 ()))))
-    (preds ((0 ()) (1 (0)) (2 (1)) (3 (1 2)) (4 (0)) (5 (3 4))))
-    (merge_blocks (3 5))
-    ((x 0) (children (5 1 4)) (children_within (5)))
-    (seq (x 0) (ys ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 5) (children ()) (children_within ()))
-    ((x 5) (ys ()) (prev_within ()) (c ((enclosing ()) (fallthrough -1))))
-    ((x 0) (ys ()) (prev_within (5)) (c ((enclosing ()) (fallthrough 5))))
-    ((x 4) (children ()) (children_within ()))
-    ((x 4) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (5)))) (fallthrough 5))))
-    ((x 1) (children (3 2)) (children_within (3)))
-    (seq (x 1) (ys ()) (c ((enclosing ((IfThenElse (5)))) (fallthrough 5))))
-    ((x 3) (children ()) (children_within ()))
-    ((x 3) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (5)))) (fallthrough 5))))
-    ((x 1) (ys ()) (prev_within (3))
-     (c ((enclosing ((IfThenElse (5)))) (fallthrough 3))))
-    ((x 2) (children ()) (children_within ()))
-    ((x 2) (ys ()) (prev_within ())
-     (c ((enclosing ((IfThenElse (3)) (IfThenElse (5)))) (fallthrough 3))))
     (WasmSeq
-     (WasmIf 0 (WasmSeq (WasmCode 4) WasmFallthrough)
-      (WasmSeq (WasmIf 1 WasmFallthrough (WasmSeq (WasmCode 2) WasmFallthrough))
-       (WasmSeq (WasmCode 3) WasmFallthrough)))
-     (WasmCodeReturn 5))
+     (WasmIf (Block 0) (WasmSeq (WasmCode (Block 4)) WasmFallthrough)
+      (WasmSeq
+       (WasmIf (Block 1) WasmFallthrough
+        (WasmSeq (WasmCode (Block 2)) WasmFallthrough))
+       (WasmSeq (WasmCode (Block 3)) WasmFallthrough)))
+     (WasmCodeReturn (Block 5)))
     |}]
 
-let%expect_test "graph" =
-  let module IntSet = Set.Make (Int) in
-  let graph =
-    [
-      [1];
-      [ 2; 3 ];
-      [ 4; 5 ];
-      [ 8 ];
-      [ 3; 7 ];
-      [ 6 ];
-      [ 7 ];
-      [ 8 ];
-      [];
-    ]
-    |> Array.Permissioned.of_list_map ~f:IntSet.of_list
-  in
-  print_s @@ sexp_of_array sexp_of_int @@ fst
-  @@ Mir.Structure_cfg.find_idoms graph;
-  [%expect {|
-    (parent ((0 -1) (1 0) (2 1) (3 3) (4 2) (5 2) (6 7) (7 3) (8 4)))
-    (preorder ((0 0) (1 1) (2 2) (3 4) (4 3) (5 8) (6 7) (7 5) (8 6)))
-    (inv_preorder ((0 0) (1 1) (2 2) (3 4) (4 3) (5 7) (6 8) (7 6) (8 5)))
-    (semidom ((0 -1) (1 0) (2 1) (3 1) (4 2) (5 2) (6 7) (7 2) (8 2)))
-    (ancestor ((0 -1) (1 0) (2 1) (3 3) (4 2) (5 1) (6 1) (7 2) (8 4)))
-    (label ((0 0) (1 0) (2 1) (3 2) (4 1) (5 2) (6 2) (7 2) (8 2)))
-    (graph
-     ((0 (1)) (1 (2 3)) (2 (4 5)) (3 (8)) (4 (3 7)) (5 (6)) (6 (7)) (7 (8))
-      (8 ())))
-    (preds
-     ((0 ()) (1 (0)) (2 (1)) (3 (1 4)) (4 (2)) (5 (2)) (6 (5)) (7 (4 6))
-      (8 (3 7))))
-    (idoms1 ((0 0) (1 0) (2 1) (3 1) (4 2) (5 2) (6 7) (7 2) (8 1)))
-    (idoms2 ((0 -1) (1 0) (2 1) (3 1) (4 2) (5 2) (6 5) (7 2) (8 1)))
-    (-1 0 1 1 2 2 5 2 1)
-    |}]

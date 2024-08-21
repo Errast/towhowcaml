@@ -13,7 +13,12 @@ val set : 'a t -> int -> 'a -> unit
 val add : 'a t -> 'a -> unit
 val pop : 'a t -> 'a
 val insert : 'a t -> int -> 'a -> unit
+val append : 'a t -> 'a t -> unit
+val singleton : 'a -> 'a t
+val reserve_for : 'a t -> int -> unit
 val copy : 'a t -> 'a t
+val of_array : 'a array -> 'a t
+val of_array_perm : ('a, [> read ]) Array.Permissioned.t -> 'a t
 val to_perm_array : 'a t -> ('a, [< 'b perms ]) Array.Permissioned.t
 
 include

@@ -20,11 +20,14 @@ let init length ?(cap = length) f =
   done;
   { array; length }
 
-let clear vec = 
-  Option_array.clear vec.array;
+let length vec = vec.length
+
+let clear vec =
+  for i = 0 to length vec - 1 do
+    Option_array.unsafe_set_none vec.array i
+  done;
   vec.length <- 0
 
-let length vec = vec.length
 let valid_index vec i = i < length vec
 
 let valid_index_exn vec i =
@@ -48,14 +51,19 @@ let set vec i value =
   (* Option_array.unsafe_set_some vec.array i value *)
   Option_array.set_some vec.array i value
 
-let add vec value =
-  let len = length vec in
-  if len >= Option_array.length vec.array then (
+let reserve_for vec len =
+  assert (len >= length vec);
+  let current_cap = Option_array.length vec.array in
+  if len > current_cap then (
     let new_arr =
-      Option_array.create ~len:(Int.max 4 @@ (Int.floor_pow2 2 * len))
+      Option_array.create ~len:(Int.max 4 @@ Int.max len @@ (2 * current_cap))
     in
     Option_array.blito ~src:vec.array ~dst:new_arr ();
-    vec.array <- new_arr);
+    vec.array <- new_arr)
+
+let add vec value =
+  let len = length vec in
+  reserve_for vec (len + 1);
   (* Option_array.unsafe_set_some vec.array len value *)
   Option_array.set_some vec.array len value;
   vec.length <- len + 1
@@ -74,9 +82,7 @@ let insert vec i value =
   vec.length <- len + 1;
   valid_index_exn vec i;
   if len = Option_array.length vec.array then (
-    let new_arr =
-      Option_array.create ~len:(Int.max 4 @@ (Int.floor_pow2 2 * len))
-    in
+    let new_arr = Option_array.create ~len:(Int.max 4 @@ (2 * len)) in
     if i > 0 then
       Option_array.blit ~src:vec.array ~dst:new_arr ~src_pos:0 ~dst_pos:0 ~len:i;
     if len <> i then
@@ -103,6 +109,19 @@ let foldi vec ~init ~f =
 
 let fold vec ~init ~f = foldi vec ~init ~f:(fun _ acc x -> f acc x)
 
+let append vec1 vec2 =
+  let len1 = length vec1 in
+  let len2 = length vec2 in
+  reserve_for vec1 (len1 + len2);
+  Option_array.blit ~src:vec2.array ~dst:vec1.array ~src_pos:0 ~dst_pos:len1
+    ~len:len2;
+  vec1.length <- len1 + len2
+
+let singleton a =
+  let v = create ~cap:0 () in
+  add v a;
+  v
+
 include Indexed_container.Make_gen (struct
   type nonrec ('a, _, _) t = 'a t
   type 'a elt = 'a
@@ -117,6 +136,13 @@ end)
 (* Shadow the indexe-container stuff *)
 let of_array arr =
   { array = Option_array.of_array_some arr; length = Array.length arr }
+
+let of_array_perm arr =
+  let len = Array.Permissioned.length arr in
+  {
+    array = Option_array.init_some len ~f:(Array.Permissioned.unsafe_get arr);
+    length = len;
+  }
 
 let to_array vec =
   Array.init vec.length
