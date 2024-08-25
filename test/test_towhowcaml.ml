@@ -3236,7 +3236,7 @@ let%expect_test "nonzero switch" =
                                    (WasmBlock
                                     (WasmSeq
                                      (WasmBlock
-                                      (WasmBrTable (bb_id (Block 5))
+                                      (WasmBrTable (Block 5)
                                        (targets (11 10 9 8 7 6 5 4 3 2 1))
                                        (default 0)))
                                      (WasmCodeReturn (Block 84))))
@@ -3569,41 +3569,27 @@ let%expect_test "test eax,eax jbe" =
 
 let%expect_test "shld" =
   test_trans_block 0x00481fa8;
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Not_found_s "List.findi_exn: not found")
-  Raised at Base__List.findi_exn.findi_exn in file "src/list.ml", line 357, characters 14-29
-  Called from Mir__Structure_cfg.f.br_index in file "mir/Structure_cfg.ml", line 432, characters 4-202
-  Called from Mir__Structure_cfg.f.do_branch in file "mir/Structure_cfg.ml", line 487, characters 13-32
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 463, characters 65-80
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 468, characters 16-37
-  Called from Mir__Structure_cfg.f.do_tree in file "mir/Structure_cfg.ml", line 498, characters 15-80
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 468, characters 16-37
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 469, characters 16-51
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 468, characters 16-37
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 456, characters 12-78
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 456, characters 12-78
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 469, characters 16-51
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 457, characters 12-23
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 456, characters 12-78
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 468, characters 16-37
-  Called from Mir__Structure_cfg.f.node_within in file "mir/Structure_cfg.ml", line 463, characters 65-80
-  Called from Test_towhowcaml.test_trans_block in file "test/test_towhowcaml.ml", line 34, characters 2-44
-  Called from Test_towhowcaml.(fun) in file "test/test_towhowcaml.ml", line 3561, characters 2-29
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
-  |}]
+  [%expect {|
+    ((id 211)
+     (instrs
+      ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
+       (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -92)))
+       (2 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -88)))
+       (3 (Const __i32 3))
+       (4 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 2)) (rhs (Ref 3))))
+       (5 (Const __i32 29))
+       (6
+        (SignedBiOp (var __i32) (op ShiftRight) (signed false) (lhs (Ref 1))
+         (rhs (Ref 5))))
+       (7 (BiOp (var ecx) (op Or) (lhs (Ref 4)) (rhs (Ref 6))))
+       (8 (Const __i32 3))
+       (9 (BiOp (var eax) (op ShiftLeft) (lhs (Ref 1)) (rhs (Ref 8))))
+       (10 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 9)) (offset -92)))
+       (11 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 7)) (offset -88)))
+       (12 (SetGlobalOp (value (Ref 7)) (global ((name ecx) (typ Int)))))
+       (13 (SetGlobalOp (value (Ref 9)) (global ((name eax) (typ Int)))))))
+     (terminator (Goto (Block 217))) (roots ()))
+    |}]
 
 let%expect_test "repne scasb" =
   test_trans_block 0x0047dcc4;

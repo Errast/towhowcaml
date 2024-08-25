@@ -251,7 +251,7 @@ let main c =
     Array.to_sequence_mutable funcs
     |> Sequence.filter ~f:(fun f -> not @@ Hash_set.mem ignroe_funcs f)
     |> Sequence.filter_map ~f:(fun f ->
-           try Some (translate_func c ~intrinsics f)
+           try Some (translate_func c ~intrinsics f |> Mir.Structure_cfg.structure_cfg)
            with exn ->
              Exn.raise_with_original_backtrace
                (Exn.create_s [%message "oops" ~func_addr:(f : int) (exn : exn)])

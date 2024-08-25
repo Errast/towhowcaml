@@ -76,29 +76,57 @@ let sexp_of_iarray sexp_of_t a =
 let sexp_of_iparray sexp_of_t a =
   AP.mapi a ~f:Tuple.T2.create |> [%sexp_of: (int * t, _) AP.t]
 
-type node = { edges : IntSet.t; block : Types.branch_target } [@@deriving sexp]
+type node = { edges : IntSet.t; block : Block.t } [@@deriving sexp]
 type graph = (node, immutable) AP.t
 type 'perms pgraph = (node, 'perms) AP.t
 
 let g_edges graph n = (AP.get graph n).edges
 let g_block graph n = (AP.get graph n).block
 
+module Block = struct
+  include Block
+
+  let sexp_of_t b =
+    [%message "Block" ~_:(b.id : int) ~_:(b.terminator : terminator)]
+end
+
 type wasm_control =
   | WasmBlock of wasm_control
   | WasmLoop of wasm_control
-  | WasmIf of Types.branch_target * wasm_control * wasm_control
-  | WasmCodeReturn of Types.branch_target
+  | WasmIf of Block.t * wasm_control * wasm_control
+  | WasmCodeReturn of Block.t
   | WasmReturn
   | WasmBr of int
-  | WasmBrTable of {
-      bb_id : Types.branch_target;
-      targets : int list;
-      default : int;
-    }
+  | WasmBrTable of { bb_id : Block.t; targets : int list; default : int }
   | WasmSeq of wasm_control * wasm_control
-  | WasmCode of Types.branch_target
+  | WasmCode of Block.t
   | WasmFallthrough
-[@@deriving sexp]
+
+let rec sexp_of_wasm_control =
+  let open Sexplib.Sexp in
+  function
+  | WasmBlock b -> List [ Atom "WasmBlock"; sexp_of_wasm_control b ]
+  | WasmLoop b -> List [ Atom "WasmLoop"; sexp_of_wasm_control b ]
+  | WasmIf (c, t, f) ->
+      [%message
+        "WasmIf"
+          ~_:(Block c.id : Types.branch_target)
+          ~_:(t : wasm_control)
+          ~_:(f : wasm_control)]
+  | WasmCodeReturn b ->
+      [%message "WasmCodeReturn" ~_:(Block b.id : Types.branch_target)]
+  | WasmCode b -> [%message "WasmCode" ~_:(Block b.id : Types.branch_target)]
+  | WasmReturn -> Atom "WasmReturn"
+  | WasmFallthrough -> Atom "WasmFallthrough"
+  | WasmBr i -> List [ Atom "WasmBr"; sexp_of_int i ]
+  | WasmBrTable { bb_id; targets; default } ->
+      [%message
+        "WasmBrTable"
+          ~_:(Block bb_id.id : Types.branch_target)
+          (targets : int list)
+          (default : int)]
+  | WasmSeq (car, cdr) ->
+      [%message "WasmSeq" ~_:(car : wasm_control) ~_:(cdr : wasm_control)]
 
 let create_graph : (Block.t, immutable) AP.t -> _ pgraph =
  fun blocks ->
@@ -119,17 +147,14 @@ let create_graph : (Block.t, immutable) AP.t -> _ pgraph =
         in
         edges)
   in
-  AP.mapi edges ~f:(fun i edges -> { edges; block = Block i })
+  AP.mapi edges ~f:(fun i edges -> { edges; block = AP.get blocks i })
 
 let graph_to_dot graph =
   let b = Buffer.create (AP.length graph * 30) in
   Buffer.add_string b "digraph G{";
   graph
   |> AP.iteri ~f:(fun s ds ->
-         sprintf "%d [label = \"%d_%d\"]; %d -> {" s s
-           (let (Block i) = ds.block in
-            i)
-           s
+         sprintf "%d [label = \"%d_%d\"]; %d -> {" s s ds.block.id s
          |> Buffer.add_string b;
          Set.iter ds.edges ~f:(fun e ->
              string_of_int e |> Buffer.add_string b;
@@ -257,12 +282,12 @@ let make_reducible : _ pgraph -> IntSet.t array -> _ =
   let sn_graph : supernode_graph =
     Hashtbl.create ~size:(Vec.length graph) (module Int)
   in
-  Vec.iteri graph ~f:(fun i { edges; block = Block block } ->
+  Vec.iteri graph ~f:(fun i { edges; block } ->
       Hashtbl.add_exn sn_graph ~key:i
         ~data:
           {
             id = i;
-            nodes = Vec.singleton block;
+            nodes = Vec.singleton block.id;
             (* remove self-edges *)
             succs = Set.remove edges i |> IntHashSet.of_set;
             preds = Set.remove preds.(i) i |> IntHashSet.of_set;
@@ -350,7 +375,6 @@ let make_reducible : _ pgraph -> IntSet.t array -> _ =
       add_node
         { dup_snode with id = fresh (); preds = IntHashSet.singleton to_skip };
 
-      (* TODO fix preds in nodes of duped supernode *)
       List.iter to_dup ~f:(fun pred ->
           (* the nodes in this supernode will be the next (length dup_snode.nodes) nodes in the graph *)
           let duped_node_vec =
@@ -360,7 +384,8 @@ let make_reducible : _ pgraph -> IntSet.t array -> _ =
           (* duplicate the appropriate nodes in graph *)
           let duped_nodes =
             Vec.fold dup_snode.nodes ~init:IntMap.empty ~f:(fun acc i ->
-                Vec.add graph (Vec.get graph i);
+                let node = Vec.get graph i in
+                Vec.add graph node;
                 Map.add_exn acc ~key:i ~data:(Vec.length graph - 1))
           in
           let update_node i =
@@ -372,7 +397,20 @@ let make_reducible : _ pgraph -> IntSet.t array -> _ =
             in
             (* if any updates have been made, write them *)
             if not (phys_equal updated_succs node.edges) then
-              Vec.set graph i { node with edges = updated_succs }
+              Vec.set graph i
+                {
+                  edges = updated_succs;
+                  block =
+                    {
+                      node.block with
+                      terminator =
+                        Block.Terminator.map
+                          (fun (Block n) ->
+                            Block
+                              (Map.find duped_nodes n |> Option.value ~default:n))
+                          node.block.terminator;
+                    };
+                }
           in
 
           (* update edges to old nodes *)
@@ -400,14 +438,8 @@ type containing_syntax =
 type context = { enclosing : containing_syntax list; fallthrough : int }
 [@@deriving sexp]
 
-let f :
-    Func.t ->
-    graph ->
-    (int, _) AP.t ->
-    int array ->
-    IntSet.t array ->
-    wasm_control =
- fun func graph rpnum idoms preds ->
+let f : graph -> (int, _) AP.t -> int array -> IntSet.t array -> wasm_control =
+ fun graph rpnum idoms preds ->
   let dom_tree =
     AP.init (AP.length graph) ~f:(fun i ->
         (* invert tree badly *)
@@ -430,18 +462,21 @@ let f :
   in
   let br_index : int -> context -> int =
    fun l c ->
-    List.findi_exn c.enclosing ~f:(fun _ f ->
-        match f with
-        | (LoopHeadedBy ll | BlockFollowedBy ll | IfThenElse (Some ll))
-          when l = ll ->
-            true
-        | _ -> false)
-    |> fst
+    let depth =
+      List.findi_exn c.enclosing ~f:(fun _ f ->
+          match f with
+          | (LoopHeadedBy ll | BlockFollowedBy ll | IfThenElse (Some ll))
+            when l = ll ->
+              true
+          | _ -> false)
+      |> fst
+    in
+    depth
   in
   let is_merge_node = Set.mem merge_blocks in
   let is_loop_header = Set.mem loop_headers in
   let generates_if b =
-    match (AP.get func.blocks b).terminator with
+    match (AP.get graph b).block.terminator with
     | Branch _ | BranchReturn _ -> true
     | _ -> false
   in
@@ -460,7 +495,7 @@ let f :
         WasmBlock
           (node_within x [] None @@ inside c (BlockFollowedBy prev_within))
     | [], _ -> (
-        match (AP.get func.blocks x).terminator with
+        match (AP.get graph x).block.terminator with
         | Goto (Block l) -> WasmSeq (WasmCode (g_block graph x), do_branch x l c)
         | Branch { succeed = Block t; fail = Block f; _ } ->
             let context = inside c @@ IfThenElse prev_within in
@@ -485,13 +520,21 @@ let f :
    fun src target c ->
     if c.fallthrough = target then WasmFallthrough
     else if is_back_edge src target || is_merge_node target then
-      WasmBr (br_index target c)
+      try WasmBr (br_index target c)
+      with _ ->
+        raise_s
+          [%message
+            "no index"
+              (src : int)
+              (target : int)
+              (c : context)
+              (preds : IntSet.t iarray)]
     else do_tree target c
   and[@tail_mod_cons] do_tree : int -> context -> wasm_control =
    fun x c ->
     let children = AP.get dom_tree x in
     let children_within =
-      match (AP.get func.blocks x).terminator with
+      match (AP.get graph x).block.terminator with
       | Switch _ -> children
       | _ -> List.filter ~f:is_merge_node children
     in
@@ -516,4 +559,5 @@ let structure_cfg : Func.t -> wasm_control =
       (graph', idoms', rpnum', preds')
   in
 
-  f func graph rpnum idoms preds
+  (* print_string @@ graph_to_dot graph; *)
+  f graph rpnum idoms preds
