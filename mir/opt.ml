@@ -389,3 +389,4 @@ let opt (block : Block.t) =
     equal_array equal_int c.uses
     @@ count_uses instrs block.roots block.terminator);
   { block with instrs = AP.of_array instrs }
+

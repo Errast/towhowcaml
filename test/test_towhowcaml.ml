@@ -17,7 +17,10 @@ let test_trans addr =
   let func = translate addr in
   print_s @@ Mir.Func.sexp_of_t @@ func;
   print_s @@ Mir.Structure_cfg.sexp_of_wasm_control
-  @@ Mir.Structure_cfg.structure_cfg func
+  @@ Mir.Structure_cfg.structure_cfg func;
+  Array.Permissioned.iteri func.blocks ~f:(fun i ->
+      Out_channel.output_binary_int stdout i;
+      Mir.Wasm_backend.test)
 
 let test_trans_block addr =
   let name = func_name (force c) addr in
@@ -32,13 +35,14 @@ let test_trans_block addr =
   in
   let translated = Func_translator.translate ~blocks ~name ~intrinsics in
   Mir.Structure_cfg.structure_cfg translated |> ignore;
-  print_s @@ Mir.Block.sexp_of_t
-  @@ Array.Permissioned.get translated.blocks index
+  let block = Array.Permissioned.get translated.blocks index in
+  Mir.Wasm_backend.test block;
+  print_s @@ Mir.Block.sexp_of_t block
 
 let%expect_test "small regs" =
   test_trans_block 0x0047bd35;
-  [%expect
-    {|
+  [%expect {|
+    ((int 11) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -346,13 +350,13 @@ let%expect_test "small regs" =
        (324 (SetGlobalOp (value (Ref 292)) (global ((name ebx) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 318))))
-     (roots ((Ref 0) (Ref 318))))
+     (roots ((Ref 0))))
     |}]
 
 let%expect_test "_sd" =
   test_trans_block 0x00484bb6;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 15))
     ((id 2)
      (instrs
       ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
@@ -602,13 +606,13 @@ let%expect_test "_sd" =
        (160 (SetGlobalOp (value (Ref 91)) (global ((name xmm5) (typ Vec)))))))
      (terminator
       (Branch (succeed (Block 39)) (fail (Block 3)) (condition (Ref 150))))
-     (roots ((Ref 120) (Ref 150))))
+     (roots ((Ref 120))))
     |}]
 
 let%expect_test "bt" =
   test_trans_block 0x00486fa8;
-  [%expect
-    {|
+  [%expect {|
+    ((int 1) (long 0) (float 0) (vec 0))
     ((id 5)
      (instrs
       ((0 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
@@ -625,13 +629,13 @@ let%expect_test "bt" =
        (12 (SetGlobalOp (value (Ref 2)) (global ((name esi) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 4)) (fail (Block 6)) (condition (Ref 11))))
-     (roots ((Ref 3) (Ref 11))))
+     (roots ((Ref 3))))
     |}]
 
 let%expect_test "bts" =
   test_trans_block 0x00486f8d;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 0) (vec 0))
     ((id 2)
      (instrs
       ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
@@ -651,8 +655,8 @@ let%expect_test "bts" =
 
 let%expect_test "rol, xlatb" =
   test_trans_block 0x00483ad4;
-  [%expect
-    {|
+  [%expect {|
+    ((int 6) (long 0) (float 1) (vec 0))
     ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ebx) (global ((name ebx) (typ Int))))) (1 Nop)
@@ -706,8 +710,8 @@ let%expect_test "rol, xlatb" =
 
 let%expect_test "shufpd" =
   test_trans_block 0x0048be1e;
-  [%expect
-    {|
+  [%expect {|
+    ((int 1) (long 0) (float 1) (vec 5))
     ((id 4)
      (instrs
       ((0 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec))))) (1 Nop)
@@ -802,8 +806,8 @@ let%expect_test "shufpd" =
 
 let%expect_test "movq, comisd jae" =
   test_trans_block 0x0048bed8;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 1) (vec 2))
     ((id 7)
      (instrs
       ((0 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
@@ -823,13 +827,13 @@ let%expect_test "movq, comisd jae" =
        (10 (SetGlobalOp (value (Ref 5)) (global ((name xmm6) (typ Vec)))))))
      (terminator
       (Branch (succeed (Block 9)) (fail (Block 8)) (condition (Ref 9))))
-     (roots ((Ref 9))))
+     (roots ()))
     |}]
 
 let%expect_test "comisd jp" =
   test_trans_block 0x0048bdb6;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 0) (vec 4))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -861,13 +865,13 @@ let%expect_test "comisd jp" =
        (18 (DupVar (var __input_compare_arg__) (src (Ref 17)) (typ Int)))))
      (terminator
       (Branch (succeed (Block 18)) (fail (Block 1)) (condition (Ref 13))))
-     (roots ((Ref 0) (Ref 1) (Ref 13) (Ref 18))))
+     (roots ((Ref 0) (Ref 1) (Ref 18))))
     |}]
 
 let%expect_test "fprem" =
   test_trans_block 0x004892f4;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 1) (vec 0))
     ((id 9)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int))) (1 (Const __i32 40))
@@ -906,8 +910,8 @@ let%expect_test "fprem" =
 
 let%expect_test "sub ja" =
   test_trans_block 0x0048929e;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 7)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -927,13 +931,13 @@ let%expect_test "sub ja" =
        (12 (SetGlobalOp (value (Ref 9)) (global ((name ebx) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 10)) (fail (Block 8)) (condition (Ref 10))))
-     (roots ((Ref 0) (Ref 10))))
+     (roots ((Ref 0))))
     |}]
 
 let%expect_test "sahf je" =
   test_trans_block 0x0048582f;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 3) (vec 0))
     ((id 1)
      (instrs
       ((0
@@ -957,13 +961,13 @@ let%expect_test "sahf je" =
         (SetGlobalOp (value (Ref 13)) (global ((name __fpuStack__) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 5)) (fail (Block 2)) (condition (Ref 9))))
-     (roots ((Ref 9))))
+     (roots ()))
     |}]
 
 let%expect_test "add jae" =
   test_trans_block 0x00488a1e;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -975,13 +979,13 @@ let%expect_test "add jae" =
        (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 11)) (fail (Block 2)) (condition (Ref 3))))
-     (roots ((Ref 0) (Ref 3))))
+     (roots ((Ref 0))))
     |}]
 
 let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
   test_trans_block 0x00484ef1;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 3))
     ((id 9)
      (instrs
       ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
@@ -1033,13 +1037,13 @@ let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
        (32 (SetGlobalOp (value (Ref 17)) (global ((name xmm1) (typ Vec)))))))
      (terminator
       (Branch (succeed (Block 25)) (fail (Block 10)) (condition (Ref 26))))
-     (roots ((Ref 26))))
+     (roots ()))
     |}]
 
 let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
   test_trans_block 0x00484fd8;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 4))
     ((id 18)
      (instrs
       ((0 (VecConst (var xmm0) (lower_bits 0) (upper_bits 0)))
@@ -1081,13 +1085,13 @@ let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
        (24 (SetGlobalOp (value (Ref 15)) (global ((name xmm4) (typ Vec)))))))
      (terminator
       (Branch (succeed (Block 20)) (fail (Block 19)) (condition (Ref 18))))
-     (roots ((Ref 18))))
+     (roots ()))
     |}]
 
 let%expect_test "pextrw, mulsd" =
   test_trans_block 0x00485561;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 4))
     ((id 69)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -1131,13 +1135,13 @@ let%expect_test "pextrw, mulsd" =
        (30 (SetGlobalOp (value (Ref 16)) (global ((name xmm6) (typ Vec)))))))
      (terminator
       (Branch (succeed (Block 59)) (fail (Block 70)) (condition (Ref 25))))
-     (roots ((Ref 3) (Ref 25))))
+     (roots ((Ref 3))))
     |}]
 
 let%expect_test "movsd" =
   test_trans_block 0x004852c9;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 0) (vec 2))
     ((id 52)
      (instrs
       ((0 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec)))))
@@ -1163,6 +1167,7 @@ let%expect_test "movsd" =
 let%expect_test "backward direction" =
   test_trans_block 0x0047d9d7;
   [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 23)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
@@ -1187,13 +1192,13 @@ let%expect_test "backward direction" =
      (terminator
       (Switch (cases ((Block 29) (Block 30) (Block 31) (Block 32)))
        (default (Block 33)) (switch_on (Ref 15))))
-     (roots ((Ref 15))))
+     (roots ()))
     |}]
 
 let%expect_test "int3" =
   test_trans_block 0x00487ff1;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 10)
      (instrs
       ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1212,8 +1217,8 @@ let%expect_test "int3" =
 (* check this *)
 let%expect_test "mmx stuff" =
   test_trans_block 0x00476bce;
-  [%expect
-    {|
+  [%expect {|
+    ((int 4) (long 0) (float 0) (vec 8))
     ((id 1)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -1442,13 +1447,13 @@ let%expect_test "mmx stuff" =
        (143 (SetGlobalOp (value (Ref 106)) (global ((name mm0) (typ Vec)))))))
      (terminator
       (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 130))))
-     (roots ((Ref 130))))
+     (roots ()))
     |}]
 
 let%expect_test "xor je" =
   test_trans_block 0x0046fcb3;
-  [%expect
-    {|
+  [%expect {|
+    ((int 1) (long 0) (float 0) (vec 0))
     ((id 6)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -1458,13 +1463,13 @@ let%expect_test "xor je" =
        (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 11)) (fail (Block 7)) (condition (Ref 3))))
-     (roots ((Ref 3))))
+     (roots ()))
     |}]
 
 let%expect_test "imul byte" =
   test_trans_block 0x0046e208;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 32)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
@@ -1504,8 +1509,8 @@ let%expect_test "imul byte" =
 
 let%expect_test "tail indirect call" =
   test_trans_block 0x0047efac;
-  [%expect
-    {|
+  [%expect {|
+    ((int 7) (long 0) (float 0) (vec 0))
     ((id 8)
      (instrs
       ((0 (Const __i32 0)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1548,8 +1553,7 @@ let%expect_test "tail indirect call" =
 
 let%expect_test "nonzero switch" =
   test_trans 0x0046af8f;
-  [%expect
-    {|
+  [%expect {|
     ((name func_46af4f)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -1587,7 +1591,7 @@ let%expect_test "nonzero switch" =
           (27 (DupVar (var __input_compare_arg__) (src (Ref 26)) (typ Int)))))
         (terminator
          (Branch (succeed (Block 63)) (fail (Block 1)) (condition (Ref 22))))
-        (roots ((Ref 1) (Ref 16) (Ref 22) (Ref 27))))
+        (roots ((Ref 1) (Ref 16) (Ref 27))))
        ((id 1)
         (instrs ((0 (OutsideContext (var __input_compare_arg__) (typ Int)))))
         (terminator
@@ -1604,7 +1608,7 @@ let%expect_test "nonzero switch" =
           (4 (DupVar (var __input_compare_arg__) (src (Ref 3)) (typ Int)))))
         (terminator
          (Branch (succeed (Block 30)) (fail (Block 3)) (condition (Ref 2))))
-        (roots ((Ref 2) (Ref 4))))
+        (roots ((Ref 4))))
        ((id 3)
         (instrs ((0 (OutsideContext (var __input_compare_arg__) (typ Int)))))
         (terminator
@@ -1622,7 +1626,7 @@ let%expect_test "nonzero switch" =
           (5 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 5)) (condition (Ref 4))))
-        (roots ((Ref 4))))
+        (roots ()))
        ((id 5)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -1634,7 +1638,7 @@ let%expect_test "nonzero switch" =
            ((Block 6) (Block 8) (Block 10) (Block 12) (Block 14) (Block 16)
             (Block 18) (Block 20) (Block 22) (Block 24) (Block 26)))
           (default (Block 84)) (switch_on (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 6)
         (instrs
          ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1656,7 +1660,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 7)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 7)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1702,7 +1706,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 9)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 9)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1748,7 +1752,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 11)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 11)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1794,7 +1798,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 13)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 13)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1840,7 +1844,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 15)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 15)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1886,7 +1890,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 17)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 17)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1932,7 +1936,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 19)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 19)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -1978,7 +1982,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 21)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 21)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2024,7 +2028,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 23)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 23)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2070,7 +2074,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 25)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 25)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2116,7 +2120,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 27)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 27)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2162,7 +2166,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 29)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 29)
         (instrs
          ((0 (Const __i32 2)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2198,7 +2202,7 @@ let%expect_test "nonzero switch" =
           (4 (DupVar (var __input_compare_arg__) (src (Ref 3)) (typ Int)))))
         (terminator
          (Branch (succeed (Block 49)) (fail (Block 31)) (condition (Ref 2))))
-        (roots ((Ref 2) (Ref 4))))
+        (roots ((Ref 4))))
        ((id 31)
         (instrs ((0 (OutsideContext (var __input_compare_arg__) (typ Int)))))
         (terminator
@@ -2213,7 +2217,7 @@ let%expect_test "nonzero switch" =
           (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 45)) (fail (Block 33)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 33)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -2223,7 +2227,7 @@ let%expect_test "nonzero switch" =
           (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 43)) (fail (Block 34)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 34)
         (instrs
          ((0 (Const __i32 1))
@@ -2233,7 +2237,7 @@ let%expect_test "nonzero switch" =
           (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 41)) (fail (Block 35)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 35)
         (instrs
          ((0 (Const __i32 1))
@@ -2243,7 +2247,7 @@ let%expect_test "nonzero switch" =
           (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 39)) (fail (Block 36)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 36)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -2252,7 +2256,7 @@ let%expect_test "nonzero switch" =
           (3 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 37)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 37)
         (instrs
          ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2274,7 +2278,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 38)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 38)
         (instrs
          ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2320,7 +2324,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 40)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 40)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2366,7 +2370,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 42)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 42)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2412,7 +2416,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 44)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 44)
         (instrs
          ((0 (Const __i32 1)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2458,7 +2462,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 46)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 46)
         (instrs
          ((0 (Const __i32 2)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2504,7 +2508,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 48)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 48)
         (instrs
          ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2538,7 +2542,7 @@ let%expect_test "nonzero switch" =
           (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 59)) (fail (Block 50)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 50)
         (instrs
          ((0 (Const __i32 1))
@@ -2548,7 +2552,7 @@ let%expect_test "nonzero switch" =
           (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 57)) (fail (Block 51)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 51)
         (instrs
          ((0 (Const __i32 1))
@@ -2558,7 +2562,7 @@ let%expect_test "nonzero switch" =
           (4 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 55)) (fail (Block 52)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 52)
         (instrs
          ((0 (Const __i32 1))
@@ -2567,7 +2571,7 @@ let%expect_test "nonzero switch" =
           (3 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 53)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 53)
         (instrs
          ((0 (Const __i32 4196)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2589,7 +2593,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 54)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 54)
         (instrs
          ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2635,7 +2639,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 56)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 56)
         (instrs
          ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2681,7 +2685,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 58)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 58)
         (instrs
          ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2727,7 +2731,7 @@ let%expect_test "nonzero switch" =
           (18 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 60)) (condition (Ref 16))))
-        (roots ((Ref 15) (Ref 16))))
+        (roots ((Ref 15))))
        ((id 60)
         (instrs
          ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2778,7 +2782,7 @@ let%expect_test "nonzero switch" =
           (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 62)) (condition (Ref 20))))
-        (roots ((Ref 15) (Ref 20))))
+        (roots ((Ref 15))))
        ((id 62)
         (instrs
          ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -2803,7 +2807,7 @@ let%expect_test "nonzero switch" =
           (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
         (terminator
          (Branch (succeed (Block 79)) (fail (Block 64)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 64)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -2811,7 +2815,7 @@ let%expect_test "nonzero switch" =
           (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
         (terminator
          (Branch (succeed (Block 77)) (fail (Block 65)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 65)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -2819,7 +2823,7 @@ let%expect_test "nonzero switch" =
           (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
         (terminator
          (Branch (succeed (Block 75)) (fail (Block 66)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 66)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -2827,7 +2831,7 @@ let%expect_test "nonzero switch" =
           (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
         (terminator
          (Branch (succeed (Block 73)) (fail (Block 67)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 67)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -2835,7 +2839,7 @@ let%expect_test "nonzero switch" =
           (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
         (terminator
          (Branch (succeed (Block 71)) (fail (Block 68)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 68)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -2843,7 +2847,7 @@ let%expect_test "nonzero switch" =
           (2 (BiOp (var __i32) (op NotEqual) (lhs (Ref 0)) (rhs (Ref 1))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 69)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 69)
         (instrs
          ((0 (Const __i32 4244)) (1 (OutsideContext (var esp) (typ Int)))
@@ -2872,7 +2876,7 @@ let%expect_test "nonzero switch" =
           (24 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 70)) (condition (Ref 22))))
-        (roots ((Ref 15) (Ref 22))))
+        (roots ((Ref 15))))
        ((id 70)
         (instrs
          ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -2916,7 +2920,7 @@ let%expect_test "nonzero switch" =
           (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 72)) (condition (Ref 20))))
-        (roots ((Ref 15) (Ref 20))))
+        (roots ((Ref 15))))
        ((id 72)
         (instrs
          ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -2960,7 +2964,7 @@ let%expect_test "nonzero switch" =
           (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 74)) (condition (Ref 20))))
-        (roots ((Ref 15) (Ref 20))))
+        (roots ((Ref 15))))
        ((id 74)
         (instrs
          ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -3004,7 +3008,7 @@ let%expect_test "nonzero switch" =
           (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 76)) (condition (Ref 20))))
-        (roots ((Ref 15) (Ref 20))))
+        (roots ((Ref 15))))
        ((id 76)
         (instrs
          ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -3048,7 +3052,7 @@ let%expect_test "nonzero switch" =
           (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 78)) (condition (Ref 20))))
-        (roots ((Ref 15) (Ref 20))))
+        (roots ((Ref 15))))
        ((id 78)
         (instrs
          ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -3092,7 +3096,7 @@ let%expect_test "nonzero switch" =
           (22 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 82)) (fail (Block 80)) (condition (Ref 20))))
-        (roots ((Ref 15) (Ref 20))))
+        (roots ((Ref 15))))
        ((id 80)
         (instrs
          ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -3265,12 +3269,98 @@ let%expect_test "nonzero switch" =
          (WasmSeq (WasmCode (Block 82)) (WasmBr 1))))
        (WasmSeq (WasmCode (Block 81)) WasmFallthrough)))
      (WasmCodeReturn (Block 83)))
+        ((int 3) (long 0) (float 0) (vec 0))
+       ((int 0) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 0) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 0) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       	((int 2) (long 0) (float 0) (vec 0))
+       
+    ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 3) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 0) (long 0) (float 0) (vec 0))
+        ((int 1) (long 0) (float 0) (vec 0))
+       !((int 1) (long 0) (float 0) (vec 0))
+       "((int 1) (long 0) (float 0) (vec 0))
+       #((int 1) (long 0) (float 0) (vec 0))
+       $((int 1) (long 0) (float 0) (vec 0))
+       %((int 3) (long 0) (float 0) (vec 0))
+       &((int 2) (long 0) (float 0) (vec 0))
+       '((int 3) (long 0) (float 0) (vec 0))
+       (((int 2) (long 0) (float 0) (vec 0))
+       )((int 3) (long 0) (float 0) (vec 0))
+       *((int 2) (long 0) (float 0) (vec 0))
+       +((int 3) (long 0) (float 0) (vec 0))
+       ,((int 2) (long 0) (float 0) (vec 0))
+       -((int 3) (long 0) (float 0) (vec 0))
+       .((int 2) (long 0) (float 0) (vec 0))
+       /((int 3) (long 0) (float 0) (vec 0))
+       0((int 2) (long 0) (float 0) (vec 0))
+       1((int 1) (long 0) (float 0) (vec 0))
+       2((int 1) (long 0) (float 0) (vec 0))
+       3((int 1) (long 0) (float 0) (vec 0))
+       4((int 1) (long 0) (float 0) (vec 0))
+       5((int 3) (long 0) (float 0) (vec 0))
+       6((int 2) (long 0) (float 0) (vec 0))
+       7((int 3) (long 0) (float 0) (vec 0))
+       8((int 2) (long 0) (float 0) (vec 0))
+       9((int 3) (long 0) (float 0) (vec 0))
+       :((int 2) (long 0) (float 0) (vec 0))
+       ;((int 3) (long 0) (float 0) (vec 0))
+       <((int 2) (long 0) (float 0) (vec 0))
+       =((int 3) (long 0) (float 0) (vec 0))
+       >((int 2) (long 0) (float 0) (vec 0))
+       ?((int 0) (long 0) (float 0) (vec 0))
+       @((int 0) (long 0) (float 0) (vec 0))
+       A((int 0) (long 0) (float 0) (vec 0))
+       B((int 0) (long 0) (float 0) (vec 0))
+       C((int 0) (long 0) (float 0) (vec 0))
+       D((int 0) (long 0) (float 0) (vec 0))
+       E((int 3) (long 0) (float 0) (vec 0))
+       F((int 2) (long 0) (float 0) (vec 0))
+       G((int 3) (long 0) (float 0) (vec 0))
+       H((int 2) (long 0) (float 0) (vec 0))
+       I((int 3) (long 0) (float 0) (vec 0))
+       J((int 2) (long 0) (float 0) (vec 0))
+       K((int 3) (long 0) (float 0) (vec 0))
+       L((int 2) (long 0) (float 0) (vec 0))
+       M((int 3) (long 0) (float 0) (vec 0))
+       N((int 2) (long 0) (float 0) (vec 0))
+       O((int 3) (long 0) (float 0) (vec 0))
+       P((int 2) (long 0) (float 0) (vec 0))
+       Q((int 0) (long 0) (float 0) (vec 0))
+       R((int 0) (long 0) (float 0) (vec 0))
+       S((int 4) (long 0) (float 0) (vec 0))
+       T((int 0) (long 0) (float 0) (vec 0))
     |}]
 
 let%expect_test "fistp dword" =
   test_trans_block 0x00465929;
-  [%expect
-    {|
+  [%expect {|
+    ((int 4) (long 0) (float 1) (vec 0))
     ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3329,13 +3419,13 @@ let%expect_test "fistp dword" =
         (SetGlobalOp (value (Ref 51)) (global ((name __fpuStack__) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 5)) (fail (Block 4)) (condition (Ref 49))))
-     (roots ((Ref 41) (Ref 49))))
+     (roots ((Ref 41))))
     |}]
 
 let%expect_test "fsubrp" =
   test_trans_block 0x0046336d;
-  [%expect
-    {|
+  [%expect {|
+    ((int 1) (long 0) (float 0) (vec 0))
     ((id 37)
      (instrs
       ((0 (FloatConst __fl 1))
@@ -3349,8 +3439,8 @@ let%expect_test "fsubrp" =
 
 let%expect_test "psrlq, andpd, psubd" =
   test_trans_block 0x0047ee50;
-  [%expect
-    {|
+  [%expect {|
+    ((int 1) (long 0) (float 0) (vec 4))
     ((id 5)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
@@ -3385,13 +3475,13 @@ let%expect_test "psrlq, andpd, psubd" =
        (23 (SetGlobalOp (value (Ref 16)) (global ((name xmm1) (typ Vec)))))))
      (terminator
       (Branch (succeed (Block 12)) (fail (Block 6)) (condition (Ref 18))))
-     (roots ((Ref 1) (Ref 18))))
+     (roots ((Ref 1))))
     |}]
 
 let%expect_test "movq, psllq, cmpltpd" =
   test_trans_block 0x0047eed2;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 0) (vec 3))
     ((id 12)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
@@ -3419,13 +3509,13 @@ let%expect_test "movq, psllq, cmpltpd" =
        (15 (SetGlobalOp (value (Ref 7)) (global ((name xmm1) (typ Vec)))))))
      (terminator
       (Branch (succeed (Block 16)) (fail (Block 13)) (condition (Ref 12))))
-     (roots ((Ref 1) (Ref 12))))
+     (roots ((Ref 1))))
     |}]
 
 let%expect_test "branch return" =
   test_trans_block 0x0047ee10;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 0) (vec 0))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -3435,13 +3525,13 @@ let%expect_test "branch return" =
        (5 (BiOp (var __i32) (op Equal) (lhs (Ref 3)) (rhs (Ref 4))))))
      (terminator
       (Branch (succeed (Block 17)) (fail (Block 1)) (condition (Ref 5))))
-     (roots ((Ref 0) (Ref 1) (Ref 5))))
+     (roots ((Ref 0) (Ref 1))))
     |}]
 
 let%expect_test "and jbe" =
   test_trans_block 0x0046632e;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -3468,7 +3558,7 @@ let%expect_test "and jbe" =
        (24 (SetGlobalOp (value (Ref 2)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 23)) (fail (Block 1)) (condition (Ref 21))))
-     (roots ((Ref 1) (Ref 5) (Ref 21))))
+     (roots ((Ref 1) (Ref 5))))
     |}]
 
 (*let%expect_est "fprem1 / sahf jp" =*)
@@ -3485,8 +3575,8 @@ let%expect_test "and jbe" =
 
 let%expect_test "frndint" =
   test_trans_block 0x0044f059;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 4) (vec 0))
     ((id 1)
      (instrs
       ((0 (Const __i32 4956072))
@@ -3534,8 +3624,8 @@ let%expect_test "frndint" =
 
 let%expect_test "test eax,eax jae" =
   test_trans_block 0x0045dbcd;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3548,13 +3638,13 @@ let%expect_test "test eax,eax jae" =
        (7 (SetGlobalOp (value (Ref 4)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 8)) (fail (Block 6)) (condition (Ref 5))))
-     (roots ((Ref 5))))
+     (roots ()))
     |}]
 
 let%expect_test "test eax,eax jbe" =
   test_trans_block 0x0047e73c;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 2)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3564,12 +3654,13 @@ let%expect_test "test eax,eax jbe" =
        (4 (SetGlobalOp (value (Ref 1)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 16)) (fail (Block 3)) (condition (Ref 3))))
-     (roots ((Ref 3))))
+     (roots ()))
     |}]
 
 let%expect_test "shld" =
   test_trans_block 0x00481fa8;
   [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 211)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -3593,8 +3684,8 @@ let%expect_test "shld" =
 
 let%expect_test "repne scasb" =
   test_trans_block 0x0047dcc4;
-  [%expect
-    {|
+  [%expect {|
+    ((int 7) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int))))) (1 Nop)
@@ -3633,13 +3724,13 @@ let%expect_test "repne scasb" =
        (36 (DupVar (var __input_compare_arg__) (src (Ref 35)) (typ Int)))))
      (terminator
       (Branch (succeed (Block 4)) (fail (Block 2)) (condition (Ref 27))))
-     (roots ((Ref 27) (Ref 36))))
+     (roots ((Ref 36))))
     |}]
 
 let%expect_test "jecxz" =
   test_trans_block 0x0047dcb9;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -3666,13 +3757,13 @@ let%expect_test "jecxz" =
        (22 (SetGlobalOp (value (Ref 4)) (global ((name ebp) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 5)) (fail (Block 1)) (condition (Ref 20))))
-     (roots ((Ref 1) (Ref 17) (Ref 20))))
+     (roots ((Ref 1) (Ref 17))))
     |}]
 
 let%expect_test "double fadd" =
   test_trans_block 0x00444017;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 2) (vec 0))
     ((id 23)
      (instrs
       ((0 (Const __i32 6447736))
@@ -3701,13 +3792,13 @@ let%expect_test "double fadd" =
        (25 (SetGlobalOp (value (Ref 18)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 25)) (fail (Block 24)) (condition (Ref 21))))
-     (roots ((Ref 21))))
+     (roots ()))
     |}]
 
 let%expect_test "rcr" =
   test_trans_block 0x00482a92;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
@@ -3743,13 +3834,13 @@ let%expect_test "rcr" =
        (26 (SetGlobalOp (value (Ref 10)) (global ((name ebx) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 3)) (fail (Block 4)) (condition (Ref 22))))
-     (roots ((Ref 22))))
+     (roots ()))
     |}]
 
 let%expect_test "dumb div" =
   test_trans_block 0x00482a7c;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -3782,8 +3873,8 @@ let%expect_test "dumb div" =
 
 let%expect_test "mul" =
   test_trans_block 0x004816d4;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 1) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -3810,8 +3901,8 @@ let%expect_test "mul" =
 
 let%expect_test "stosw" =
   test_trans_block 0x00439633;
-  [%expect
-    {|
+  [%expect {|
+    ((int 4) (long 0) (float 0) (vec 0))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -3903,13 +3994,13 @@ let%expect_test "stosw" =
        (93 (SetGlobalOp (value (Ref 75)) (global ((name edi) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 4)) (fail (Block 1)) (condition (Ref 91))))
-     (roots ((Ref 1) (Ref 58) (Ref 91))))
+     (roots ((Ref 1) (Ref 58))))
     |}]
 
 let%expect_test "tail intrinsic" =
   test_trans_block 0x0047d136;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 0) (vec 0))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -3921,8 +4012,8 @@ let%expect_test "tail intrinsic" =
 
 let%expect_test "movsw" =
   test_trans_block 0x004399e1;
-  [%expect
-    {|
+  [%expect {|
+    ((int 1) (long 0) (float 0) (vec 0))
     ((id 9)
      (instrs
       ((0 Nop) (1 (Const __i32 1)) (2 (Const __i32 5724808))
@@ -3974,8 +4065,8 @@ let%expect_test "movsw" =
 
 let%expect_test "sub jne" =
   test_trans_block 0x0047dc43;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 7)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (1 Nop)
@@ -3990,13 +4081,13 @@ let%expect_test "sub jne" =
        (10 (SetGlobalOp (value (Ref 5)) (global ((name edi) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 7)) (fail (Block 8)) (condition (Ref 8))))
-     (roots ((Ref 8))))
+     (roots ()))
     |}]
 
 let%expect_test "rep stosd (nonzero)" =
   test_trans_block 0x0042d5ee;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (Const ecx 180))
@@ -4014,8 +4105,8 @@ let%expect_test "rep stosd (nonzero)" =
 
 let%expect_test "rep movsb" =
   test_trans_block 0x004446bb;
-  [%expect
-    {|
+  [%expect {|
+    ((int 5) (long 0) (float 0) (vec 0))
     ((id 20)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4073,8 +4164,8 @@ let%expect_test "rep movsb" =
 
 let%expect_test "repe cmpsd" =
   test_trans_block 0x00444521;
-  [%expect
-    {|
+  [%expect {|
+    ((int 5) (long 0) (float 0) (vec 0))
     ((id 3)
      (instrs
       ((0 (Const ecx 14))
@@ -4097,13 +4188,13 @@ let%expect_test "repe cmpsd" =
        (19 (SetGlobalOp (value (Ref 10)) (global ((name edi) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 5)) (fail (Block 4)) (condition (Ref 14))))
-     (roots ((Ref 14))))
+     (roots ()))
     |}]
 
 let%expect_test "and jns" =
   test_trans_block 0x0043dbb0;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 18)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4119,12 +4210,13 @@ let%expect_test "and jns" =
        (8 (SetGlobalOp (value (Ref 1)) (global ((name ecx) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 20)) (fail (Block 19)) (condition (Ref 6))))
-     (roots ((Ref 6))))
+     (roots ()))
     |}]
 
 let%expect_test "fidivr" =
   test_trans_block 0x00414d50;
   [%expect {|
+    ((int 3) (long 0) (float 1) (vec 0))
     ((id 818)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4166,13 +4258,13 @@ let%expect_test "fidivr" =
        (34 (SetGlobalOp (value (Ref 25)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 820)) (fail (Block 819)) (condition (Ref 30))))
-     (roots ((Ref 30))))
+     (roots ()))
     |}]
 
 let%expect_test "tib offset 0" =
   test_trans_block 0x0043009a;
-  [%expect
-    {|
+  [%expect {|
+    ((int 4) (long 0) (float 0) (vec 0))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -4219,13 +4311,12 @@ let%expect_test "tib offset 0" =
        (45 (BiOp (var __i32) (op Equal) (lhs (Ref 43)) (rhs (Ref 44))))))
      (terminator
       (Branch (succeed (Block 2)) (fail (Block 1)) (condition (Ref 45))))
-     (roots ((Ref 1) (Ref 37) (Ref 45))))
+     (roots ((Ref 1) (Ref 37))))
     |}]
 
 let%expect_test "tail call" =
   test_trans 0x0047d43c;
-  [%expect
-    {|
+  [%expect {|
     ((name func_47d43c)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -4241,12 +4332,13 @@ let%expect_test "tail call" =
       ((__ret_addr__ ((name __ret_addr__) (typ Int)))
        (esp ((name esp) (typ Int))))))
     (WasmCodeReturn (Block 0))
+        ((int 0) (long 0) (float 0) (vec 0))
     |}]
 
 let%expect_test "shl reg" =
   test_trans_block 0x0040f3de;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4263,13 +4355,13 @@ let%expect_test "shl reg" =
        (10 (SetGlobalOp (value (Ref 7)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 3)) (fail (Block 2)) (condition (Ref 7))))
-     (roots ((Ref 7))))
+     (roots ()))
     |}]
 
 let%expect_test "cld" =
   test_trans_block 0x0048c237;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 20)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4299,13 +4391,13 @@ let%expect_test "cld" =
        (24 (SetGlobalOp (value (Ref 14)) (global ((name edi) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 22)) (fail (Block 21)) (condition (Ref 22))))
-     (roots ((Ref 22))))
+     (roots ()))
     |}]
 
 let%expect_test "fscale/fabs/fcomp sahf jae" =
   test_trans_block 0x0048c1e9;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 3) (vec 0))
     ((id 15)
      (instrs
       ((0 (Const __i32 4))
@@ -4329,13 +4421,13 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
        (15 (SetGlobalOp (value (Ref 12)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 19)) (fail (Block 16)) (condition (Ref 13))))
-     (roots ((Ref 13))))
+     (roots ()))
     |}]
 
 let%expect_test "fscale/fabs/fcomp sahf jbe" =
   test_trans_block 0x0048c217;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 3) (vec 0))
     ((id 17)
      (instrs
       ((0 (Const __i32 3))
@@ -4358,13 +4450,13 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
        (16 (SetGlobalOp (value (Ref 12)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 19)) (fail (Block 18)) (condition (Ref 14))))
-     (roots ((Ref 14))))
+     (roots ()))
     |}]
 
 let%expect_test "and je" =
   test_trans_block 0x0048c178;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 6)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4379,13 +4471,13 @@ let%expect_test "and je" =
        (11 (SetGlobalOp (value (Ref 9)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 9)) (fail (Block 7)) (condition (Ref 10))))
-     (roots ((Ref 10))))
+     (roots ()))
     |}]
 
 let%expect_test "or je" =
   test_trans_block 0x0048c15b;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 4)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -4398,13 +4490,13 @@ let%expect_test "or je" =
        (7 (SetGlobalOp (value (Ref 4)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 9)) (fail (Block 5)) (condition (Ref 6))))
-     (roots ((Ref 6))))
+     (roots ()))
     |}]
 
 let%expect_test "xchg" =
   test_trans_block 0x0047f3b0;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -4429,8 +4521,8 @@ let%expect_test "xchg" =
 
 let%expect_test "fsqrt" =
   test_trans_block 0x00461f7b;
-  [%expect
-    {|
+  [%expect {|
+    ((int 3) (long 0) (float 2) (vec 0))
     ((id 6)
      (instrs
       ((0
@@ -4463,8 +4555,8 @@ let%expect_test "fsqrt" =
 
 let%expect_test "movsd" =
   test_trans_block 0x00461f64;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 3)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (1 Nop)
@@ -4494,8 +4586,8 @@ let%expect_test "movsd" =
 
 let%expect_test "sbb" =
   test_trans_block 0x0048b8f3;
-  [%expect
-    {|
+  [%expect {|
+    ((int 5) (long 0) (float 0) (vec 0))
     ((id 3)
      (instrs
       ((0
@@ -4532,8 +4624,8 @@ let%expect_test "sbb" =
 
 let%expect_test "adc" =
   test_trans_block 0x0048b8db;
-  [%expect
-    {|
+  [%expect {|
+    ((int 6) (long 0) (float 0) (vec 0))
     ((id 2)
      (instrs
       ((0
@@ -4572,8 +4664,8 @@ let%expect_test "adc" =
 
 let%expect_test "test reflexive jns" =
   test_trans_block 0x0048b8c7;
-  [%expect
-    {|
+  [%expect {|
+    ((int 1) (long 0) (float 1) (vec 0))
     ((id 1)
      (instrs
       ((0
@@ -4593,13 +4685,13 @@ let%expect_test "test reflexive jns" =
         (SetGlobalOp (value (Ref 9)) (global ((name __fpuStack__) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 3)) (fail (Block 2)) (condition (Ref 6))))
-     (roots ((Ref 6))))
+     (roots ()))
     |}]
 
 let%expect_test "fistp" =
   test_trans_block 0x0048b8af;
-  [%expect
-    {|
+  [%expect {|
+    ((int 4) (long 0) (float 2) (vec 0))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -4636,13 +4728,13 @@ let%expect_test "fistp" =
        (28 (SetGlobalOp (value (Ref 4)) (global ((name ebp) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 4)) (fail (Block 1)) (condition (Ref 20))))
-     (roots ((Ref 1) (Ref 10) (Ref 20))))
+     (roots ((Ref 1) (Ref 10))))
     |}]
 
 let%expect_test "dec/dec js" =
   test_trans_block 0x0047d173;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (Const __i32 1))
@@ -4656,13 +4748,13 @@ let%expect_test "dec/dec js" =
          (rhs (Ref 5))))))
      (terminator
       (Branch (succeed (Block 3)) (fail (Block 2)) (condition (Ref 6))))
-     (roots ((Ref 6))))
+     (roots ()))
     |}]
 
 let%expect_test "jb" =
   test_trans_block 0x0044e4f5;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 0) (vec 0))
     ((id 1)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4673,13 +4765,13 @@ let%expect_test "jb" =
          (rhs (Ref 2))))))
      (terminator
       (Branch (succeed (Block 3)) (fail (Block 2)) (condition (Ref 3))))
-     (roots ((Ref 3))))
+     (roots ()))
     |}]
 
 let%expect_test "fsubr" =
   test_trans_block 0x00404715;
-  [%expect
-    {|
+  [%expect {|
+    ((int 5) (long 0) (float 1) (vec 0))
     ((id 7)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4751,13 +4843,13 @@ let%expect_test "fsubr" =
          (rhs (Ref 60))))))
      (terminator
       (Branch (succeed (Block 9)) (fail (Block 8)) (condition (Ref 61))))
-     (roots ((Ref 55) (Ref 61))))
+     (roots ((Ref 55))))
     |}]
 
 let%expect_test "rep movsd" =
   test_trans_block 0x00403ad5;
-  [%expect
-    {|
+  [%expect {|
+    ((int 4) (long 0) (float 0) (vec 0))
     ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4795,8 +4887,8 @@ let%expect_test "rep movsd" =
 
 let%expect_test "fabs" =
   test_trans_block 0x004023c9;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 2) (vec 0))
     ((id 23)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4826,13 +4918,13 @@ let%expect_test "fabs" =
        (26 (SetGlobalOp (value (Ref 20)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 25)) (fail (Block 24)) (condition (Ref 23))))
-     (roots ((Ref 23))))
+     (roots ()))
     |}]
 
 let%expect_test "jae" =
   test_trans_block 0x004027fc;
-  [%expect
-    {|
+  [%expect {|
+    ((int 0) (long 0) (float 0) (vec 0))
     ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4843,13 +4935,13 @@ let%expect_test "jae" =
          (lhs (Ref 1)) (rhs (Ref 2))))))
      (terminator
       (Branch (succeed (Block 9)) (fail (Block 6)) (condition (Ref 3))))
-     (roots ((Ref 3))))
+     (roots ()))
     |}]
 
 let%expect_test "rep stosd (zeroed)" =
   test_trans_block 0x0040118c;
-  [%expect
-    {|
+  [%expect {|
+    ((int 4) (long 0) (float 0) (vec 0))
     ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
@@ -4902,6 +4994,7 @@ let%expect_test "rep stosd (zeroed)" =
 let%expect_test "fild/fiadd" =
   test_trans_block 0x00453df6;
   [%expect {|
+    ((int 5) (long 0) (float 1) (vec 0))
     ((id 510)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -4956,6 +5049,7 @@ let%expect_test "fild/fiadd" =
 let%expect_test "div" =
   test_trans_block 0x00452f62;
   [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 341)
      (instrs
       ((0 (Const ecx 4849184)) (1 (Const __i32 4))
@@ -4984,6 +5078,7 @@ let%expect_test "div" =
 let%expect_test "fdiv" =
   test_trans_block 0x00452949;
   [%expect {|
+    ((int 5) (long 0) (float 0) (vec 0))
     ((id 279)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5031,6 +5126,7 @@ let%expect_test "fdiv" =
 let%expect_test "cdq/idiv" =
   test_trans_block 0x004529e3;
   [%expect {|
+    ((int 4) (long 0) (float 0) (vec 0))
     ((id 286)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5079,6 +5175,7 @@ let%expect_test "cdq/idiv" =
 let%expect_test "imul" =
   test_trans_block 0x004539dd;
   [%expect {|
+    ((int 3) (long 0) (float 0) (vec 0))
     ((id 491)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5100,12 +5197,13 @@ let%expect_test "imul" =
        (14 (SetGlobalOp (value (Ref 3)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 513)) (fail (Block 492)) (condition (Ref 11))))
-     (roots ((Ref 11))))
+     (roots ()))
     |}]
 
 let%expect_test "float jp 0x5" =
   test_trans_block 0x00451bfe;
   [%expect {|
+    ((int 2) (long 0) (float 2) (vec 0))
     ((id 148)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5120,12 +5218,13 @@ let%expect_test "float jp 0x5" =
        (11 (SetGlobalOp (value (Ref 5)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 150)) (fail (Block 149)) (condition (Ref 8))))
-     (roots ((Ref 8))))
+     (roots ()))
     |}]
 
 let%expect_test "jle" =
   test_trans_block 0x004536f0;
   [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 450)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5137,12 +5236,13 @@ let%expect_test "jle" =
        (4 (SetGlobalOp (value (Ref 1)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 452)) (fail (Block 451)) (condition (Ref 3))))
-     (roots ((Ref 3))))
+     (roots ()))
     |}]
 
 let%expect_test "jumptable" =
   test_trans_block 0x00450dec;
   [%expect {|
+    ((int 1) (long 0) (float 0) (vec 0))
     ((id 6)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5166,12 +5266,13 @@ let%expect_test "jumptable" =
          (Block 408) (Block 417) (Block 426) (Block 435) (Block 444) (Block 453)
          (Block 462) (Block 471) (Block 115) (Block 159) (Block 163)))
        (default (Block 528)) (switch_on (Ref 1))))
-     (roots ((Ref 1))))
+     (roots ()))
     |}]
 
 let%expect_test "ja" =
   test_trans_block 0x00450de0;
   [%expect {|
+    ((int 4) (long 0) (float 0) (vec 0))
     ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5193,12 +5294,13 @@ let%expect_test "ja" =
        (14 (SetGlobalOp (value (Ref 1)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 481)) (fail (Block 6)) (condition (Ref 11))))
-     (roots ((Ref 11))))
+     (roots ()))
     |}]
 
 let%expect_test "jg" =
   test_trans_block 4525496;
   [%expect {|
+    ((int 4) (long 0) (float 0) (vec 0))
     ((id 4)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5221,13 +5323,13 @@ let%expect_test "jg" =
        (14 (SetGlobalOp (value (Ref 5)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 482)) (fail (Block 5)) (condition (Ref 11))))
-     (roots ((Ref 11))))
+     (roots ()))
     |}]
 
 let%expect_test "jge" =
   test_trans_block 4380548;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 2)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5239,13 +5341,13 @@ let%expect_test "jge" =
        (4 (SetGlobalOp (value (Ref 1)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 4)) (fail (Block 3)) (condition (Ref 3))))
-     (roots ((Ref 3))))
+     (roots ()))
     |}]
 
 let%expect_test _ =
   test_trans_block 0x0040127a;
-  [%expect
-    {|
+  [%expect {|
+    ((int 2) (long 0) (float 0) (vec 0))
     ((id 4)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5261,13 +5363,12 @@ let%expect_test _ =
        (8 (SetGlobalOp (value (Ref 3)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 6)) (fail (Block 5)) (condition (Ref 7))))
-     (roots ((Ref 7))))
+     (roots ()))
     |}]
 
 let%expect_test _ =
   test_trans 0x47ea7d;
-  [%expect
-    {|
+  [%expect {|
     ((name func_47ea7d)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -5334,7 +5435,7 @@ let%expect_test _ =
           (61 (SetGlobalOp (value (Ref 45)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 2)) (fail (Block 1)) (condition (Ref 57))))
-        (roots ((Ref 1) (Ref 40) (Ref 57))))
+        (roots ((Ref 1) (Ref 40))))
        ((id 1)
         (instrs
          ((0 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
@@ -5375,7 +5476,7 @@ let%expect_test _ =
           (28 (BiOp (var __i32) (op NotEqual) (lhs (Ref 24)) (rhs (Ref 27))))))
         (terminator
          (Branch (succeed (Block 6)) (fail (Block 3)) (condition (Ref 28))))
-        (roots ((Ref 22) (Ref 28))))
+        (roots ((Ref 22))))
        ((id 3)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -5387,7 +5488,7 @@ let%expect_test _ =
           (6 (SetGlobalOp (value (Ref 2)) (global ((name ecx) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 6)) (fail (Block 4)) (condition (Ref 5))))
-        (roots ((Ref 5))))
+        (roots ()))
        ((id 4)
         (instrs
          ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
@@ -5399,7 +5500,7 @@ let%expect_test _ =
           (5 (SetGlobalOp (value (Ref 1)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 9)) (fail (Block 5)) (condition (Ref 4))))
-        (roots ((Ref 4))))
+        (roots ()))
        ((id 5)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -5407,7 +5508,7 @@ let%expect_test _ =
           (2 (BiOp (var __i32) (op Equal) (lhs (Ref 0)) (rhs (Ref 1))))))
         (terminator
          (Branch (succeed (Block 7)) (fail (Block 6)) (condition (Ref 2))))
-        (roots ((Ref 2))))
+        (roots ()))
        ((id 6)
         (instrs
          ((0 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
@@ -5424,7 +5525,7 @@ let%expect_test _ =
             (lhs (Ref 1)) (rhs (Ref 2))))))
         (terminator
          (Branch (succeed (Block 6)) (fail (Block 8)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 8)
         (instrs
          ((0 (Const eax 0))
@@ -5445,7 +5546,7 @@ let%expect_test _ =
             (lhs (Ref 1)) (rhs (Ref 2))))))
         (terminator
          (Branch (succeed (Block 6)) (fail (Block 10)) (condition (Ref 3))))
-        (roots ((Ref 3))))
+        (roots ()))
        ((id 10)
         (instrs
          ((0 (Const eax 0))
@@ -5484,7 +5585,7 @@ let%expect_test _ =
           (15 (SetGlobalOp (value (Ref 11)) (global ((name ecx) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 14)) (fail (Block 13)) (condition (Ref 14))))
-        (roots ((Ref 13) (Ref 14))))
+        (roots ((Ref 13))))
        ((id 13)
         (instrs
          ((0 (Const __i32 28)) (1 (OutsideContext (var esp) (typ Int)))
@@ -5513,7 +5614,7 @@ let%expect_test _ =
           (7 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 16)) (fail (Block 15)) (condition (Ref 7))))
-        (roots ((Ref 6) (Ref 7))))
+        (roots ((Ref 6))))
        ((id 15)
         (instrs
          ((0 (Const __i32 16)) (1 (OutsideContext (var esp) (typ Int)))
@@ -5555,7 +5656,7 @@ let%expect_test _ =
             (lhs (Ref 16)) (rhs (Ref 17))))))
         (terminator
          (Branch (succeed (Block 18)) (fail (Block 17)) (condition (Ref 18))))
-        (roots ((Ref 15) (Ref 18))))
+        (roots ((Ref 15))))
        ((id 17)
         (instrs
          ((0 (Const __i32 27)) (1 (OutsideContext (var esp) (typ Int)))
@@ -5606,7 +5707,7 @@ let%expect_test _ =
             (lhs (Ref 25)) (rhs (Ref 26))))))
         (terminator
          (Branch (succeed (Block 20)) (fail (Block 19)) (condition (Ref 27))))
-        (roots ((Ref 24) (Ref 27))))
+        (roots ((Ref 24))))
        ((id 19)
         (instrs
          ((0 (Const __i32 8)) (1 (OutsideContext (var esp) (typ Int)))
@@ -5639,7 +5740,7 @@ let%expect_test _ =
             (lhs (Ref 7)) (rhs (Ref 8))))))
         (terminator
          (Branch (succeed (Block 22)) (fail (Block 21)) (condition (Ref 9))))
-        (roots ((Ref 6) (Ref 9))))
+        (roots ((Ref 6))))
        ((id 21)
         (instrs
          ((0 (Const __i32 9)) (1 (OutsideContext (var esp) (typ Int)))
@@ -5672,7 +5773,7 @@ let%expect_test _ =
           (11 (BiOp (var __i32) (op Equal) (lhs (Ref 7)) (rhs (Ref 10))))))
         (terminator
          (Branch (succeed (Block 24)) (fail (Block 23)) (condition (Ref 11))))
-        (roots ((Ref 6) (Ref 11))))
+        (roots ((Ref 6))))
        ((id 23)
         (instrs
          ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
@@ -5724,7 +5825,7 @@ let%expect_test _ =
           (30 (UniOp (var __i32) (op EqualsZero) (operand (Ref 29))))))
         (terminator
          (Branch (succeed (Block 26)) (fail (Block 25)) (condition (Ref 30))))
-        (roots ((Ref 21) (Ref 30))))
+        (roots ((Ref 21))))
        ((id 25)
         (instrs
          ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5789,7 +5890,7 @@ let%expect_test _ =
           (41 (SetGlobalOp (value (Ref 34)) (global ((name edi) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 29)) (fail (Block 28)) (condition (Ref 40))))
-        (roots ((Ref 33) (Ref 40))))
+        (roots ((Ref 33))))
        ((id 28)
         (instrs
          ((0 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -5882,12 +5983,43 @@ let%expect_test _ =
               (WasmIf (Block 27) WasmFallthrough
                (WasmSeq (WasmCode (Block 28)) WasmFallthrough))
               (WasmSeq (WasmCode (Block 29)) (WasmCodeReturn (Block 30)))))))))))))
+        ((int 4) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 4) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 0) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 0) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       	((int 0) (long 0) (float 0) (vec 0))
+       
+    ((int 1) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 0) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
     |}]
 
 let%expect_test _ =
   test_trans 4429197;
-  [%expect
-    {|
+  [%expect {|
     ((name func_43958d)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -5918,7 +6050,7 @@ let%expect_test _ =
           (22 (SetGlobalOp (value (Ref 4)) (global ((name ebp) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 4)) (fail (Block 1)) (condition (Ref 19))))
-        (roots ((Ref 1) (Ref 9) (Ref 19))))
+        (roots ((Ref 1) (Ref 9))))
        ((id 1)
         (instrs
          ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5942,7 +6074,7 @@ let%expect_test _ =
           (18 (SetGlobalOp (value (Ref 12)) (global ((name eax) (typ Int)))))))
         (terminator
          (Branch (succeed (Block 3)) (fail (Block 2)) (condition (Ref 15))))
-        (roots ((Ref 15))))
+        (roots ()))
        ((id 2)
         (instrs
          ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -5995,5 +6127,10 @@ let%expect_test _ =
         (WasmSeq (WasmCode (Block 2)) WasmFallthrough))
        (WasmSeq (WasmCode (Block 3)) WasmFallthrough)))
      (WasmCodeReturn (Block 5)))
+        ((int 2) (long 0) (float 2) (vec 0))
+       ((int 3) (long 0) (float 2) (vec 0))
+       ((int 3) (long 0) (float 1) (vec 0))
+       ((int 0) (long 0) (float 0) (vec 0))
+       ((int 2) (long 0) (float 0) (vec 0))
+       ((int 1) (long 0) (float 0) (vec 0))
     |}]
-

@@ -76,13 +76,6 @@ let sexp_of_iarray sexp_of_t a =
 let sexp_of_iparray sexp_of_t a =
   AP.mapi a ~f:Tuple.T2.create |> [%sexp_of: (int * t, _) AP.t]
 
-type node = { edges : IntSet.t; block : Block.t } [@@deriving sexp]
-type graph = (node, immutable) AP.t
-type 'perms pgraph = (node, 'perms) AP.t
-
-let g_edges graph n = (AP.get graph n).edges
-let g_block graph n = (AP.get graph n).block
-
 module Block = struct
   include Block
 
@@ -90,16 +83,25 @@ module Block = struct
     [%message "Block" ~_:(b.id : int) ~_:(b.terminator : terminator)]
 end
 
+type node = { edges : IntSet.t; block : int; terminator : Block.terminator }
+[@@deriving sexp]
+
+type graph = (node, immutable) AP.t
+type 'perms pgraph = (node, 'perms) AP.t
+
+let g_edges graph n = (AP.get graph n).edges
+let g_block graph n = (AP.get graph n).block
+
 type wasm_control =
   | WasmBlock of wasm_control
   | WasmLoop of wasm_control
-  | WasmIf of Block.t * wasm_control * wasm_control
-  | WasmCodeReturn of Block.t
+  | WasmIf of int * wasm_control * wasm_control
+  | WasmCodeReturn of int
   | WasmReturn
   | WasmBr of int
-  | WasmBrTable of { bb_id : Block.t; targets : int list; default : int }
+  | WasmBrTable of { bb_id : int; targets : int list; default : int }
   | WasmSeq of wasm_control * wasm_control
-  | WasmCode of Block.t
+  | WasmCode of int
   | WasmFallthrough
 
 let rec sexp_of_wasm_control =
@@ -110,19 +112,19 @@ let rec sexp_of_wasm_control =
   | WasmIf (c, t, f) ->
       [%message
         "WasmIf"
-          ~_:(Block c.id : Types.branch_target)
+          ~_:(Block c : Types.branch_target)
           ~_:(t : wasm_control)
           ~_:(f : wasm_control)]
   | WasmCodeReturn b ->
-      [%message "WasmCodeReturn" ~_:(Block b.id : Types.branch_target)]
-  | WasmCode b -> [%message "WasmCode" ~_:(Block b.id : Types.branch_target)]
+      [%message "WasmCodeReturn" ~_:(Block b : Types.branch_target)]
+  | WasmCode b -> [%message "WasmCode" ~_:(Block b : Types.branch_target)]
   | WasmReturn -> Atom "WasmReturn"
   | WasmFallthrough -> Atom "WasmFallthrough"
   | WasmBr i -> List [ Atom "WasmBr"; sexp_of_int i ]
   | WasmBrTable { bb_id; targets; default } ->
       [%message
         "WasmBrTable"
-          ~_:(Block bb_id.id : Types.branch_target)
+          ~_:(Block bb_id : Types.branch_target)
           (targets : int list)
           (default : int)]
   | WasmSeq (car, cdr) ->
@@ -147,14 +149,15 @@ let create_graph : (Block.t, immutable) AP.t -> _ pgraph =
         in
         edges)
   in
-  AP.mapi edges ~f:(fun i edges -> { edges; block = AP.get blocks i })
+  AP.mapi edges ~f:(fun i edges ->
+      { edges; block = i; terminator = (AP.get blocks i).terminator })
 
 let graph_to_dot graph =
   let b = Buffer.create (AP.length graph * 30) in
   Buffer.add_string b "digraph G{";
   graph
   |> AP.iteri ~f:(fun s ds ->
-         sprintf "%d [label = \"%d_%d\"]; %d -> {" s s ds.block.id s
+         sprintf "%d [label = \"%d_%d\"]; %d -> {" s s ds.block s
          |> Buffer.add_string b;
          Set.iter ds.edges ~f:(fun e ->
              string_of_int e |> Buffer.add_string b;
@@ -282,12 +285,12 @@ let make_reducible : _ pgraph -> IntSet.t array -> _ =
   let sn_graph : supernode_graph =
     Hashtbl.create ~size:(Vec.length graph) (module Int)
   in
-  Vec.iteri graph ~f:(fun i { edges; block } ->
+  Vec.iteri graph ~f:(fun i { edges; block; _ } ->
       Hashtbl.add_exn sn_graph ~key:i
         ~data:
           {
             id = i;
-            nodes = Vec.singleton block.id;
+            nodes = Vec.singleton block;
             (* remove self-edges *)
             succs = Set.remove edges i |> IntHashSet.of_set;
             preds = Set.remove preds.(i) i |> IntHashSet.of_set;
@@ -399,17 +402,13 @@ let make_reducible : _ pgraph -> IntSet.t array -> _ =
             if not (phys_equal updated_succs node.edges) then
               Vec.set graph i
                 {
+                  node with
                   edges = updated_succs;
-                  block =
-                    {
-                      node.block with
-                      terminator =
-                        Block.Terminator.map
-                          (fun (Block n) ->
-                            Block
-                              (Map.find duped_nodes n |> Option.value ~default:n))
-                          node.block.terminator;
-                    };
+                  terminator =
+                    Block.Terminator.map
+                      (fun (Block n) ->
+                        Block (Map.find duped_nodes n |> Option.value ~default:n))
+                      node.terminator;
                 }
           in
 
@@ -476,7 +475,7 @@ let f : graph -> (int, _) AP.t -> int array -> IntSet.t array -> wasm_control =
   let is_merge_node = Set.mem merge_blocks in
   let is_loop_header = Set.mem loop_headers in
   let generates_if b =
-    match (AP.get graph b).block.terminator with
+    match (AP.get graph b).terminator with
     | Branch _ | BranchReturn _ -> true
     | _ -> false
   in
@@ -495,7 +494,7 @@ let f : graph -> (int, _) AP.t -> int array -> IntSet.t array -> wasm_control =
         WasmBlock
           (node_within x [] None @@ inside c (BlockFollowedBy prev_within))
     | [], _ -> (
-        match (AP.get graph x).block.terminator with
+        match (AP.get graph x).terminator with
         | Goto (Block l) -> WasmSeq (WasmCode (g_block graph x), do_branch x l c)
         | Branch { succeed = Block t; fail = Block f; _ } ->
             let context = inside c @@ IfThenElse prev_within in
@@ -534,7 +533,7 @@ let f : graph -> (int, _) AP.t -> int array -> IntSet.t array -> wasm_control =
    fun x c ->
     let children = AP.get dom_tree x in
     let children_within =
-      match (AP.get graph x).block.terminator with
+      match (AP.get graph x).terminator with
       | Switch _ -> children
       | _ -> List.filter ~f:is_merge_node children
     in

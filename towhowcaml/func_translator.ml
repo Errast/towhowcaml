@@ -228,12 +228,6 @@ let to_mir_block used_locals b =
   let instrs, current_vars, _, roots = Mir.Builder.deconstruct b.builder in
   Hashtbl.iteri current_vars ~f:(fun ~key ~data ->
       add_used_local used_locals key data.typ);
-  let roots =
-    match b.terminator with
-    | Branch { condition; _ } | Switch { switch_on = condition; _ } ->
-        Set.add roots condition
-    | _ -> roots
-  in
   Mir.opt @@ Block.{ id = b.id; terminator = b.terminator; instrs; roots }
 
 let add_opt_block blocks f block =

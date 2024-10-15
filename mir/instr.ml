@@ -485,10 +485,10 @@ let fold f s = function
       let s = f s v.table_index in
       List.fold ~f ~init:s v.args
 
-let iter f = function
+let fold_right f s = function
   | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
-      ()
+      s
   | DupVar { src = v1; _ }
   | UniOp { operand = v1; _ }
   | VecExtend { operand = v1; _ }
@@ -498,7 +498,7 @@ let iter f = function
   | SignedLoadOp { addr = v1; _ }
   | SetGlobalOp { value = v1; _ }
   | AssertOp { condition = v1 } ->
-      f v1
+      f v1 s
   | BiOp { lhs = v1; rhs = v2; _ }
   | VecLaneBiOp { lhs = v1; rhs = v2; _ }
   | SignedBiOp { lhs = v1; rhs = v2; _ }
@@ -510,17 +510,17 @@ let iter f = function
   | VecLoadLaneOp { dest_vec = v1; addr = v2; _ }
   | StoreOp { addr = v1; value = v2; _ }
   | VecStoreLaneOp { addr = v1; value = v2; _ } ->
-      f v1;
-      f v2
+      f v1 (f v2 s)
   | Memset { dest = v1; value = v2; count = v3 }
   | Memcopy { dest = v1; src = v2; count = v3 } ->
-      f v1;
-      f v2;
-      f v3
-  | CallOp v -> List.iter ~f v.args
+      f v1 (f v2 (f v3 s))
+  | CallOp v -> List.fold_right ~f ~init:s v.args
   | CallIndirectOp v ->
-      f v.table_index;
-      List.iter ~f v.args
+      let s = List.fold_right ~f ~init:s v.args in
+      f v.table_index s
+
+let iter f = fold (fun () -> f) ()
+let iter_right f = fold_right (fun r () -> f r) ()
 
 let map f t =
   match t with

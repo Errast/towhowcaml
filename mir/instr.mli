@@ -279,5 +279,7 @@ val is_pure : t -> bool
 val is_assignment : t -> bool
 val assignment_var : t -> Variable.t option
 val iter : (ref -> unit) -> t -> unit
+val iter_right : (ref -> unit) -> t -> unit
 val fold : ('a -> ref -> 'a) -> 'a -> t -> 'a
+val fold_right : (ref -> 'a -> 'a) -> 'a -> t -> 'a
 val map : (ref -> ref) -> t -> t
