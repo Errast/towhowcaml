@@ -11,7 +11,7 @@ val get_opt : 'a t -> int -> 'a option
 val unsafe_get : 'a t -> int -> 'a
 val set : 'a t -> int -> 'a -> unit
 val add : 'a t -> 'a -> unit
-val pop : 'a t -> 'a
+val pop_exn : 'a t -> 'a
 val insert : 'a t -> int -> 'a -> unit
 val append : 'a t -> 'a t -> unit
 val singleton : 'a -> 'a t

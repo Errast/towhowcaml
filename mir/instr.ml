@@ -10,6 +10,7 @@ module Ref = struct
   include Comparable.Make (T)
 
   let invalid = Ref (-1)
+  let to_int (Ref r) = r
 end
 
 type ref = Ref.t = Ref of int [@@unboxed]

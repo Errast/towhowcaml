@@ -7,6 +7,7 @@ module Ref : sig
   include Comparable.S with type t := t
 
   val invalid : t
+  val to_int : t -> int
 end
 
 type ref = Ref.t = Ref of int [@@unboxed]

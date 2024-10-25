@@ -169,7 +169,7 @@ let store_big_float = {|
       -- shift mantiss into place and set integer bit
       res_mantissa = (f <<L 11L) |L 0x8000000000000000L
       res_exp = 0x7FFF
-    } if abs_f !=L 0L {
+    } else if abs_f !=L 0L {
       -- f is subnormal
       -- the position of the leading one tells us what to make res_exp
       %leading_zeros = clz long abs_f

@@ -68,7 +68,7 @@ let add vec value =
   Option_array.set_some vec.array len value;
   vec.length <- len + 1
 
-let pop vec =
+let pop_exn vec =
   if vec.length < 1 then raise @@ Invalid_argument "Vec is empty";
   vec.length <- vec.length - 1;
   (* Option_array.unsafe_get_some_assuming_some vec.array vec.length *)

@@ -41,7 +41,7 @@ let compile str =
            (7 (UniOp (var __i32) (op LongToInt32) (operand (Ref 6))))
            (8 (Const __i32 15360))
            (9 (BiOp (var res_exp) (op Add) (lhs (Ref 7)) (rhs (Ref 8))))))
-         (terminator (Goto (Block 4))) (roots ((Ref 0) (Ref 4) (Ref 9))))
+         (terminator (Goto (Block 7))) (roots ((Ref 0) (Ref 4) (Ref 9))))
         ((id 2)
          (instrs
           ((0 (OutsideContext (var abs_f) (typ Long)))
@@ -59,7 +59,7 @@ let compile str =
            (3 (LongConst __i64 -9223372036854775808))
            (4 (BiOp (var res_mantissa) (op LongOr) (lhs (Ref 2)) (rhs (Ref 3))))
            (5 (Const res_exp 32767))))
-         (terminator (Goto (Block 4))) (roots ((Ref 0) (Ref 4) (Ref 5))))
+         (terminator (Goto (Block 7))) (roots ((Ref 0) (Ref 4) (Ref 5))))
         ((id 4)
          (instrs
           ((0 (OutsideContext (var abs_f) (typ Long))) (1 (LongConst __i64 0))
