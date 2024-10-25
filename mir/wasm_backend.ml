@@ -301,7 +301,6 @@ let validate_stack :
 let test block =
   let types = stack_allocate_block block in
   let locs, nums = allocate_locations types block in
-  print_s @@ [%sexp_of: (Types.local_type alloc_location, _) iparray] types;
   print_s
   @@ [%sexp_of: ((Types.local_type * int) alloc_location, _) iparray] locs;
   print_s @@ [%sexp_of: number_of_locals] nums;
