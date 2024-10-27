@@ -3,6 +3,6 @@
  (foreign_stubs
   (language c)
   (names bits))
- (libraries core mir_ppx)
+ (libraries core)
  (preprocess
-  (pps ppx_jane mir_ppx)))
+  (pps ppx_jane)))

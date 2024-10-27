@@ -38,9 +38,6 @@ type uni_op =
   | FloatRound
   | FloatTrunc
   | FloatSqrt
-  | FloatSine
-  | FloatCosine
-  | FloatTangent
   | Int32ToFloatUnsigned
   | Int32ToFloatSigned
   | Int64ToFloatUnsigned
@@ -85,13 +82,13 @@ type bi_op =
   | FloatSub
   | FloatMult
   | FloatDiv
-  | FloatAtan2
   (* Long-valued *)
   | LongShiftLeft
   | LongAdd
   | LongSub
   | LongMultiply
   | LongRotateLeft
+  | LongRotateRight
   | LongAnd
   | LongOr
   | LongXor
@@ -122,7 +119,6 @@ type signed_bi_op =
   | LongDivide
   | LongRemainder
   | LongShiftRight
-  | LongRotateRight
   (* Vec valued *)
   | VecNarrow16Bit
   | VecNarrow32Bit
@@ -303,9 +299,9 @@ let value_type = function
       | FloatToInt32 | LongToInt32 | CountOnes | VecInt8SignBitmask
       | CountLeadingZeros ->
           Int
-      | FloatNeg | FloatAbs | FloatRound | FloatTrunc | FloatSqrt | FloatSine
-      | FloatCosine | FloatTangent | Int32ToFloatSigned | Int32ToFloatUnsigned
-      | Int64ToFloatSigned | Int64ToFloatUnsigned | BitcastInt64ToFloat ->
+      | FloatNeg | FloatAbs | FloatRound | FloatTrunc | FloatSqrt
+      | Int32ToFloatSigned | Int32ToFloatUnsigned | Int64ToFloatSigned
+      | Int64ToFloatUnsigned | BitcastInt64ToFloat ->
           Float
       | BitcastFloatToLong | FloatToLong | Int32ToLongSigned
       | LongCountLeadingZeros | Int32ToLongUnsigned ->
@@ -319,9 +315,9 @@ let value_type = function
       | FloatNotEq | FloatGreaterThan | FloatLessThan | FloatGreaterThanEqual
       | FloatLessThanEqual | MergeTruncLow8 | MergeTruncHigh8 | MergeTrunc16 ->
           Int
-      | FloatAdd | FloatSub | FloatMult | FloatDiv | FloatAtan2 -> Float
+      | FloatAdd | FloatSub | FloatMult | FloatDiv -> Float
       | LongShiftLeft | LongAdd | LongSub | LongMultiply | LongRotateLeft
-      | LongAnd | LongOr | LongXor ->
+      | LongRotateRight | LongAnd | LongOr | LongXor ->
           Long
       | VecAnd | VecOr | VecXor | VecMulAdd16Bit -> Vec)
   | VecLaneBiOp _ -> Vec
@@ -331,7 +327,7 @@ let value_type = function
       | GreaterThanEqual | LongGreaterThan | LongGreaterThanEqual | LongLessThan
       | LongLessThanEqual ->
           Int
-      | LongDivide | LongRemainder | LongShiftRight | LongRotateRight -> Long
+      | LongDivide | LongRemainder | LongShiftRight -> Long
       | VecNarrow16Bit | VecNarrow32Bit -> Vec)
   | SignedVecLaneBiOp _ -> Vec
   | VecSplatOp _ | VecShiftLeftOp _ | VecShiftRightOp _ -> Vec
@@ -687,3 +683,33 @@ let assignment_var = function
   | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _
   | AssertOp _ | Unreachable | Memset _ | Memcopy _ | Nop ->
       None
+
+let assignment_var_exn = function
+  | Const (var, _)
+  | FloatConst (var, _)
+  | LongConst (var, _)
+  | VecConst { var; _ }
+  | DupVar { var; _ }
+  | VecExtend { var; _ }
+  | UniOp { var; _ }
+  | BiOp { var; _ }
+  | VecLaneBiOp { var; _ }
+  | SignedBiOp { var; _ }
+  | SignedVecLaneBiOp { var; _ }
+  | VecShiftLeftOp { var; _ }
+  | VecShiftRightOp { var; _ }
+  | VecSplatOp { var; _ }
+  | VecExtractLaneOp { var; _ }
+  | VecReplaceLaneOp { var; _ }
+  | VecShuffleOp { var; _ }
+  | LoadOp { var; _ }
+  | SignedLoadOp { var; _ }
+  | VecLoadLaneOp { var; _ }
+  | ReturnedOp { var; _ }
+  | GetGlobalOp { var; _ }
+  | OutsideContext { var; _ }
+  | Landmine { var; _ } ->
+      var
+  | CallOp _ | CallIndirectOp _ | StoreOp _ | VecStoreLaneOp _ | SetGlobalOp _
+  | AssertOp _ | Unreachable | Memset _ | Memcopy _ | Nop ->
+      failwith "not an assignment instruction"

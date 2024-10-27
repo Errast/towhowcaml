@@ -244,22 +244,23 @@ let translate_func c addr ~intrinsics =
 
 let main c =
   let module Cmd = Radatnet.Commands in
-  let funcs = Cmd.list_functions c in
+  let funcs = Cmd.list_functions c in 
   let intrinsics = make_intrinsics c in
   let start = Time_ns.now () in
-  let _ =
+  let out = Out_channel.create ~binary:false ~append:false "./towhowcaml.wat" in 
+  let result =
     Array.to_sequence_mutable funcs
     |> Sequence.filter ~f:(fun f -> not @@ Hash_set.mem ignroe_funcs f)
     |> Sequence.filter_map ~f:(fun f ->
-           try Some (translate_func c ~intrinsics f |> Mir.Structure_cfg.structure_cfg)
+           try Some (translate_func c ~intrinsics f |> Mir.Wasm_backend.run out)
            with exn ->
              Exn.raise_with_original_backtrace
                (Exn.create_s [%message "oops" ~func_addr:(f : int) (exn : exn)])
                (Backtrace.Exn.most_recent ()))
-    |> Sequence.to_list_rev
+    |> Sequence.length
   in
   let stop = Time_ns.now () in
-  Printf.printf "%d Elapsed: %f" !counts
+  Printf.printf "%d Elapsed: %f, did %d" !counts
     Time_ns.(
       Span.( - ) (to_span_since_epoch stop) (to_span_since_epoch start)
-      |> Span.to_sec)
+      |> Span.to_sec) result

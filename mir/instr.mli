@@ -35,9 +35,6 @@ type uni_op =
   | FloatRound
   | FloatTrunc
   | FloatSqrt
-  | FloatSine
-  | FloatCosine
-  | FloatTangent
   | Int32ToFloatUnsigned
   | Int32ToFloatSigned
   | Int64ToFloatUnsigned
@@ -82,13 +79,13 @@ type bi_op =
   | FloatSub
   | FloatMult
   | FloatDiv
-  | FloatAtan2
   (* Long-valued *)
   | LongShiftLeft
   | LongAdd
   | LongSub
   | LongMultiply
   | LongRotateLeft
+  | LongRotateRight
   | LongAnd
   | LongOr
   | LongXor
@@ -119,7 +116,6 @@ type signed_bi_op =
   | LongDivide
   | LongRemainder
   | LongShiftRight
-  | LongRotateRight
   (* Vec valued *)
   | VecNarrow16Bit
   | VecNarrow32Bit
@@ -279,6 +275,7 @@ val replace_instr_ref : t -> from:Ref.t -> into:Ref.t -> t
 val is_pure : t -> bool
 val is_assignment : t -> bool
 val assignment_var : t -> Variable.t option
+val assignment_var_exn : t -> Variable.t
 val iter : (ref -> unit) -> t -> unit
 val iter_right : (ref -> unit) -> t -> unit
 val fold : ('a -> ref -> 'a) -> 'a -> t -> 'a

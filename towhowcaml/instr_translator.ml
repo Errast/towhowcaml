@@ -1948,6 +1948,26 @@ let translate_bit_test c kind =
             [ (B.int_and c.builder ~lhs:prev ~rhs:bit, `Reg32Bit) ])
   | _ -> raise_ops c
 
+let translate_vec_pack c (f : Builder.bi_op_add) =
+  match operands c with
+  | [ dest; src ] -> (
+      match (operand_size dest, operand_size src) with
+      | 8, 8 ->
+          let lhs = load_operand_mmx c dest in
+          let rhs = load_operand_mmx c src in
+          let packed = f c.builder ~rhs ~lhs in
+          let fixed =
+            B.vec_shuffle c.builder ~vec1:packed ~vec2:rhs
+              ~ctrl_h:0x0404040404040404L ~ctrl_l:0x0B0A090803020100L
+          in
+          store_operand_mmx c fixed ~dest
+      | 16, 16 ->
+          store_operand_mmx c ~dest
+          @@ f c.builder ~rhs:(load_operand_v c src)
+               ~lhs:(load_operand_v c dest)
+      | _ -> raise_ops c)
+  | _ -> raise_ops c
+
 let translate_no_prefix c =
   assert_c c (c.opcode.prefix = opcode_prefix_none);
   match c.opcode.id with
@@ -2084,8 +2104,8 @@ let translate_no_prefix c =
       translate_punpack c
         (0x1F_1E_1D_1C_0F_0E_0D_0CL, 0x1B_1A_19_18_0B_0A_09_08L)
         ~mm:0x17_16_15_14_07_06_05_04L
-  | PACKSSDW -> translate_vec_bi_op c (B.vec_narrow_32bit ~signed:true)
-  | PACKUSWB -> translate_vec_bi_op c (B.vec_narrow_16bit ~signed:false)
+  | PACKSSDW -> translate_vec_pack c (B.vec_narrow_32bit ~signed:true)
+  | PACKUSWB -> translate_vec_pack c (B.vec_narrow_16bit ~signed:false)
   | PMULLW -> translate_vec_bi_op c (B.vec_mul ~shape:`I16)
   | PADDW -> translate_vec_bi_op c (B.vec_add ~shape:`I16)
   | PSUBW -> translate_vec_bi_op c (B.vec_sub ~shape:`I16)

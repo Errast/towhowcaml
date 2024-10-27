@@ -1,9 +1,3 @@
-(* Why are you still working on this? *)
-(* -- I'm giving up after the code generation, not doing the runtime. *)
-(* I found a new module paper and I also told leo about my module ideas *)
-(* leo said they sound like fun ideas *)
-(* that doesn't sound like he likes them *)
-(* I made him read the papers *)
 open! Core
 open Util
 module Out = Out_channel
@@ -15,8 +9,7 @@ type 'a alloc_location =
   | Stack
   | Local of 'a
   | Tee of 'a
-  | Variable
-  | TeeVariable
+  | Variable of string
 [@@deriving sexp, equal]
 
 module Bool_map : sig
@@ -52,8 +45,9 @@ let stack_allocate_block :
   let locs =
     AP.mapi block.instrs ~f:(fun i instr ->
         match instr with
-        | OutsideContext _ -> Variable
-        | _ when Set.mem block.roots (Ref i) -> Variable
+        | OutsideContext { var; _ } -> Variable var.name
+        | _ when Set.mem block.roots (Ref i) ->
+            Variable (Instr.assignment_var_exn instr).name
         | _ when AP.get num_uses i = 0 -> Drop
         | _ -> Local ())
   in
@@ -74,18 +68,17 @@ let stack_allocate_block :
     Instr.iter_right (fun (Ref r as arg) ->
         match AP.get locs r with
         | Stack -> consume_arg arg
-        | (Tee _ | TeeVariable) when not @@ Bool_map.get is_used r ->
-            consume_arg arg
-        | Local _ | Tee _ | Variable | TeeVariable -> ()
+        | Tee _ when not @@ Bool_map.get is_used r -> consume_arg arg
+        | Local _ | Tee _ | Variable _ -> ()
         | Drop -> failwith "cannot consume Drop")
   in
   let stackify (Instr.Ref r) =
     let new_loc =
       match AP.get locs r with
-      | Variable -> TeeVariable
       | Local () when AP.get num_uses r = 1 -> Stack
       | Local () -> Tee ()
-      | Drop | TeeVariable | Tee _ | Stack -> failwith "already on stack"
+      | Variable _ -> failwith "cannot stackify"
+      | Drop | Tee _ | Stack -> failwith "already on stack"
     in
     AP.set locs r new_loc
   in
@@ -110,19 +103,21 @@ let stack_allocate_block :
   AP.iteri block.instrs ~f:(fun i instr ->
       match instr with
       | OutsideContext _ -> ()
-      | _ ->
+      | _ -> (
           Instr.iter find_on_stack instr;
           (* print_s [%message "" (i : int) (stack : stack_value Vec.t)]; *)
           consume_args instr;
-          if Instr.is_assignment instr then Vec.add stack @@ Potential (Ref i));
+          match AP.get locs i with
+          | Variable _ | Drop -> ()
+          | Local _ -> Vec.add stack @@ Potential (Ref i)
+          | Stack | Tee _ -> failwith "impossible"));
   AP.mapi locs ~f:(fun i loc ->
       match loc with
       | Local () -> Local (Instr.value_type @@ AP.get block.instrs i)
       | Tee () -> Tee (Instr.value_type @@ AP.get block.instrs i)
       | Drop -> Drop
       | Stack -> Stack
-      | Variable -> Variable
-      | TeeVariable -> TeeVariable)
+      | Variable var -> Variable var)
 
 type number_of_locals = { int : int; long : int; float : int; vec : int }
 [@@deriving sexp]
@@ -172,7 +167,7 @@ let allocate_locations :
     if OA.is_none alloced_locs r then
       let alloced_loc =
         match AP.get locs r with
-        | (Stack | Variable | TeeVariable | Drop) as loc -> loc
+        | (Stack | Variable _ | Drop) as loc -> loc
         | Local typ -> Local (typ, get_local typ)
         | Tee typ -> Tee (typ, get_local typ)
       in
@@ -203,14 +198,14 @@ let allocate_locations :
           assert (OA.is_none alloced_locs i);
           OA.set_some alloced_locs i Drop;
           Drop
-      | Variable when OA.is_none alloced_locs i ->
-          OA.set_some alloced_locs i @@ Variable;
-          Variable
+      | Variable _ as loc when OA.is_none alloced_locs i ->
+          OA.set_some alloced_locs i @@ loc;
+          loc
       | _ -> OA.get_some_exn alloced_locs i
     in
 
     (match alloced_loc with
-    | Drop | Stack | Variable | TeeVariable -> ()
+    | Drop | Stack | Variable _ -> ()
     | Local (typ, l) | Tee (typ, l) -> free_local l typ);
 
     Instr.iter_right add_use @@ AP.get block.instrs i
@@ -247,6 +242,22 @@ let validate_stack :
     | s :: stack when Instr.Ref.equal ref s -> stack
     | _ -> raise_s @@ Instr.Ref.sexp_of_t ref
   in
+  let get_value (Instr.Ref r) stack =
+    let stack =
+      match AP.get locs r with
+      | Stack -> pop_stack stack (Ref r)
+      | Tee _ when not @@ Bool_map.get is_used r -> pop_stack stack (Ref r)
+      | Tee (typ, loc) | Local (typ, loc) ->
+          assert (Instr.Ref.equal (get_local typ).(loc) (Ref r));
+          stack
+      | Variable var ->
+          assert (Instr.Ref.equal (Ref r) @@ Hashtbl.find_exn variables var);
+          stack
+      | Drop -> failwith "can't have Drop as an argument"
+    in
+    Bool_map.set is_used r true;
+    stack
+  in
   let stack =
     AP.foldi block.instrs ~init:[] ~f:(fun i stack instr ->
         match instr with
@@ -255,46 +266,24 @@ let validate_stack :
             Hashtbl.add_exn variables ~key:name ~data:(Instr.Ref i);
             stack
         | _ -> (
-            let stack =
-              Instr.fold_right
-                (fun (Ref r) stack ->
-                  let stack =
-                    match AP.get locs r with
-                    | Stack -> pop_stack stack (Ref r)
-                    | (Tee _ | TeeVariable) when not @@ Bool_map.get is_used r
-                      ->
-                        pop_stack stack (Ref r)
-                    | Tee (typ, loc) | Local (typ, loc) ->
-                        assert (Instr.Ref.equal (get_local typ).(loc) (Ref r));
-                        stack
-                    | Variable | TeeVariable ->
-                        assert (
-                          Instr.Ref.equal (Ref r)
-                          @@ Hashtbl.find_exn variables
-                               (Instr.assignment_var @@ AP.get block.instrs r
-                               |> Option.value_exn)
-                                 .name);
-                        stack
-                    | Drop -> failwith "can't have Drop as an argument"
-                  in
-                  Bool_map.set is_used r true;
-                  stack)
-                stack instr
-            in
+            let stack = Instr.fold_right get_value stack instr in
             let loc = AP.get locs i in
             (match loc with
             | Tee (typ, loc) | Local (typ, loc) ->
                 (get_local typ).(loc) <- Ref i
-            | Variable | TeeVariable ->
-                Hashtbl.set variables ~data:(Ref i)
-                  ~key:
-                    (AP.get block.instrs i |> Instr.assignment_var
-                   |> Option.value_exn)
-                      .name
+            | Variable var -> Hashtbl.set variables ~data:(Ref i) ~key:var
             | _ -> ());
             match loc with
-            | Stack | Tee _ | TeeVariable -> Ref i :: stack
-            | _ -> stack))
+            | Stack | Tee _ -> Ref i :: stack
+            | Local _ | Variable _ | Drop -> stack))
+  in
+  let stack =
+    match block.terminator with
+    | Branch { condition; _ }
+    | BranchReturn { condition; _ }
+    | Switch { switch_on = condition; _ } ->
+        get_value condition stack
+    | Goto _ | Return -> stack
   in
   assert (List.is_empty stack)
 
@@ -314,6 +303,473 @@ let nums_max n1 n2 =
     vec = Int.max n1.vec n2.vec;
   }
 
+let output_block :
+    Out_channel.t -> Block.t -> (_ alloc_location, immutable) AP.t -> _ -> unit
+    =
+ fun out block locs expected_terminator ->
+  let is_used = Bool_map.make @@ AP.length locs in
+  let output_string = Out_channel.output_string out in
+  let output_int i = string_of_int i |> output_string in
+  let output_char = Out_channel.output_char out in
+  let output_local typ id =
+    output_string
+      (match typ with
+      | Types.Int -> "$__int_scratch_"
+      | Long -> "$__long_scratch_"
+      | Float -> "$__float_scratch_"
+      | Vec -> "$__vec_scratch_");
+    output_int id
+  in
+  let output_get_value (Instr.Ref r) =
+    (match AP.get locs r with
+    | Stack -> ()
+    | Tee _ when not @@ Bool_map.get is_used r -> ()
+    | Tee (typ, local) | Local (typ, local) ->
+        output_string "\n    (local.get ";
+        output_local typ local;
+        output_char ')'
+    | Variable var ->
+        output_string "\n    (global.get $";
+        output_string var;
+        output_char ')'
+    | Drop -> failwith "cannot get dropped value");
+    Bool_map.set is_used r true
+  in
+  let output_set_value (Instr.Ref r) =
+    match AP.get locs r with
+    | Stack -> ()
+    | Drop -> output_string "\n    (drop)"
+    | Tee (typ, id) ->
+        output_string "\n    (local.tee ";
+        output_local typ id;
+        output_char ')'
+    | Local (typ, id) ->
+        output_string "\n    (local.set ";
+        output_local typ id;
+        output_char ')'
+    | Variable var ->
+        output_string "\n    (global.set $";
+        output_string var;
+        output_char ')'
+  in
+  let output_lane_shape shape =
+    output_string
+    @@
+    match shape with
+    | `I8 -> "i8x16"
+    | `I16 -> "i16x8"
+    | `I32 -> "i32x4"
+    | `I64 -> "i64x2"
+    | `F32 -> "f32x4"
+    | `F64 -> "f64x2"
+  in
+  let output_shape_size shape =
+    output_string
+      (match shape with
+      | `I8 -> "8"
+      | `I16 -> "16"
+      | `I32 | `F32 -> "32"
+      | `I64 | `F64 -> "64")
+  in
+  let signed_suffix = function true -> "_s" | false -> "_u" in
+  let output_offset offset =
+    if offset <> 0 then (
+      output_string " offset ";
+      string_of_int offset)
+    else ""
+  in
+  let output_instr i instr =
+    Instr.iter output_get_value instr;
+    (match instr with
+    | Nop | ReturnedOp _ | OutsideContext _ -> ()
+    | _ ->
+        output_string "\n    ";
+        output_string
+          (match instr with
+          | Instr.Const (_, c) ->
+              output_string "i32.const ";
+              string_of_int c
+          | FloatConst (_, c) ->
+              output_string "f64.const ";
+              string_of_float c
+          | LongConst (_, c) ->
+              output_string "i64.const ";
+              Int64.to_string c
+          | VecConst c ->
+              output_string "vec128.const i64x2 ";
+              Int64.to_string c.lower_bits |> output_string;
+              Int64.to_string c.upper_bits
+          | DupVar _ -> ""
+          | UniOp { op; _ } -> (
+              match op with
+              | EqualsZero -> "i32.eqz"
+              | LongEqualsZero -> "i64.eqz"
+              | SignExtendLow8 -> "i32.extend8_s"
+              | SignExtendHigh8 -> "(i32.const 8) (i32.shr_u) (i32.extend8_s)"
+              | SignExtend16 -> "i32.extend16_s"
+              | ZeroExtendLow8 -> "(i32.const 0xFF) (i32.and)"
+              | ZeroExtendHigh8 ->
+                  "(i32.const 8) (i32.shr_u) (i32.const 0xFF) (i32.and)"
+              | ZeroExtend16 -> "(i32.const 0xFFFF) (i32.and)"
+              | FloatToInt32 -> "i32.trunc_f64_s"
+              | LongToInt32 -> "i32.wrap_i64"
+              | CountOnes -> "i32.popcnt"
+              | VecInt8SignBitmask -> "i8x16.bitmask"
+              | CountLeadingZeros -> "i32.clz"
+              | FloatNeg -> "f64.neg"
+              | FloatAbs -> "f64.abs"
+              | FloatRound -> "f64.nearest"
+              | FloatTrunc -> "f64.trunc"
+              | FloatSqrt -> "f64.sqrt"
+              | Int32ToFloatUnsigned -> "f64.convert_i32_u"
+              | Int32ToFloatSigned -> "f64.convert_i32_s"
+              | Int64ToFloatSigned -> "f64.convert_i64_s"
+              | Int64ToFloatUnsigned -> "f64.convert_i64_u"
+              | BitcastInt64ToFloat -> "f64.reinterpret_i64"
+              | FloatToLong -> "i64.trunc_f64_s"
+              | Int32ToLongUnsigned -> "i64.extend_i32_u"
+              | Int32ToLongSigned -> "i64.extend_i32_s"
+              | BitcastFloatToLong -> "i64.reinterpret_f64"
+              | LongCountLeadingZeros -> "i64.clz"
+              | VecConvertLow32BitsToFloatsSigned -> "f64x2.convert_low_i32x4_s"
+              )
+          | BiOp { op; _ } -> (
+              match op with
+              | Add -> "i32.add"
+              | Subtract -> "i32.subtract"
+              | Multiply -> "i32.mult"
+              | Equal -> "i32.eq"
+              | NotEqual -> "i32.ne"
+              | And -> "i32.and"
+              | Or -> "i32.or"
+              | Xor -> "i32.xor"
+              | ShiftLeft -> "i32.shl"
+              | RotateLeft -> "i32.rotl"
+              | RotateRight -> "i32.rotr"
+              | LongEq -> "i64.eq"
+              | LongNotEq -> "i64.ne"
+              | FloatEq -> "f64.eq"
+              | FloatNotEq -> "f64.ne"
+              | FloatGreaterThan -> "f64.gt"
+              | FloatLessThan -> "f64.lt"
+              | FloatGreaterThanEqual -> "f64.ge"
+              | FloatLessThanEqual -> "f64.le"
+              | MergeTruncLow8 ->
+                  "(i32.const 0xFF) (i32.and) (local.set __instr_scratch) \
+                   (i32.const 0xFFFFFF00) (i32.and) (local.get \
+                   __instr_scratch) (i32.or)"
+              | MergeTruncHigh8 ->
+                  "(i32.const 0xFF) (i32.and) (i32.const 8) (i32.shl) \
+                   (local.set __instr_scratch) (i32.const 0xFFFFFF00) \
+                   (i32.and) (local.get __instr_scratch) (i32.or)"
+              | MergeTrunc16 ->
+                  "(i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) \
+                   (i32.const 0xFFFF0000) (i32.and) (local.get \
+                   __instr_scratch) (i32.or)"
+              | FloatAdd -> "f64.add"
+              | FloatSub -> "f64.sub"
+              | FloatMult -> "f64.mult"
+              | FloatDiv -> "f64.div"
+              | LongShiftLeft -> "i64.shl"
+              | LongAdd -> "i64.add"
+              | LongSub -> "i64.sub"
+              | LongMultiply -> "i64.mult"
+              | LongRotateLeft -> "i64.rotl"
+              | LongRotateRight -> "i64.rotr"
+              | LongAnd -> "i64.and"
+              | LongOr -> "i64.or"
+              | LongXor -> "i64.xor"
+              | VecAnd -> "v128.and"
+              | VecOr -> "v128.or"
+              | VecXor -> "v128.xor"
+              | VecMulAdd16Bit -> "i32x4.dot_i16x8_s")
+          | VecLaneBiOp { op; shape; _ } -> (
+              output_lane_shape shape;
+              match op with
+              | VecSub -> ".add"
+              | VecEqual -> ".eq"
+              | VecAdd -> ".add"
+              | VecMul -> ".mul"
+              | VecNotEqual -> ".eq")
+          | SignedBiOp { op; signed; _ } ->
+              (output_string
+              @@
+              match op with
+              | Divide -> "i32.div"
+              | Remainder -> "i32.rem"
+              | ShiftRight -> "i32.shr"
+              | LessThan -> "i32.lt"
+              | LessThanEqual -> "i32.le"
+              | GreaterThan -> "i32.gt"
+              | GreaterThanEqual -> "i32.ge"
+              | LongDivide -> "i64.div"
+              | LongRemainder -> "i64.rem"
+              | LongShiftRight -> "i64.shr"
+              | LongLessThan -> "i64.lt"
+              | LongLessThanEqual -> "i64.le"
+              | LongGreaterThan -> "i64.gt"
+              | LongGreaterThanEqual -> "i64.ge"
+              | VecNarrow16Bit -> "i8x16.narrow_i16x8"
+              | VecNarrow32Bit -> "i16x8.narrow_i32x4");
+              signed_suffix signed
+          | SignedVecLaneBiOp { op; signed; shape; _ } -> (
+              output_lane_shape shape;
+              (output_string
+              @@
+              match op with
+              | VecMin -> ".min"
+              | VecMax -> ".max"
+              | VecLessThan -> ".lt"
+              | VecLessThanEqual -> ".le"
+              | VecGreaterThan -> ".gt"
+              | VecGreaterThanEqual -> ".ge"
+              | VecAddSaturating -> ".add_sat"
+              | VecSubSaturating -> ".sub_sat"
+              | VecDiv -> ".div");
+              match shape with `F32 | `F64 -> "" | _ -> signed_suffix signed)
+          | VecShiftLeftOp { shape; _ } ->
+              output_lane_shape shape;
+              ".shl"
+          | VecShiftRightOp { shape; signed; _ } ->
+              output_lane_shape shape;
+              output_string ".shr";
+              signed_suffix signed
+          | VecSplatOp { shape; _ } ->
+              output_lane_shape shape;
+              "splat"
+          | VecExtractLaneOp { shape; lane; _ } ->
+              output_lane_shape shape;
+              (match shape with
+              | `I8 | `I16 -> output_string ".extract_lane_u "
+              | _ -> output_string ".extract_lane ");
+              string_of_int lane
+          | VecReplaceLaneOp { shape; lane; _ } ->
+              output_lane_shape shape;
+              (match shape with
+              | `I8 | `I16 -> output_string ".replace_lane_u "
+              | _ -> output_string ".replace_lane ");
+              string_of_int lane
+          | VecShuffleOp { control_lower_bits; control_upper_bits; _ } ->
+              output_string "i8x16.shuffle";
+              let rec output_bytes i n =
+                if n > 0 then (
+                  let byte = Int64.to_int_trunc i land 0xFF in
+
+                  output_char ' ';
+                  output_int byte;
+                  output_bytes (Int64.shift_right_logical i 8) (n - 1))
+              in
+              output_bytes control_lower_bits 8;
+              output_bytes control_upper_bits 8;
+              ""
+          | VecExtend { shape; signed; half_used; _ } ->
+              output_lane_shape
+                (match[@warning "-8"] shape with
+                | `I8 -> `I16
+                | `I16 -> `I32
+                | `I32 -> `I64);
+              output_string ".extend_";
+              output_string
+                (match half_used with
+                | `HighOrder -> "high_"
+                | `LowOrder -> "low_");
+              output_lane_shape shape;
+              signed_suffix signed
+          | LoadOp { op; offset; _ } -> (
+              let basic str =
+                output_string str;
+                output_offset offset
+              in
+              match op with
+              | Load32 -> basic "i32.load"
+              | FloatLoad32 ->
+                  output_string "(f32.load";
+                  output_string @@ output_offset offset;
+                  ") (f64.promote_f32)"
+              | FloatLoad64 -> basic "f64.load"
+              | LongLoad64 -> basic "i64.load"
+              | VecLoad32ZeroExtend -> basic "v128.load32_zero"
+              | VecLoad64ZeroExtend -> basic "v128.load64_zero"
+              | VecLoad128 -> basic "v128.load")
+          | SignedLoadOp { op; offset; signed; _ } ->
+              output_string
+                (match op with Load8 -> "i32.load8" | Load16 -> "i32.load16");
+              output_string @@ signed_suffix signed;
+              output_offset offset
+          | VecLoadLaneOp { shape; lane; offset; _ } ->
+              output_string "v128.load";
+              output_shape_size shape;
+              output_string "_lane";
+              if offset <> 0 then (
+                output_string " offset ";
+                output_int offset);
+              output_char ' ';
+              string_of_int lane
+          | CallOp { func; _ } ->
+              output_string "call $";
+              func
+          (* *)
+          | CallIndirectOp { args; _ } ->
+              let args =
+                List.map
+                  ~f:(fun (Ref i) -> AP.get block.instrs i |> Instr.value_type)
+                  args
+              in
+              let returns =
+                let rec go i rs =
+                  match AP.get block.instrs i with
+                  | ReturnedOp { typ; _ } ->
+                      if i + 1 < AP.length block.instrs then
+                        go (i + 1) (typ :: rs)
+                      else typ :: rs
+                  | _ -> rs
+                in
+                go (i + 1) [] |> List.rev
+              in
+              let to_char = function
+                | Types.Int -> output_char 'i'
+                | Long -> output_char 'l'
+                | Float -> output_char 'f'
+                | Vec -> output_char 'v'
+              in
+              output_string "call_indirect (type $__FUNC";
+              List.iter args ~f:to_char;
+              output_char '_';
+              List.iter returns ~f:to_char;
+              ")"
+          | GetGlobalOp { global; _ } ->
+              output_string "global.get $";
+              global.name
+          | Landmine { typ = Int; _ } -> "i32.const 0xDEADBEEF"
+          | Landmine _ -> failwith "landmine"
+          | StoreOp { op; offset; _ } ->
+              output_string
+                (match op with
+                | Store32 -> "i32.store"
+                | Store16 -> "i32.store16"
+                | Store8 -> "i32.store8"
+                | FloatStore32 -> "(f32.demote_f64) f32.store"
+                | FloatStore64 -> "f64.store"
+                | LongStore64 -> "i64.store"
+                | VecStore128 -> "v128.store");
+              output_offset offset
+          | VecStoreLaneOp { shape; lane; offset; _ } ->
+              output_string "v128.store";
+              output_shape_size shape;
+              output_string "_lane";
+              if offset <> 0 then (
+                output_string " offset ";
+                output_int offset);
+              output_char ' ';
+              string_of_int lane
+          | SetGlobalOp { global; _ } ->
+              output_string "global.set $";
+              global.name
+          | AssertOp _ -> "(if (result) (then) (else unreachable))"
+          | Memset _ -> "memory.fill"
+          | Memcopy _ -> "memory.copy"
+          | Unreachable -> "unreachable"
+          | Nop | ReturnedOp _ | OutsideContext _ -> ""));
+    match instr with
+    | OutsideContext _ -> ()
+    | _ when not @@ Instr.is_assignment instr -> ()
+    | _ -> output_set_value (Ref i)
+  in
+
+  AP.iteri block.instrs ~f:output_instr;
+
+  match (block.terminator, expected_terminator) with
+  | _, `Any | Goto _, `Goto | Return, `Return -> ()
+  | (Branch { condition; _ } | BranchReturn { condition; _ }), `Branch
+  | Switch { switch_on = condition; _ }, `Switch ->
+      output_get_value condition
+  | _ -> failwith "unexpected terminator"
+
 let run out func =
   let structured = Structure_cfg.structure_cfg func in
-  ()
+  let num_locals, locals =
+    AP.fold_map func.blocks ~init:{ int = 0; long = 0; float = 0; vec = 0 }
+      ~f:(fun max_nums block ->
+        let locs, nums =
+          allocate_locations (stack_allocate_block block) block
+        in
+        (nums_max max_nums nums, locs))
+  in
+  let output_string = Out_channel.output_string out in
+  let output_int i = string_of_int i |> output_string in
+  let output_char = Out_channel.output_char out in
+  let output_block id expected =
+    output_block out (AP.get func.blocks id) (AP.get locals id) expected
+  in
+  let rec output_tree : Structure_cfg.wasm_control -> unit = function
+    | WasmBlock body ->
+        output_string "\n    (block";
+        output_tree body;
+        output_char ')'
+    | WasmLoop body ->
+        output_string "\n    (loop";
+        output_tree body;
+        output_char ')'
+    | WasmIf (block, if_true, if_false) ->
+        output_block block `Branch;
+        output_string "\n    (if (then ";
+        output_tree if_true;
+        output_string ")\n    (else";
+        output_tree if_false;
+        output_char ')'
+    | WasmCodeReturn block ->
+        output_block block `Return;
+        output_string "\n    (return)"
+    | WasmReturn -> output_string "\n    (return)"
+    | WasmBr label ->
+        output_string "\n    (br ";
+        output_int label;
+        output_char ')'
+    | WasmBrTable { bb_id; targets; default } ->
+        output_block bb_id `Switch;
+        output_string "\n    (br_table ";
+        List.iter targets ~f:(fun i ->
+            output_int i;
+            output_char ' ');
+        output_int default;
+        output_char ')'
+    | WasmSeq (b1, b2) ->
+        output_tree b1;
+        output_tree b2
+    | WasmCode block -> output_block block `Goto
+    | WasmFallthrough -> ()
+  in
+  output_string "\n  (func $";
+  output_string func.name;
+  output_string "(param";
+  let param_types = function
+    | { Types.typ = Int; _ } -> " i32"
+    | { typ = Long; _ } -> " i64"
+    | { typ = Float; _ } -> " f64"
+    | { typ = Vec; _ } -> " v128"
+  in
+  List.iter func.signature.args ~f:(fun t -> param_types t |> output_string);
+  output_string ") (result";
+  List.iter func.signature.returns ~f:(fun t -> param_types t |> output_string);
+  output_string ")\n ";
+  let make_local name num typ =
+    for i = 0 to num - 1 do
+      output_string " (local $__";
+      output_string name;
+      output_string "_scratch_";
+      output_int i;
+      output_string typ;
+      output_char ')'
+    done
+  in
+  make_local "int" num_locals.int "i32";
+  make_local "long" num_locals.long "i64";
+  make_local "float" num_locals.float "f64";
+  make_local "vec" num_locals.vec "v128";
+  output_tree structured;
+  output_string "  )\n"
+
+let run_block : Out_channel.t -> Block.t -> unit =
+ fun out block ->
+  let locs, _ = allocate_locations (stack_allocate_block block) block in
+  output_block out block locs `Any

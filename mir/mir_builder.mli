@@ -101,9 +101,6 @@ val float_abs : uni_op_add
 val float_round : uni_op_add
 val float_trunc : uni_op_add
 val float_sqrt : uni_op_add
-val float_sine : uni_op_add
-val float_cosine : uni_op_add
-val float_tangent : uni_op_add
 val int32_to_float : uni_op_add_signed
 val int32_to_long : uni_op_add_signed
 val float_to_long : uni_op_add
@@ -147,12 +144,12 @@ val float_add : bi_op_add
 val float_sub : bi_op_add
 val float_mul : bi_op_add
 val float_div : bi_op_add
-val float_atan2 : bi_op_add
 val long_add : bi_op_add
 val long_sub : bi_op_add
 val long_mul : bi_op_add
 val long_shift_left : bi_op_add
 val long_rotate_left : bi_op_add
+val long_rotate_right : bi_op_add
 val long_and : bi_op_add
 val long_or : bi_op_add
 val long_xor : bi_op_add
@@ -188,7 +185,6 @@ val long_greater_than_equal : signed_bi_op_add
 val long_div : signed_bi_op_add
 val long_remainder : signed_bi_op_add
 val long_shift_right : signed_bi_op_add
-val long_rotate_right : signed_bi_op_add
 val vec_narrow_16bit : signed_bi_op_add
 val vec_narrow_32bit : signed_bi_op_add
 
