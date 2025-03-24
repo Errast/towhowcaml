@@ -75,8 +75,7 @@ let stack_allocate_block :
   let stackify (Instr.Ref r) =
     let new_loc =
       match AP.get locs r with
-      | Local () when AP.get num_uses r = 1 -> Stack
-      | Local () -> Tee ()
+      | Local () -> if AP.get num_uses r = 1 then Stack else Tee ()
       | Variable _ -> failwith "cannot stackify"
       | Drop | Tee _ | Stack -> failwith "already on stack"
     in
@@ -772,4 +771,6 @@ let run out func =
 let run_block : Out_channel.t -> Block.t -> unit =
  fun out block ->
   let locs, _ = allocate_locations (stack_allocate_block block) block in
+  print_s
+    [%message "" (locs : ((Types.local_type * int) alloc_location, _) iparray)];
   output_block out block locs `Any
