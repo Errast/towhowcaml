@@ -1,5 +1,6 @@
 open! Core
 
+module DSL = Dsl
 let compile : Sedlexing.lexbuf -> Mir.Func.t list =
   let parser = MenhirLib.Convert.Simplified.traditional2revised Parser.main in
   fun buf ->

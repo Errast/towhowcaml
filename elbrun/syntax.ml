@@ -80,3 +80,9 @@ type func_def = {
   body : statement list;
 }
 [@@deriving sexp]
+
+let fresh =
+  let i = ref 0 in
+  fun () ->
+    i := !i + 1;
+    string_of_int !i

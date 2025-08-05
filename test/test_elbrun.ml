@@ -6,8 +6,10 @@ let compile str =
   |> sexp_of_list Mir.Func.sexp_of_t
   |> print_s
 
- let%expect_test "store_big_float" = compile Towhowcaml.store_big_float;
-  [%expect {|
+let%expect_test "store_big_float" =
+  compile Towhowcaml.store_big_float;
+  [%expect
+    {|
     (((name __store_big_float__)
       (signature
        ((args (((name arg) (typ Float)) ((name dest_ptr) (typ Int))))
@@ -121,10 +123,11 @@ let compile str =
         (res_exp ((name res_exp) (typ Int)))
         (res_mantissa ((name res_mantissa) (typ Long)))))))
     |}]
- 
 
- let%expect_test "load_big_float" = compile Towhowcaml.load_big_float;
-  [%expect {|
+let%expect_test "load_big_float" =
+  compile Towhowcaml.load_big_float;
+  [%expect
+    {|
     (((name __load_big_float__)
       (signature
        ((args (((name float_ptr) (typ Int))))
@@ -314,10 +317,11 @@ let compile str =
         (rounded_part ((name rounded_part) (typ Long)))
         (upper_bits ((name upper_bits) (typ Int)))))))
     |}]
- 
 
-let%expect_test "memset" = compile Towhowcaml.elbrun_code;
-  [%expect {|
+let%expect_test "memset" =
+  compile Towhowcaml.elbrun_code;
+  [%expect
+    {|
     (((name __int_memset__)
       (signature
        ((args
@@ -528,7 +532,8 @@ let%expect_test "basic" =
     r2 = a1 + load a1 * 3 - a2 + a3
   }
   |};
-  [%expect {|
+  [%expect
+    {|
     (((name test)
       (signature
        ((args
@@ -588,3 +593,97 @@ let%expect_test "basic" =
          (terminator Return) (roots ((Ref 0) (Ref 5) (Ref 7) (Ref 8))))))
       (locals ((r1 ((name r1) (typ Int))) (r2 ((name r2) (typ Int)))))))
     |}]
+
+let%expect_test "basic dsl" =
+  Elbrun.DSL.(
+    fn "test"
+      Params.[ Int "a1"; Int "a2"; Int "a3" ]
+      Returns.[ Int "r1"; Int "r2" ]
+      Vars.[]
+      (fun Args.[ a1; a2; a3 ] RetVars.[ r1; r2 ]   Locals.[] ->
+        [
+          if_
+            (!a1 - i 1 >> u (i 2))
+            [ r1 := !a2 ]
+            elif_ (load int !a1)
+            [ r1 := !a3; store ~offset:4 int !a1 at ((!a2 * !a3) - i 4) ]
+            else_
+            [ r1 := !a3 ]
+            end_;
+          r2 := !a1 + load int ((!a1 * i 3) - !a2 + !a3);
+        ]))
+  |> Mir.Func.sexp_of_t |> print_s;
+  [%expect {|
+    ((name test)
+     (signature
+      ((args (((name a1) (typ Int)) ((name a2) (typ Int)) ((name a3) (typ Int))))
+       (returns (((name r1) (typ Int)) ((name r2) (typ Int))))))
+     (blocks
+      (((id 0)
+        (instrs
+         ((0 (OutsideContext (var a1) (typ Int))) (1 (Const __i32 1))
+          (2 (BiOp (var __i32) (op Subtract) (lhs (Ref 0)) (rhs (Ref 1))))
+          (3 (Const __i32 2))
+          (4
+           (SignedBiOp (var __i32) (op ShiftRight) (signed false) (lhs (Ref 2))
+            (rhs (Ref 3))))))
+        (terminator
+         (Branch (succeed (Block 1)) (fail (Block 2)) (condition (Ref 4))))
+        (roots ((Ref 0))))
+       ((id 1)
+        (instrs
+         ((0 (OutsideContext (var a2) (typ Int)))
+          (1 (DupVar (var r1) (src (Ref 0)) (typ Int)))))
+        (terminator (Goto (Block 5))) (roots ((Ref 0) (Ref 1))))
+       ((id 2)
+        (instrs
+         ((0 (OutsideContext (var a1) (typ Int)))
+          (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))))
+        (terminator
+         (Branch (succeed (Block 3)) (fail (Block 4)) (condition (Ref 1))))
+        (roots ((Ref 0))))
+       ((id 3)
+        (instrs
+         ((0 (OutsideContext (var a3) (typ Int)))
+          (1 (DupVar (var r1) (src (Ref 0)) (typ Int)))
+          (2 (OutsideContext (var a2) (typ Int)))
+          (3 (BiOp (var __i32) (op Multiply) (lhs (Ref 2)) (rhs (Ref 0))))
+          (4 (Const __i32 4))
+          (5 (BiOp (var __i32) (op Subtract) (lhs (Ref 3)) (rhs (Ref 4))))
+          (6 (OutsideContext (var a1) (typ Int)))
+          (7 (StoreOp (op Store32) (addr (Ref 5)) (value (Ref 6)) (offset 4)))))
+        (terminator (Goto (Block 5))) (roots ((Ref 0) (Ref 1) (Ref 2) (Ref 6))))
+       ((id 4)
+        (instrs
+         ((0 (OutsideContext (var a3) (typ Int)))
+          (1 (DupVar (var r1) (src (Ref 0)) (typ Int)))))
+        (terminator (Goto (Block 5))) (roots ((Ref 0) (Ref 1))))
+       ((id 5)
+        (instrs
+         ((0 (OutsideContext (var a1) (typ Int))) (1 (Const __i32 3))
+          (2 (BiOp (var __i32) (op Multiply) (lhs (Ref 0)) (rhs (Ref 1))))
+          (3 (OutsideContext (var a2) (typ Int)))
+          (4 (BiOp (var __i32) (op Subtract) (lhs (Ref 2)) (rhs (Ref 3))))
+          (5 (OutsideContext (var a3) (typ Int)))
+          (6 (BiOp (var __i32) (op Add) (lhs (Ref 4)) (rhs (Ref 5))))
+          (7 (LoadOp (var __i32) (op Load32) (addr (Ref 6))))
+          (8 (BiOp (var r2) (op Add) (lhs (Ref 0)) (rhs (Ref 7))))))
+        (terminator Return) (roots ((Ref 0) (Ref 3) (Ref 5) (Ref 8))))))
+     (locals ((r1 ((name r1) (typ Int))) (r2 ((name r2) (typ Int))))))
+    |}]
+
+(* compile *)
+(* {| *)
+  (* fn test(int a1 a2 a3) -> (int r1 r2) { *)
+    (* if (a1 - 1) >> 2 { *)
+      (* r1 = a2 *)
+    (* } else if load a1 { *)
+        (* r1 = a3 *)
+        (* store:4 a1, a2 * a3 - 4 *)
+    (* } else { *)
+      (* r1 = a3 *)
+   
+    (* } *)
+    (* r2 = a1 + load a1 * 3 - a2 + a3 *)
+  (* } *)
+  (* |}; *)

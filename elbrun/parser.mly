@@ -7,7 +7,7 @@ let or_zero = function
   | None -> 0
   | Some s -> int_of_string s
 
-let fresh = let i = ref 0 in fun () -> i := !i + 1; string_of_int !i
+
 %}
 %token <string> IDENT
 %token <string> REF_IDENT
