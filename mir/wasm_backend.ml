@@ -50,7 +50,7 @@ let stack_allocate_block :
             Variable (Instr.assignment_var_exn instr).name
         | _ -> Drop)
   in
-  let rec handle_uses ?(backtracking = false) user instr start_stack =
+  let rec handle_uses user instr start_stack =
     let handle_use user (Instr.Ref index) ((stack, changes) as acc) =
       (* print_s *)
       (* [%message *)
@@ -59,15 +59,17 @@ let stack_allocate_block :
       (* (index : int) *)
       (* (stack : Instr.Ref.t list) *)
       (* (changes : (Instr.Ref.t * unit alloc_location) list)]; *)
-      let[@tail_mod_cons] rec remove_from_stack ref = function
+      let[@tail_mod_cons] rec remove_from_stack should_backtrack ref = function
         | [] -> []
-        | r :: stack when Instr.Ref.equal r ref -> stack
-        | r :: stack -> r :: remove_from_stack ref stack
+        | r :: stack when Instr.Ref.equal r ref ->
+            should_backtrack := true;
+            stack
+        | r :: stack -> r :: remove_from_stack should_backtrack ref stack
       in
-      let spill_to_locals stack =
+      let spill_to_locals should_backtrack stack =
         List.fold ~init:stack ~f:(fun stack -> function
           | _, Local _ -> stack
-          | ref, (Tee _ | Stack) -> remove_from_stack ref stack
+          | ref, (Tee _ | Stack) -> remove_from_stack should_backtrack ref stack
           | _ -> assert false)
       in
       match AP.get locs index with
@@ -79,18 +81,22 @@ let stack_allocate_block :
                     if AP.get num_uses i > 1 then Tee ((), user) else Stack )
                   :: changes )
             | _ :: stack -> go stack
-            | [] when backtracking -> (stack, (Ref index, Local ()) :: changes)
             | [] ->
-                handle_uses ~backtracking:true user instr
-                @@ spill_to_locals start_stack changes
+                let should_backtrack = ref false in
+                let new_stack =
+                  spill_to_locals should_backtrack start_stack changes
+                in
+                if !should_backtrack then handle_uses user instr new_stack
+                else (stack, (Ref index, Local ()) :: changes)
           in
           go stack
       | Stack -> failwith "stack value used multiple times?"
       | Variable _ | Tee _ | Local _ ->
-          if backtracking then acc
-          else
-            handle_uses ~backtracking:true user instr
-            @@ spill_to_locals start_stack changes
+          let should_backtrack = ref false in
+          let new_stack =
+            spill_to_locals should_backtrack start_stack changes
+          in
+          if !should_backtrack then handle_uses user instr new_stack else acc
     in
     Instr.fold_right (handle_use user) (start_stack, []) instr
   in
@@ -244,15 +250,16 @@ let validate_stack :
     | Types.Long -> long_locals
     | Types.Vec -> vec_locals
   in
-  let consume_stack ref stack =
+  let consume_stack instr ref stack =
     match stack with
     | r :: stack when Instr.Ref.equal r ref -> stack
-    | Instr.Ref i :: _ ->
+    | _ :: _ ->
         raise_s
           [%message
             "wrong value on stack"
+              (instr : Instr.t)
               ~expected:(ref : Instr.Ref.t)
-              ~found:(Ref i : Instr.Ref.t)]
+              ~found:(stack : Instr.Ref.t list)]
     | [] -> raise_s [%message "stack too small" (ref : Instr.Ref.t)]
   in
   let retrieve_local stack typ var = (get_locals typ).(var) :: stack in
@@ -276,7 +283,7 @@ let validate_stack :
         (get_locals typ).(var) <- ref;
         stack
     | Variable var ->
-        Hashtbl.add variables ~key:var ~data:ref |> ignore;
+        Hashtbl.set variables ~key:var ~data:ref;
         stack
   in
   let stack =
@@ -286,7 +293,7 @@ let validate_stack :
           stack
       | instr ->
           let stack = Instr.fold (retrieve_arg (Ref i)) stack instr in
-          let stack = Instr.fold_right consume_stack stack instr in
+          let stack = Instr.fold_right (consume_stack instr) stack instr in
           store_result (Ref i) stack (AP.get locs i))
   in
   let stack =
@@ -295,7 +302,8 @@ let validate_stack :
     | Branch { condition = c; _ }
     | BranchReturn { condition = c; _ }
     | Switch { switch_on = c; _ } ->
-        retrieve_arg (Ref (AP.length block.instrs)) stack c |> consume_stack c
+        retrieve_arg (Ref (AP.length block.instrs)) stack c
+        |> consume_stack Nop c
   in
   if not @@ List.is_empty stack then
     raise_s [%message "stack not empty" (stack : Instr.Ref.t list)]

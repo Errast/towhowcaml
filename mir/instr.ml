@@ -482,6 +482,40 @@ let fold f s = function
       let s = f s v.table_index in
       List.fold ~f ~init:s v.args
 
+let foldi f s = function
+  | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
+  | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
+      s
+  | DupVar { src = v1; _ }
+  | UniOp { operand = v1; _ }
+  | VecExtend { operand = v1; _ }
+  | VecSplatOp { value = v1; _ }
+  | VecExtractLaneOp { src = v1; _ }
+  | LoadOp { addr = v1; _ }
+  | SignedLoadOp { addr = v1; _ }
+  | SetGlobalOp { value = v1; _ }
+  | AssertOp { condition = v1 } ->
+      f 0 s v1
+  | BiOp { lhs = v1; rhs = v2; _ }
+  | VecLaneBiOp { lhs = v1; rhs = v2; _ }
+  | SignedBiOp { lhs = v1; rhs = v2; _ }
+  | SignedVecLaneBiOp { lhs = v1; rhs = v2; _ }
+  | VecShiftLeftOp { operand = v1; count = v2; _ }
+  | VecShiftRightOp { operand = v1; count = v2; _ }
+  | VecReplaceLaneOp { dest = v1; lane_value = v2; _ }
+  | VecShuffleOp { arg1 = v1; arg2 = v2; _ }
+  | VecLoadLaneOp { dest_vec = v1; addr = v2; _ }
+  | StoreOp { addr = v1; value = v2; _ }
+  | VecStoreLaneOp { addr = v1; value = v2; _ } ->
+      f 1 (f 0 s v1) v2
+  | Memset { dest = v1; value = v2; count = v3 }
+  | Memcopy { dest = v1; src = v2; count = v3 } ->
+      f 2 (f 1 (f 0 s v1) v2) v3
+  | CallOp v -> List.foldi ~f ~init:s v.args
+  | CallIndirectOp v ->
+      let s = f 0 s v.table_index in
+      List.foldi ~f:(fun i a v -> f (i + 1) a v) ~init:s v.args
+
 let fold_right f s = function
   | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
@@ -515,6 +549,45 @@ let fold_right f s = function
   | CallIndirectOp v ->
       let s = List.fold_right ~f ~init:s v.args in
       f v.table_index s
+
+let list_fold_righti l ~(f : _ -> _ -> _ -> _) ~init =
+  match l with
+  | [] -> init (* avoid the allocation of [~f] below *)
+  | _ -> List.foldi ~f:(fun i a b -> f i b a) ~init (List.rev l) [@nontail]
+
+let fold_righti f s = function
+  | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
+  | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
+      s
+  | DupVar { src = v1; _ }
+  | UniOp { operand = v1; _ }
+  | VecExtend { operand = v1; _ }
+  | VecSplatOp { value = v1; _ }
+  | VecExtractLaneOp { src = v1; _ }
+  | LoadOp { addr = v1; _ }
+  | SignedLoadOp { addr = v1; _ }
+  | SetGlobalOp { value = v1; _ }
+  | AssertOp { condition = v1 } ->
+      f 0 v1 s
+  | BiOp { lhs = v1; rhs = v2; _ }
+  | VecLaneBiOp { lhs = v1; rhs = v2; _ }
+  | SignedBiOp { lhs = v1; rhs = v2; _ }
+  | SignedVecLaneBiOp { lhs = v1; rhs = v2; _ }
+  | VecShiftLeftOp { operand = v1; count = v2; _ }
+  | VecShiftRightOp { operand = v1; count = v2; _ }
+  | VecReplaceLaneOp { dest = v1; lane_value = v2; _ }
+  | VecShuffleOp { arg1 = v1; arg2 = v2; _ }
+  | VecLoadLaneOp { dest_vec = v1; addr = v2; _ }
+  | StoreOp { addr = v1; value = v2; _ }
+  | VecStoreLaneOp { addr = v1; value = v2; _ } ->
+      f 1 v1 (f 0 v2 s)
+  | Memset { dest = v1; value = v2; count = v3 }
+  | Memcopy { dest = v1; src = v2; count = v3 } ->
+      f 2 v1 (f 1 v2 (f 0 v3 s))
+  | CallOp v -> list_fold_righti ~f ~init:s v.args
+  | CallIndirectOp v ->
+      let s = list_fold_righti ~f ~init:s v.args in
+      f (List.length v.args) v.table_index s
 
 let iter f = fold (fun () -> f) ()
 let iter_right f = fold_right (fun r () -> f r) ()

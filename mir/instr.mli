@@ -281,4 +281,6 @@ val iter : (ref -> unit) -> t -> unit
 val iter_right : (ref -> unit) -> t -> unit
 val fold : ('a -> ref -> 'a) -> 'a -> t -> 'a
 val fold_right : (ref -> 'a -> 'a) -> 'a -> t -> 'a
+val foldi : (int -> 'a -> ref -> 'a) -> 'a -> t -> 'a
+val fold_righti : (int -> ref -> 'a -> 'a) -> 'a -> t -> 'a
 val map : (ref -> ref) -> t -> t
