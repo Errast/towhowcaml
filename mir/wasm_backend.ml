@@ -8,7 +8,7 @@ type 'a alloc_location =
   | Drop
   | Stack
   | Local of 'a
-  | Tee of 'a
+  | Tee of 'a * Instr.Ref.t
   | Variable of string
 [@@deriving sexp, equal]
 
@@ -48,75 +48,84 @@ let stack_allocate_block :
         | OutsideContext { var; _ } -> Variable var.name
         | _ when Set.mem block.roots (Ref i) ->
             Variable (Instr.assignment_var_exn instr).name
-        | _ when AP.get num_uses i = 0 -> Drop
-        | _ -> Local ())
+        | _ -> Drop)
   in
-  let open struct
-    type stack_value = Potential of Instr.Ref.t | Actual of Instr.Ref.t | Null
-    [@@deriving sexp]
-  end in
-  let stack = Vec.create () in
-  let is_used = Bool_map.make @@ AP.length block.instrs in
-  let rec consume_arg r =
-    match Vec.pop_exn stack with
-    | Potential _ | Null -> consume_arg r
-    | Actual arg ->
-        assert (Instr.Ref.equal arg r);
-        Bool_map.set is_used (Instr.Ref.to_int r) true
-  in
-  let consume_args =
-    Instr.iter_right (fun (Ref r as arg) ->
-        match AP.get locs r with
-        | Stack -> consume_arg arg
-        | Tee _ when not @@ Bool_map.get is_used r -> consume_arg arg
-        | Local _ | Tee _ | Variable _ -> ()
-        | Drop -> failwith "cannot consume Drop")
-  in
-  let stackify (Instr.Ref r) =
-    let new_loc =
-      match AP.get locs r with
-      | Local () -> if AP.get num_uses r = 1 then Stack else Tee ()
-      | Variable _ -> failwith "cannot stackify"
-      | Drop | Tee _ | Stack -> failwith "already on stack"
+  let rec handle_uses ?(backtracking = false) user instr start_stack =
+    let handle_use user (Instr.Ref index) ((stack, changes) as acc) =
+      (* print_s *)
+      (* [%message *)
+      (* "" *)
+      (* (user : Instr.Ref.t) *)
+      (* (index : int) *)
+      (* (stack : Instr.Ref.t list) *)
+      (* (changes : (Instr.Ref.t * unit alloc_location) list)]; *)
+      let[@tail_mod_cons] rec remove_from_stack ref = function
+        | [] -> []
+        | r :: stack when Instr.Ref.equal r ref -> stack
+        | r :: stack -> r :: remove_from_stack ref stack
+      in
+      let spill_to_locals stack =
+        List.fold ~init:stack ~f:(fun stack -> function
+          | _, Local _ -> stack
+          | ref, (Tee _ | Stack) -> remove_from_stack ref stack
+          | _ -> assert false)
+      in
+      match AP.get locs index with
+      | Drop ->
+          let rec go = function
+            | Instr.Ref i :: stack when i = index ->
+                ( stack,
+                  ( Instr.Ref index,
+                    if AP.get num_uses i > 1 then Tee ((), user) else Stack )
+                  :: changes )
+            | _ :: stack -> go stack
+            | [] when backtracking -> (stack, (Ref index, Local ()) :: changes)
+            | [] ->
+                handle_uses ~backtracking:true user instr
+                @@ spill_to_locals start_stack changes
+          in
+          go stack
+      | Stack -> failwith "stack value used multiple times?"
+      | Variable _ | Tee _ | Local _ ->
+          if backtracking then acc
+          else
+            handle_uses ~backtracking:true user instr
+            @@ spill_to_locals start_stack changes
     in
-    AP.set locs r new_loc
+    Instr.fold_right (handle_use user) (start_stack, []) instr
   in
-  let find_on_stack r =
-    let rec go i =
-      if i > 0 then
-        match Vec.get stack i with
-        | Potential arg when Instr.Ref.equal arg r ->
-            Vec.set stack i (Actual arg);
-            stackify arg
-        | Potential _ | Null -> go (i - 1)
-        | Actual _ -> remove (i - 1)
-    and remove i =
-      if i > 0 then
-        match Vec.get stack i with
-        | Potential arg when Instr.Ref.equal arg r -> Vec.set stack i Null
-        | _ -> remove (i - 1)
-    in
-    go (Vec.length stack - 1)
+  let write_changes =
+    List.iter ~f:(fun (Instr.Ref i, loc) -> AP.set locs i loc)
   in
-
-  AP.iteri block.instrs ~f:(fun i instr ->
-      match instr with
-      | OutsideContext _ -> ()
-      | _ -> (
-          Instr.iter find_on_stack instr;
-          (* print_s [%message "" (i : int) (stack : stack_value Vec.t)]; *)
-          consume_args instr;
-          match AP.get locs i with
-          | Variable _ | Drop -> ()
-          | Local _ -> Vec.add stack @@ Potential (Ref i)
-          | Stack | Tee _ -> failwith "impossible"));
-  AP.mapi locs ~f:(fun i loc ->
-      match loc with
-      | Local () -> Local (Instr.value_type @@ AP.get block.instrs i)
-      | Tee () -> Tee (Instr.value_type @@ AP.get block.instrs i)
-      | Drop -> Drop
-      | Stack -> Stack
-      | Variable var -> Variable var)
+  let final_stack =
+    AP.foldi block.instrs ~init:[] ~f:(fun i stack instr ->
+        let stack, changes = handle_uses (Ref i) instr stack in
+        (* print_s *)
+        (* [%message *)
+        (* "" *)
+        (* (i : int) *)
+        (* (stack : Instr.Ref.t list) *)
+        (* (changes : (Instr.Ref.t * unit alloc_location) list)]; *)
+        write_changes changes;
+        if AP.get num_uses i > 0 then Ref i :: stack else stack)
+  in
+  (match block.terminator with
+  | Goto _ | Return -> ()
+  | Branch { condition = c; _ }
+  | BranchReturn { condition = c; _ }
+  | Switch { switch_on = c; _ } ->
+      handle_uses
+        (Ref (AP.length block.instrs))
+        (Instr.AssertOp { condition = c }) (* fun hack *)
+        final_stack
+      |> snd |> write_changes);
+  AP.mapi locs ~f:(fun i -> function
+    | Local () -> Local (Instr.value_type @@ AP.get block.instrs i)
+    | Tee ((), stackuser) ->
+        Tee (Instr.value_type @@ AP.get block.instrs i, stackuser)
+    | Variable var -> Variable var
+    | Drop -> Drop
+    | Stack -> Stack)
 
 type number_of_locals = { int : int; long : int; float : int; vec : int }
 [@@deriving sexp]
@@ -130,7 +139,7 @@ let option_array_to_some_array : 'a OA.t -> ('a, [< _ perms ]) AP.t =
   Option_array.copy arr |> Obj.magic
 
 let allocate_locations :
-    (Types.local_type alloc_location, immutable) AP.t ->
+    (Types.local_type alloc_location, _) AP.t ->
     Block.t ->
     ((Types.local_type * int) alloc_location, immutable) AP.t * number_of_locals
     =
@@ -162,15 +171,14 @@ let allocate_locations :
         local
   in
 
-  let add_use (Instr.Ref r) =
+  let add_use user (Instr.Ref r) =
     if OA.is_none alloced_locs r then
-      let alloced_loc =
-        match AP.get locs r with
-        | (Stack | Variable _ | Drop) as loc -> loc
-        | Local typ -> Local (typ, get_local typ)
-        | Tee typ -> Tee (typ, get_local typ)
-      in
-      OA.set_some alloced_locs r alloced_loc
+      match AP.get locs r with
+      | (Stack | Variable _ | Drop) as loc -> OA.set_some alloced_locs r loc
+      | Local typ -> OA.set_some alloced_locs r @@ Local (typ, get_local typ)
+      | Tee (typ, Ref stackuser) when user <> stackuser ->
+          OA.set_some alloced_locs r @@ Tee ((typ, get_local typ), Ref stackuser)
+      | Tee _ -> ()
   in
   let free_local local_id typ =
     let free_list =
@@ -188,7 +196,7 @@ let allocate_locations :
   | Branch { condition = r; _ }
   | BranchReturn { condition = r; _ }
   | Switch { switch_on = r; _ } ->
-      add_use r);
+      add_use (AP.length block.instrs) r);
 
   for i = AP.length locs - 1 downto 0 do
     let alloced_loc =
@@ -205,9 +213,9 @@ let allocate_locations :
 
     (match alloced_loc with
     | Drop | Stack | Variable _ -> ()
-    | Local (typ, l) | Tee (typ, l) -> free_local l typ);
+    | Local (typ, l) | Tee ((typ, l), _) -> free_local l typ);
 
-    Instr.iter_right add_use @@ AP.get block.instrs i
+    Instr.iter_right (add_use i) @@ AP.get block.instrs i
   done;
 
   ( option_array_to_some_array alloced_locs,
@@ -223,74 +231,80 @@ let validate_stack :
     ((Types.local_type * int) alloc_location, immutable) AP.t ->
     number_of_locals ->
     unit =
- fun block locs nums ->
-  let int_locals = Array.create ~len:nums.int Instr.Ref.invalid in
-  let long_locals = Array.create ~len:nums.long Instr.Ref.invalid in
-  let float_locals = Array.create ~len:nums.float Instr.Ref.invalid in
-  let vec_locals = Array.create ~len:nums.vec Instr.Ref.invalid in
-  let get_local = function
-    | Types.Int -> int_locals
-    | Long -> long_locals
-    | Float -> float_locals
-    | Vec -> vec_locals
-  in
+ fun block locs num_locals ->
+  let int_locals = Array.create ~len:num_locals.int Instr.Ref.invalid in
+  let long_locals = Array.create ~len:num_locals.long Instr.Ref.invalid in
+  let float_locals = Array.create ~len:num_locals.float Instr.Ref.invalid in
+  let vec_locals = Array.create ~len:num_locals.vec Instr.Ref.invalid in
   let variables = Hashtbl.create (module String) in
-  let is_used = Bool_map.make @@ AP.length block.instrs in
-  let pop_stack stack ref =
-    match stack with
-    | s :: stack when Instr.Ref.equal ref s -> stack
-    | _ -> raise_s @@ Instr.Ref.sexp_of_t ref
+
+  let get_locals = function
+    | Types.Int -> int_locals
+    | Types.Float -> float_locals
+    | Types.Long -> long_locals
+    | Types.Vec -> vec_locals
   in
-  let get_value (Instr.Ref r) stack =
-    let stack =
-      match AP.get locs r with
-      | Stack -> pop_stack stack (Ref r)
-      | Tee _ when not @@ Bool_map.get is_used r -> pop_stack stack (Ref r)
-      | Tee (typ, loc) | Local (typ, loc) ->
-          assert (Instr.Ref.equal (get_local typ).(loc) (Ref r));
-          stack
-      | Variable var ->
-          assert (Instr.Ref.equal (Ref r) @@ Hashtbl.find_exn variables var);
-          stack
-      | Drop -> failwith "can't have Drop as an argument"
-    in
-    Bool_map.set is_used r true;
-    stack
+  let consume_stack ref stack =
+    match stack with
+    | r :: stack when Instr.Ref.equal r ref -> stack
+    | Instr.Ref i :: _ ->
+        raise_s
+          [%message
+            "wrong value on stack"
+              ~expected:(ref : Instr.Ref.t)
+              ~found:(Ref i : Instr.Ref.t)]
+    | [] -> raise_s [%message "stack too small" (ref : Instr.Ref.t)]
+  in
+  let retrieve_local stack typ var = (get_locals typ).(var) :: stack in
+  let retrieve_arg user stack (Instr.Ref arg_index as ref) =
+    match AP.get locs arg_index with
+    | Drop -> raise_s [%message "consumed dropped value" (ref : Instr.Ref.t)]
+    | Stack -> stack
+    | Local (typ, var) -> retrieve_local stack typ var
+    | Tee ((typ, var), stackuser) ->
+        if Instr.Ref.equal stackuser user then stack
+        else retrieve_local stack typ var
+    | Variable var -> Hashtbl.find_exn variables var :: stack
+  in
+  let store_result ref stack = function
+    | Drop -> stack
+    | Stack -> ref :: stack
+    | Tee ((typ, var), _) ->
+        (get_locals typ).(var) <- ref;
+        ref :: stack
+    | Local (typ, var) ->
+        (get_locals typ).(var) <- ref;
+        stack
+    | Variable var ->
+        Hashtbl.add variables ~key:var ~data:ref |> ignore;
+        stack
   in
   let stack =
-    AP.foldi block.instrs ~init:[] ~f:(fun i stack instr ->
-        match instr with
-        | Instr.OutsideContext { var = { name; _ }; _ } ->
-            assert (not @@ Hashtbl.mem variables name);
-            Hashtbl.add_exn variables ~key:name ~data:(Instr.Ref i);
-            stack
-        | _ -> (
-            let stack = Instr.fold_right get_value stack instr in
-            let loc = AP.get locs i in
-            (match loc with
-            | Tee (typ, loc) | Local (typ, loc) ->
-                (get_local typ).(loc) <- Ref i
-            | Variable var -> Hashtbl.set variables ~data:(Ref i) ~key:var
-            | _ -> ());
-            match loc with
-            | Stack | Tee _ -> Ref i :: stack
-            | Local _ | Variable _ | Drop -> stack))
+    AP.foldi block.instrs ~init:[] ~f:(fun i stack -> function
+      | OutsideContext { var; _ } ->
+          Hashtbl.add_exn variables ~key:var.name ~data:(Ref i);
+          stack
+      | instr ->
+          let stack = Instr.fold (retrieve_arg (Ref i)) stack instr in
+          let stack = Instr.fold_right consume_stack stack instr in
+          store_result (Ref i) stack (AP.get locs i))
   in
   let stack =
     match block.terminator with
-    | Branch { condition; _ }
-    | BranchReturn { condition; _ }
-    | Switch { switch_on = condition; _ } ->
-        get_value condition stack
     | Goto _ | Return -> stack
+    | Branch { condition = c; _ }
+    | BranchReturn { condition = c; _ }
+    | Switch { switch_on = c; _ } ->
+        retrieve_arg (Ref (AP.length block.instrs)) stack c |> consume_stack c
   in
-  assert (List.is_empty stack)
+  if not @@ List.is_empty stack then
+    raise_s [%message "stack not empty" (stack : Instr.Ref.t list)]
 
 let test block =
   let types = stack_allocate_block block in
   let locs, nums = allocate_locations types block in
   print_s
-  @@ [%sexp_of: ((Types.local_type * int) alloc_location, _) iparray] locs;
+  @@ [%message "" (locs : ((Types.local_type * int) alloc_location, _) iparray)];
   print_s @@ [%sexp_of: number_of_locals] nums;
   validate_stack block locs nums
 
@@ -306,7 +320,6 @@ let output_block :
     Out_channel.t -> Block.t -> (_ alloc_location, immutable) AP.t -> _ -> unit
     =
  fun out block locs expected_terminator ->
-  let is_used = Bool_map.make @@ AP.length locs in
   let output_string = Out_channel.output_string out in
   let output_int i = string_of_int i |> output_string in
   let output_char = Out_channel.output_char out in
@@ -319,11 +332,11 @@ let output_block :
       | Vec -> "$__vec_scratch_");
     output_int id
   in
-  let output_get_value (Instr.Ref r) =
-    (match AP.get locs r with
+  let output_get_value user (Instr.Ref r) =
+    match AP.get locs r with
     | Stack -> ()
-    | Tee _ when not @@ Bool_map.get is_used r -> ()
-    | Tee (typ, local) | Local (typ, local) ->
+    | Tee (_, stackuser) when Instr.Ref.equal stackuser user -> ()
+    | Tee ((typ, local), _) | Local (typ, local) ->
         output_string "\n    (local.get ";
         output_local typ local;
         output_char ')'
@@ -331,14 +344,13 @@ let output_block :
         output_string "\n    (global.get $";
         output_string var;
         output_char ')'
-    | Drop -> failwith "cannot get dropped value");
-    Bool_map.set is_used r true
+    | Drop -> failwith "cannot get dropped value"
   in
   let output_set_value (Instr.Ref r) =
     match AP.get locs r with
     | Stack -> ()
     | Drop -> output_string "\n    (drop)"
-    | Tee (typ, id) ->
+    | Tee ((typ, id), _) ->
         output_string "\n    (local.tee ";
         output_local typ id;
         output_char ')'
@@ -378,7 +390,7 @@ let output_block :
     else ""
   in
   let output_instr i instr =
-    Instr.iter output_get_value instr;
+    Instr.iter (output_get_value (Ref i)) instr;
     (match instr with
     | Nop | ReturnedOp _ | OutsideContext _ -> ()
     | _ ->
@@ -681,7 +693,7 @@ let output_block :
   | _, `Any | Goto _, `Goto | Return, `Return -> ()
   | (Branch { condition; _ } | BranchReturn { condition; _ }), `Branch
   | Switch { switch_on = condition; _ }, `Switch ->
-      output_get_value condition
+      output_get_value (Ref (AP.length block.instrs)) condition
   | _ -> failwith "unexpected terminator"
 
 let run out func =
@@ -771,6 +783,6 @@ let run out func =
 let run_block : Out_channel.t -> Block.t -> unit =
  fun out block ->
   let locs, _ = allocate_locations (stack_allocate_block block) block in
-  print_s
-    [%message "" (locs : ((Types.local_type * int) alloc_location, _) iparray)];
+  (* print_s *)
+  (* [%message "" (locs : ((Types.local_type * int) alloc_location, _) iparray)]; *)
   output_block out block locs `Any

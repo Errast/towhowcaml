@@ -518,6 +518,7 @@ let fold_right f s = function
 
 let iter f = fold (fun () -> f) ()
 let iter_right f = fold_right (fun r () -> f r) ()
+let arg_list = fold_right List.cons []
 
 let map f t =
   match t with

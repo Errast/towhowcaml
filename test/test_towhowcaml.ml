@@ -18,9 +18,9 @@ let test_trans addr =
   print_s @@ Mir.Func.sexp_of_t @@ func;
   print_s @@ Mir.Structure_cfg.sexp_of_wasm_control
   @@ Mir.Structure_cfg.structure_cfg func;
-  Array.Permissioned.iteri func.blocks ~f:(fun i ->
+  Array.Permissioned.iteri func.blocks ~f:(fun i block ->
       Out_channel.output_binary_int stdout i;
-      Mir.Wasm_backend.test)
+      Mir.Wasm_backend.test block)
 
 let test_trans_block addr =
   let name = func_name (force c) addr in
@@ -35,349 +35,403 @@ let test_trans_block addr =
   in
   let translated = Func_translator.translate ~blocks ~name ~intrinsics in
   let block = Array.Permissioned.get translated.blocks index in
+  Mir.Wasm_backend.test block;
   Mir.Wasm_backend.run_block stdout block;
+  Out_channel.output_char stdout '\n' ;
   print_s @@ Mir.Block.sexp_of_t block
 
 let%expect_test "small regs" =
   test_trans_block 0x0047bd35;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Local (Int 4))) (2 (Tee (Int 8)))
-      (3 (Local (Int 2))) (4 Drop) (5 (Local (Int 3))) (6 Drop)
-      (7 (Local (Int 0))) (8 Drop) (9 (Local (Int 1))) (10 Drop) (11 Drop)
-      (12 Stack) (13 Drop) (14 (Tee (Int 2))) (15 Drop) (16 Stack) (17 Drop)
-      (18 (Local (Int 5))) (19 Drop) (20 Drop) (21 Stack) (22 Drop)
-      (23 (Local (Int 0))) (24 Drop) (25 (Local (Int 7))) (26 Drop)
-      (27 (Local (Int 6))) (28 Drop) (29 Drop) (30 Stack) (31 Drop)
-      (32 (Local (Int 9))) (33 Drop) (34 Drop) (35 Stack) (36 Drop)
-      (37 (Local (Int 7))) (38 Drop) (39 Drop) (40 Drop) (41 Drop) (42 Drop)
-      (43 (Tee (Int 2))) (44 Drop) (45 Stack) (46 Drop) (47 Drop) (48 Stack)
-      (49 Drop) (50 Drop) (51 Drop) (52 Drop) (53 Drop) (54 (Tee (Int 0)))
-      (55 Drop) (56 Drop) (57 Drop) (58 Stack) (59 Stack) (60 Drop) (61 Drop)
-      (62 (Local (Int 1))) (63 Drop) (64 Drop) (65 Stack) (66 Drop) (67 Stack)
-      (68 Stack) (69 (Local (Int 1))) (70 Drop) (71 Drop) (72 (Local (Int 2)))
+     ((0 (Variable esp)) (1 (Tee (Int 4) (Ref 3))) (2 (Local (Int 9))) (3 Stack)
+      (4 Drop) (5 (Local (Int 3))) (6 Drop) (7 (Local (Int 10))) (8 Drop)
+      (9 (Local (Int 0))) (10 Drop) (11 Drop) (12 Stack) (13 Drop)
+      (14 (Local (Int 6))) (15 Drop) (16 Stack) (17 Drop) (18 (Local (Int 7)))
+      (19 Drop) (20 Drop) (21 (Local (Int 8))) (22 Drop) (23 (Local (Int 8)))
+      (24 Drop) (25 (Local (Int 10))) (26 Drop) (27 (Local (Int 2))) (28 Drop)
+      (29 Drop) (30 Stack) (31 Drop) (32 (Tee (Int 5) (Ref 54))) (33 Drop)
+      (34 Drop) (35 (Local (Int 1))) (36 Drop) (37 (Tee (Int 1) (Ref 54)))
+      (38 Drop) (39 Drop) (40 Drop) (41 Drop) (42 Drop) (43 (Local (Int 6)))
+      (44 Drop) (45 (Local (Int 10))) (46 Drop) (47 Drop) (48 (Local (Int 8)))
+      (49 Drop) (50 Drop) (51 Drop) (52 Drop) (53 Drop) (54 (Local (Int 8)))
+      (55 Drop) (56 Drop) (57 Drop) (58 (Local (Int 1))) (59 Stack) (60 Drop)
+      (61 Drop) (62 Stack) (63 Drop) (64 Drop) (65 (Local (Int 0))) (66 Drop)
+      (67 Stack) (68 Stack) (69 Stack) (70 Drop) (71 Drop) (72 (Local (Int 6)))
       (73 Drop) (74 Drop) (75 Drop) (76 Drop) (77 Drop) (78 Drop) (79 Stack)
-      (80 (Tee (Int 1))) (81 (Local (Int 2))) (82 Drop) (83 Drop) (84 Drop)
-      (85 Drop) (86 (Tee (Int 0))) (87 Drop) (88 Drop) (89 Drop) (90 Stack)
-      (91 Drop) (92 Stack) (93 Drop) (94 Drop) (95 Stack) (96 Drop) (97 Drop)
-      (98 Drop) (99 Stack) (100 Drop) (101 Drop) (102 Drop) (103 Stack)
-      (104 Drop) (105 (Tee (Int 0))) (106 Drop) (107 Stack) (108 Drop) (109 Drop)
-      (110 (Local (Int 2))) (111 Drop) (112 Drop) (113 Drop) (114 Stack)
-      (115 Drop) (116 (Local (Int 7))) (117 Drop) (118 Stack) (119 Drop)
-      (120 Drop) (121 Drop) (122 Stack) (123 Drop) (124 (Local (Int 2)))
-      (125 Drop) (126 Drop) (127 Stack) (128 Drop) (129 (Local (Int 8)))
-      (130 Drop) (131 Drop) (132 Drop) (133 Drop) (134 Drop) (135 (Tee (Int 0)))
-      (136 Drop) (137 Stack) (138 Drop) (139 Drop) (140 Stack) (141 Drop)
-      (142 Drop) (143 Drop) (144 Drop) (145 Drop) (146 (Tee (Int 7))) (147 Drop)
-      (148 Drop) (149 Drop) (150 (Local (Int 2))) (151 Drop) (152 Drop)
-      (153 Drop) (154 Drop) (155 Drop) (156 (Local (Int 8))) (157 Drop)
-      (158 Drop) (159 Drop) (160 Stack) (161 Stack) (162 Stack) (163 Drop)
-      (164 (Local (Int 6))) (165 Drop) (166 Stack) (167 Drop) (168 Stack)
-      (169 (Local (Int 1))) (170 Stack) (171 Stack) (172 Stack) (173 Stack)
-      (174 (Local (Int 1))) (175 Stack) (176 Stack) (177 (Local (Int 6)))
-      (178 Stack) (179 Stack) (180 (Local (Int 1))) (181 (Local (Int 2)))
-      (182 Drop) (183 Drop) (184 Drop) (185 Drop) (186 Stack) (187 (Tee (Int 5)))
-      (188 Drop) (189 Stack) (190 (Local (Int 1))) (191 Stack) (192 Stack)
-      (193 Stack) (194 Drop) (195 Stack) (196 (Local (Int 6))) (197 Drop)
-      (198 Stack) (199 Stack) (200 Drop) (201 Drop) (202 (Local (Int 2)))
-      (203 Drop) (204 Drop) (205 Drop) (206 Stack) (207 Drop) (208 Drop)
-      (209 Drop) (210 (Tee (Int 7))) (211 Drop) (212 Drop) (213 Drop)
-      (214 (Tee (Int 0))) (215 Drop) (216 Drop) (217 Drop) (218 Stack) (219 Drop)
-      (220 Drop) (221 Drop) (222 (Tee (Int 2))) (223 Drop) (224 (Local (Int 4)))
-      (225 Stack) (226 Drop) (227 Drop) (228 Drop) (229 Stack) (230 Drop)
-      (231 (Local (Int 9))) (232 Drop) (233 Drop) (234 Drop)
-      (235 (Local (Int 8))) (236 Drop) (237 Drop) (238 Drop) (239 Drop)
-      (240 Drop) (241 Drop) (242 Drop) (243 (Tee (Int 8))) (244 Drop) (245 Drop)
-      (246 Drop) (247 Drop) (248 Stack) (249 Drop) (250 Drop) (251 Drop)
-      (252 (Local (Int 7))) (253 Drop) (254 Drop) (255 Drop) (256 Drop)
-      (257 Drop) (258 Drop) (259 Stack) (260 (Tee (Int 6))) (261 Drop) (262 Drop)
-      (263 Drop) (264 Drop) (265 Stack) (266 Drop) (267 Drop) (268 Drop)
+      (80 (Local (Int 6))) (81 Stack) (82 Drop) (83 Drop) (84 Drop) (85 Drop)
+      (86 (Tee (Int 8) (Ref 90))) (87 Drop) (88 Drop) (89 Drop)
+      (90 (Local (Int 0))) (91 Drop) (92 (Local (Int 1))) (93 Drop) (94 Drop)
+      (95 (Local (Int 8))) (96 Drop) (97 Drop) (98 Drop) (99 Stack) (100 Drop)
+      (101 Drop) (102 Drop) (103 Stack) (104 Drop) (105 (Local (Int 0)))
+      (106 Drop) (107 Stack) (108 Drop) (109 Drop) (110 (Local (Int 8)))
+      (111 Drop) (112 Drop) (113 Drop) (114 Stack) (115 Drop)
+      (116 (Local (Int 1))) (117 Drop) (118 Stack) (119 Drop) (120 Drop)
+      (121 Drop) (122 (Local (Int 5))) (123 Drop) (124 (Local (Int 5)))
+      (125 Drop) (126 Drop) (127 Stack) (128 Drop) (129 (Local (Int 9)))
+      (130 Drop) (131 Drop) (132 Drop) (133 Drop) (134 Drop)
+      (135 (Tee (Int 0) (Ref 156))) (136 Drop) (137 (Local (Int 8))) (138 Drop)
+      (139 Drop) (140 (Local (Int 1))) (141 Drop) (142 Drop) (143 Drop)
+      (144 Drop) (145 Drop) (146 (Tee (Int 1) (Ref 156))) (147 Drop) (148 Drop)
+      (149 Drop) (150 (Local (Int 5))) (151 Drop) (152 Drop) (153 Drop)
+      (154 Drop) (155 Drop) (156 (Local (Int 9))) (157 Drop) (158 Drop)
+      (159 Drop) (160 (Local (Int 1))) (161 Stack) (162 Stack) (163 Drop)
+      (164 (Local (Int 2))) (165 Drop) (166 (Local (Int 7))) (167 Drop)
+      (168 (Local (Int 7))) (169 (Local (Int 6))) (170 Stack) (171 Stack)
+      (172 Stack) (173 Stack) (174 (Local (Int 6))) (175 Stack) (176 Stack)
+      (177 (Local (Int 2))) (178 Stack) (179 (Local (Int 7)))
+      (180 (Local (Int 7))) (181 (Local (Int 6))) (182 Drop) (183 Drop)
+      (184 Drop) (185 Drop) (186 Stack) (187 (Tee (Int 5) (Ref 214))) (188 Drop)
+      (189 (Local (Int 1))) (190 (Local (Int 1))) (191 Stack)
+      (192 (Local (Int 7))) (193 Stack) (194 Drop) (195 (Local (Int 7)))
+      (196 (Local (Int 7))) (197 Drop) (198 Stack) (199 Stack) (200 Drop)
+      (201 Drop) (202 (Local (Int 2))) (203 Drop) (204 Drop) (205 Drop)
+      (206 Stack) (207 Drop) (208 Drop) (209 Drop) (210 (Tee (Int 6) (Ref 214)))
+      (211 Drop) (212 Drop) (213 Drop) (214 (Local (Int 0))) (215 Drop)
+      (216 Drop) (217 Drop) (218 (Local (Int 2))) (219 Drop) (220 Drop)
+      (221 Drop) (222 (Tee (Int 2) (Ref 238))) (223 Drop) (224 (Local (Int 4)))
+      (225 (Local (Int 8))) (226 Drop) (227 Drop) (228 Drop)
+      (229 (Local (Int 10))) (230 Drop) (231 Stack) (232 Drop) (233 Drop)
+      (234 Drop) (235 (Local (Int 9))) (236 Drop) (237 Drop) (238 Drop)
+      (239 Drop) (240 Drop) (241 Drop) (242 Drop) (243 (Local (Int 9)))
+      (244 Drop) (245 Drop) (246 Drop) (247 Drop) (248 (Local (Int 8)))
+      (249 Drop) (250 Drop) (251 Drop) (252 (Local (Int 6))) (253 Drop)
+      (254 Drop) (255 Drop) (256 Drop) (257 Drop) (258 Drop) (259 Stack)
+      (260 (Local (Int 7))) (261 Drop) (262 Drop) (263 Drop) (264 Drop)
+      (265 (Local (Int 6))) (266 Drop) (267 Drop) (268 Drop)
       (269 (Local (Int 0))) (270 Drop) (271 Drop) (272 Drop) (273 Drop)
-      (274 Drop) (275 (Tee (Int 0))) (276 Drop) (277 (Local (Int 5)))
+      (274 Drop) (275 (Local (Int 0))) (276 Drop) (277 (Local (Int 5)))
       (278 (Local (Int 6))) (279 Drop) (280 Drop) (281 Stack) (282 Drop)
-      (283 Drop) (284 Stack) (285 Drop) (286 Drop) (287 Drop) (288 Stack)
-      (289 Drop) (290 (Tee (Int 0))) (291 Drop) (292 (Local (Int 1))) (293 Drop)
-      (294 Drop) (295 Drop) (296 Drop) (297 Stack) (298 Stack) (299 Stack)
-      (300 Drop) (301 Stack) (302 Stack) (303 Stack) (304 Drop) (305 Stack)
-      (306 Stack) (307 Stack) (308 Drop) (309 Stack) (310 Drop) (311 Drop)
-      (312 Stack) (313 Drop) (314 (Tee (Int 0))) (315 (Local (Int 3))) (316 Drop)
-      (317 Drop) (318 (Local (Int 0))) (319 Drop) (320 Drop) (321 Drop)
-      (322 Drop) (323 Drop) (324 Drop)))
+      (283 Drop) (284 (Local (Int 7))) (285 Drop) (286 Drop) (287 Drop)
+      (288 (Local (Int 0))) (289 Drop) (290 (Local (Int 6))) (291 Drop)
+      (292 (Local (Int 1))) (293 Drop) (294 Drop) (295 Drop) (296 Drop)
+      (297 Stack) (298 Stack) (299 (Local (Int 0))) (300 Drop) (301 Stack)
+      (302 Stack) (303 (Local (Int 0))) (304 Drop) (305 Stack) (306 Stack)
+      (307 (Local (Int 0))) (308 Drop) (309 Stack) (310 Drop) (311 Drop)
+      (312 Stack) (313 Drop) (314 (Local (Int 0))) (315 (Local (Int 3)))
+      (316 Drop) (317 Drop) (318 (Local (Int 0))) (319 Drop) (320 Drop)
+      (321 Drop) (322 Drop) (323 Drop) (324 Drop)))
+    ((int 11) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load offset 52
-        (local.set $__int_scratch_4)
+        (local.tee $__int_scratch_4)
         (global.get $esp)
         i32.load offset 48
-        (local.tee $__int_scratch_8)
-        (local.get $__int_scratch_4)
+        (local.set $__int_scratch_9)
         i32.load16_s
-        (local.set $__int_scratch_2)
         global.get $eax
         (local.set $__int_scratch_3)
         (local.get $__int_scratch_4)
         i32.load16_s offset 64
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_10)
         global.get $ebx
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_9)
         i32.load16_s
-        (local.get $__int_scratch_2)
         i32.mult
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_6)
         (local.get $__int_scratch_4)
         i32.load16_s offset 32
         global.get $ecx
-        (local.set $__int_scratch_5)
-        (local.get $__int_scratch_8)
+        (local.set $__int_scratch_7)
+        (local.get $__int_scratch_9)
         i32.load16_s offset 64
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_8)
+        (local.get $__int_scratch_10)
+        (local.get $__int_scratch_8)
         i32.mult
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_8)
         (local.get $__int_scratch_4)
         i32.load16_s offset 96
-        (local.set $__int_scratch_7)
+        (local.set $__int_scratch_10)
         global.get $edx
-        (local.set $__int_scratch_6)
-        (local.get $__int_scratch_8)
-        i32.load16_s offset 32
-        i32.mult
-        (local.set $__int_scratch_9)
-        (local.get $__int_scratch_8)
-        i32.load16_s offset 96
-        (local.get $__int_scratch_7)
-        i32.mult
-        (local.set $__int_scratch_7)
-        (global.get $esp)
-        i32.store16 offset 32
-        (local.get $__int_scratch_2)
-        (local.get $__int_scratch_0)
-        i32.add
-        (local.tee $__int_scratch_2)
-        (global.get $esp)
-        i32.load16_s offset 32
-        (local.get $__int_scratch_0)
-        i32.subtract
-        (global.get $esp)
-        i32.store16 offset 32
-        (local.get $__int_scratch_9)
-        (local.get $__int_scratch_7)
-        i32.add
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_9)
-        (local.get $__int_scratch_7)
-        i32.subtract
-        (local.get $__int_scratch_1)
-        (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
-        i32.extend16_s
-        (local.set $__int_scratch_1)
-        i32.add
-        i32.const 4785088
-        i32.load
-        (local.get $__int_scratch_1)
-        i32.mult
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_2)
-        (local.get $__int_scratch_0)
-        i32.subtract
         (local.set $__int_scratch_2)
-        (global.get $esp)
-        i32.store16 offset 28
-        (global.get $esp)
-        (local.get $__int_scratch_2)
-        i32.store16 offset 24
-        i32.const 8
+        (local.get $__int_scratch_9)
+        i32.load16_s offset 32
+        i32.mult
+        (local.tee $__int_scratch_5)
+        (local.get $__int_scratch_9)
+        i32.load16_s offset 96
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_10)
         (local.get $__int_scratch_1)
-        i32.shr_s
+        i32.mult
         (local.tee $__int_scratch_1)
         (global.get $esp)
-        i32.load16_s offset 32
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_0)
-        i32.subtract
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_6)
+        i32.store16 offset 32
+        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_8)
         i32.add
+        (local.set $__int_scratch_6)
         (global.get $esp)
         i32.load16_s offset 32
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_10)
+        (local.get $__int_scratch_10)
+        (local.get $__int_scratch_8)
         i32.subtract
+        (local.set $__int_scratch_8)
         (global.get $esp)
+        (local.get $__int_scratch_8)
+        i32.store16 offset 32
+        i32.add
+        (local.set $__int_scratch_8)
+        (local.get $__int_scratch_5)
+        (local.get $__int_scratch_1)
+        i32.subtract
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
+        (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
+        i32.extend16_s
+        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_8)
+        i32.add
+        (local.set $__int_scratch_0)
+        i32.const 4785088
+        i32.load
+        i32.mult
+        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_8)
+        i32.subtract
+        (local.set $__int_scratch_6)
+        (global.get $esp)
+        (local.get $__int_scratch_0)
+        i32.store16 offset 28
+        (global.get $esp)
+        (local.get $__int_scratch_6)
+        i32.store16 offset 24
+        i32.const 8
+        i32.shr_s
+        (local.set $__int_scratch_6)
+        (global.get $esp)
+        i32.load16_s offset 32
+        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_8)
+        i32.subtract
+        (local.tee $__int_scratch_8)
+        i32.add
+        (local.set $__int_scratch_0)
+        (global.get $esp)
+        i32.load16_s offset 32
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_8)
+        i32.subtract
+        (local.set $__int_scratch_8)
+        (global.get $esp)
+        (local.get $__int_scratch_8)
         i32.store16 offset 32
         (global.get $esp)
+        (local.get $__int_scratch_0)
         i32.store16 offset 20
         (local.get $__int_scratch_4)
         i32.load16_s offset 16
-        (local.get $__int_scratch_8)
+        (local.get $__int_scratch_9)
         i32.load16_s offset 16
         i32.mult
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_4)
         i32.load16_s offset 112
         (local.get $__int_scratch_4)
         i32.load16_s offset 48
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_8)
+        (local.set $__int_scratch_8)
+        (local.get $__int_scratch_9)
         i32.load16_s offset 112
         i32.mult
-        (local.set $__int_scratch_7)
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_4)
         i32.load16_s offset 80
-        (local.get $__int_scratch_8)
+        (local.get $__int_scratch_9)
         i32.load16_s offset 48
-        (local.get $__int_scratch_2)
-        i32.mult
-        (local.set $__int_scratch_2)
+        (local.set $__int_scratch_5)
         (local.get $__int_scratch_8)
-        i32.load16_s offset 80
-        i32.mult
-        (local.set $__int_scratch_8)
-        (global.get $esp)
-        i32.store16 offset 16
-        (local.get $__int_scratch_0)
-        (local.get $__int_scratch_7)
-        i32.add
-        (local.tee $__int_scratch_0)
-        (global.get $esp)
-        i32.load16_s offset 16
-        (local.get $__int_scratch_7)
-        i32.subtract
-        (global.get $esp)
-        i32.store16 offset 16
-        (local.get $__int_scratch_8)
-        (local.get $__int_scratch_2)
-        i32.add
-        (local.tee $__int_scratch_7)
-        (local.get $__int_scratch_8)
-        (local.get $__int_scratch_2)
-        i32.subtract
-        (local.set $__int_scratch_2)
-        i32.add
-        (local.set $__int_scratch_8)
-        (local.get $__int_scratch_0)
-        (local.get $__int_scratch_7)
-        i32.subtract
         (local.get $__int_scratch_5)
+        i32.mult
+        (local.set $__int_scratch_5)
+        (local.get $__int_scratch_9)
+        i32.load16_s offset 80
+        i32.mult
+        (local.set $__int_scratch_9)
+        (global.get $esp)
+        (local.get $__int_scratch_0)
+        i32.store16 offset 16
+        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
+        i32.add
+        (local.tee $__int_scratch_0)
+        (global.get $esp)
+        i32.load16_s offset 16
+        (local.set $__int_scratch_8)
+        (local.get $__int_scratch_8)
+        (local.get $__int_scratch_1)
+        i32.subtract
+        (local.set $__int_scratch_1)
+        (global.get $esp)
+        (local.get $__int_scratch_1)
+        i32.store16 offset 16
+        (local.get $__int_scratch_9)
+        (local.get $__int_scratch_5)
+        i32.add
+        (local.tee $__int_scratch_1)
+        (local.get $__int_scratch_9)
+        (local.get $__int_scratch_5)
+        i32.subtract
+        (local.set $__int_scratch_5)
+        i32.add
+        (local.set $__int_scratch_9)
+        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
+        i32.subtract
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_7)
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         i32.extend16_s
+        (local.get $__int_scratch_5)
         (local.get $__int_scratch_2)
+        (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
+        (local.set $__int_scratch_2)
+        (global.get $esp)
+        i32.load16_s offset 16
+        (local.set $__int_scratch_7)
+        (local.get $__int_scratch_5)
+        (local.get $__int_scratch_7)
+        i32.add
+        (local.set $__int_scratch_7)
+        (local.get $__int_scratch_7)
         (local.get $__int_scratch_6)
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.set $__int_scratch_6)
-        (global.get $esp)
-        i32.load16_s offset 16
-        (local.get $__int_scratch_2)
-        i32.add
-        (local.get $__int_scratch_1)
-        (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
-        (local.set $__int_scratch_1)
         i32.const 4785088
         i32.load
         i32.mult
+        (local.get $__int_scratch_2)
+        i32.extend16_s
         (local.get $__int_scratch_6)
         i32.extend16_s
-        (local.get $__int_scratch_1)
-        i32.extend16_s
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_6)
         i32.const 4785092
         i32.load
         i32.mult
-        (local.set $__int_scratch_6)
+        (local.set $__int_scratch_2)
         i32.const 4785100
         i32.load
-        (local.get $__int_scratch_1)
+        (local.set $__int_scratch_7)
+        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_7)
         i32.mult
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_7)
         (global.get $esp)
         i32.load16_s offset 16
-        (local.set $__int_scratch_2)
+        (local.set $__int_scratch_6)
         i32.const 8
         i32.shr_s
         (local.tee $__int_scratch_5)
         i32.const 8
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_7)
         (local.get $__int_scratch_1)
         i32.shr_s
         (local.set $__int_scratch_1)
         i32.const 4785096
         i32.load
-        (local.get $__int_scratch_2)
+        (local.set $__int_scratch_7)
+        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_7)
         i32.mult
         i32.const 8
-        (local.get $__int_scratch_6)
+        (local.set $__int_scratch_7)
+        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_7)
         i32.shr_s
-        (local.set $__int_scratch_6)
+        (local.set $__int_scratch_7)
         i32.const 8
         i32.shr_s
         (local.get $__int_scratch_1)
         i32.subtract
         (local.set $__int_scratch_2)
-        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_7)
         (local.get $__int_scratch_1)
         i32.add
-        (local.get $__int_scratch_8)
+        (local.get $__int_scratch_9)
         i32.subtract
-        (local.tee $__int_scratch_7)
+        (local.tee $__int_scratch_6)
         i32.subtract
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.add
+        (local.set $__int_scratch_2)
         (global.get $esp)
+        (local.get $__int_scratch_2)
         i32.store16 offset 12
         (global.get $esp)
         i32.load offset 44
         (local.tee $__int_scratch_2)
-        (local.get $__int_scratch_8)
+        (local.get $__int_scratch_9)
         (local.get $__int_scratch_4)
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.set $__int_scratch_4)
         (global.get $esp)
         i32.load16_s offset 28
+        (local.set $__int_scratch_8)
         (global.get $esp)
         i32.load16_s offset 28
-        (local.get $__int_scratch_8)
-        i32.add
-        (local.set $__int_scratch_9)
-        (local.get $__int_scratch_8)
-        i32.subtract
-        (local.set $__int_scratch_8)
+        (local.set $__int_scratch_10)
         (local.get $__int_scratch_9)
+        (local.get $__int_scratch_10)
+        i32.add
+        (local.get $__int_scratch_8)
+        (local.get $__int_scratch_9)
+        i32.subtract
+        (local.set $__int_scratch_9)
         i32.store16
         (local.get $__int_scratch_2)
-        (local.get $__int_scratch_8)
+        (local.get $__int_scratch_9)
         i32.store16 offset 112
         (global.get $esp)
         i32.load16_s offset 20
-        (local.tee $__int_scratch_8)
-        (local.get $__int_scratch_7)
+        (local.set $__int_scratch_9)
+        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_9)
         i32.add
-        (local.get $__int_scratch_8)
-        (local.get $__int_scratch_7)
+        (local.set $__int_scratch_8)
+        (local.get $__int_scratch_9)
+        (local.get $__int_scratch_6)
         i32.subtract
-        (local.set $__int_scratch_7)
+        (local.set $__int_scratch_6)
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_8)
         i32.store16 offset 16
         (local.get $__int_scratch_2)
-        (local.get $__int_scratch_7)
+        (local.get $__int_scratch_6)
         i32.store16 offset 96
         (local.get $__int_scratch_0)
-        (local.get $__int_scratch_6)
+        (local.get $__int_scratch_7)
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (global.get $esp)
         i32.load16_s offset 32
-        (local.tee $__int_scratch_6)
+        (local.set $__int_scratch_7)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_7)
         i32.add
-        (local.get $__int_scratch_6)
+        (local.set $__int_scratch_6)
+        (local.get $__int_scratch_7)
         (local.get $__int_scratch_0)
         i32.subtract
         (local.set $__int_scratch_0)
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_6)
         i32.store16 offset 32
         (local.get $__int_scratch_2)
         (local.get $__int_scratch_0)
         i32.store16 offset 80
         (global.get $esp)
         i32.load16_s offset 12
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_5)
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.set $__int_scratch_5)
@@ -388,45 +442,57 @@ let%expect_test "small regs" =
         i32.load16_s offset 12
         (local.get $__int_scratch_6)
         i32.add
+        (local.set $__int_scratch_7)
         (global.get $esp)
+        (local.get $__int_scratch_7)
         i32.store16 offset 12
         (local.get $__int_scratch_6)
         (local.get $__int_scratch_0)
         i32.subtract
+        (local.set $__int_scratch_0)
         (global.get $esp)
         i32.load16_s offset 12
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_6)
+        (local.get $__int_scratch_6)
         (local.get $__int_scratch_1)
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.set $__int_scratch_1)
         (local.get $__int_scratch_2)
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_6)
         i32.store16 offset 64
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.store16 offset 48
         (global.get $esp)
         i32.load offset 52
         i32.const 2
         i32.add
+        (local.set $__int_scratch_0)
         (global.get $esp)
+        (local.get $__int_scratch_0)
         i32.store offset 52
         (global.get $esp)
         i32.load offset 48
         i32.const 2
         i32.add
+        (local.set $__int_scratch_0)
         (global.get $esp)
+        (local.get $__int_scratch_0)
         i32.store offset 48
         (global.get $esp)
         i32.load offset 44
         i32.const 2
         i32.add
+        (local.set $__int_scratch_0)
         (global.get $esp)
+        (local.get $__int_scratch_0)
         i32.store offset 44
         (global.get $esp)
         i32.load16_s offset 36
         i32.const 1
         i32.subtract
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_3)
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.set $__int_scratch_3)
@@ -446,7 +512,8 @@ let%expect_test "small regs" =
         (local.get $__int_scratch_2)
         global.set $edi
         (local.get $__int_scratch_1)
-        global.set $ebx((id 1)
+        global.set $ebx
+    ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var esi) (op Load32) (addr (Ref 0)) (offset 52)))
@@ -760,70 +827,79 @@ let%expect_test "_sd" =
   test_trans_block 0x00484bb6;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 (Local (Vec 13))) (3 Stack) (4 Stack)
-      (5 Stack) (6 Stack) (7 (Local (Vec 5))) (8 Stack) (9 Stack) (10 Stack)
-      (11 (Tee (Vec 13))) (12 Drop) (13 Drop) (14 Stack) (15 (Tee (Vec 4)))
-      (16 Stack) (17 Stack) (18 (Local (Vec 1))) (19 Stack) (20 (Local (Vec 1)))
-      (21 Stack) (22 Stack) (23 Stack) (24 Stack) (25 Stack) (26 (Tee (Int 1)))
-      (27 Stack) (28 Stack) (29 Stack) (30 (Local (Vec 13))) (31 Stack)
-      (32 (Local (Vec 14))) (33 (Tee (Vec 0))) (34 Stack) (35 Stack) (36 Stack)
-      (37 (Local (Vec 7))) (38 Drop) (39 Drop) (40 Stack) (41 Stack) (42 Stack)
-      (43 (Local (Vec 3))) (44 Stack) (45 (Tee (Vec 3))) (46 Stack) (47 Stack)
-      (48 (Local (Vec 1))) (49 Stack) (50 Stack) (51 (Local (Vec 3)))
-      (52 (Tee (Vec 2))) (53 (Local (Vec 6))) (54 Drop) (55 Drop) (56 Stack)
-      (57 (Tee (Vec 14))) (58 (Local (Int 1))) (59 Stack) (60 (Local (Vec 5)))
-      (61 (Tee (Vec 12))) (62 Drop) (63 Drop) (64 Stack) (65 (Tee (Vec 4)))
-      (66 Stack) (67 Stack) (68 Stack) (69 Stack) (70 Stack) (71 (Tee (Int 1)))
-      (72 Stack) (73 Stack) (74 Stack) (75 (Tee (Vec 7))) (76 Stack) (77 Stack)
-      (78 Stack) (79 Stack) (80 Stack) (81 (Local (Vec 13))) (82 Drop) (83 Drop)
-      (84 Stack) (85 Stack) (86 Stack) (87 (Local (Vec 3))) (88 (Tee (Vec 5)))
-      (89 (Tee (Vec 7))) (90 Stack) (91 (Local (Vec 0))) (92 (Local (Vec 9)))
-      (93 Drop) (94 Drop) (95 Drop) (96 Drop) (97 (Local (Vec 10))) (98 Drop)
-      (99 Drop) (100 (Tee (Vec 8))) (101 Stack) (102 (Local (Vec 2)))
-      (103 (Tee (Vec 11))) (104 Stack) (105 Stack) (106 Stack) (107 Drop)
-      (108 Drop) (109 (Local (Vec 7))) (110 Drop) (111 Drop) (112 Drop)
-      (113 Drop) (114 Stack) (115 Drop) (116 Drop) (117 (Tee (Vec 8)))
-      (118 Stack) (119 (Local (Vec 12))) (120 (Variable esp)) (121 (Tee (Vec 2)))
-      (122 (Local (Int 1))) (123 (Local (Vec 11))) (124 Drop) (125 Drop)
-      (126 (Local (Vec 10))) (127 Drop) (128 Drop) (129 Stack) (130 Stack)
-      (131 Stack) (132 (Tee (Vec 7))) (133 Stack) (134 (Local (Vec 6)))
-      (135 Stack) (136 (Local (Vec 1))) (137 Stack) (138 Stack)
-      (139 (Local (Vec 5))) (140 Stack) (141 Stack) (142 (Tee (Vec 4)))
+     ((0 (Local (Int 1))) (1 Stack) (2 (Local (Vec 2))) (3 Stack) (4 Stack)
+      (5 Stack) (6 Stack) (7 (Local (Vec 10))) (8 (Local (Int 1)))
+      (9 (Local (Vec 2))) (10 Stack) (11 (Tee (Vec 0) (Ref 15))) (12 Drop)
+      (13 Drop) (14 Stack) (15 (Tee (Vec 4) (Ref 16))) (16 Stack) (17 Stack)
+      (18 (Local (Vec 7))) (19 Stack) (20 (Local (Vec 7))) (21 Stack) (22 Stack)
+      (23 Stack) (24 Stack) (25 Stack) (26 (Tee (Int 1) (Ref 28))) (27 Stack)
+      (28 Stack) (29 (Local (Vec 3))) (30 (Local (Vec 3))) (31 (Local (Long 0)))
+      (32 Stack) (33 (Tee (Vec 0) (Ref 37))) (34 (Local (Int 0))) (35 Stack)
+      (36 Stack) (37 (Local (Vec 5))) (38 Drop) (39 Drop) (40 Stack) (41 Stack)
+      (42 Stack) (43 (Local (Vec 9))) (44 Stack) (45 (Tee (Vec 9) (Ref 49)))
+      (46 Stack) (47 (Local (Vec 1))) (48 (Local (Vec 1))) (49 Stack) (50 Stack)
+      (51 (Local (Vec 9))) (52 (Local (Vec 2))) (53 (Local (Vec 7))) (54 Drop)
+      (55 Drop) (56 Stack) (57 (Tee (Vec 6) (Ref 58))) (58 Stack)
+      (59 (Local (Int 1))) (60 (Local (Vec 10))) (61 (Local (Vec 13))) (62 Drop)
+      (63 Drop) (64 (Local (Int 1))) (65 (Local (Vec 4))) (66 Stack) (67 Stack)
+      (68 Stack) (69 Stack) (70 Stack) (71 (Tee (Int 1) (Ref 73))) (72 Stack)
+      (73 Stack) (74 (Local (Vec 8))) (75 (Tee (Vec 8) (Ref 77))) (76 Stack)
+      (77 (Local (Vec 5))) (78 (Local (Int 0))) (79 Stack) (80 (Local (Vec 14)))
+      (81 (Local (Vec 14))) (82 Drop) (83 Drop) (84 (Local (Int 0))) (85 Stack)
+      (86 (Local (Vec 3))) (87 (Tee (Vec 3) (Ref 117))) (88 (Local (Vec 5)))
+      (89 (Tee (Vec 8) (Ref 91))) (90 Stack) (91 (Local (Vec 0)))
+      (92 (Tee (Vec 10) (Ref 117))) (93 Drop) (94 Drop) (95 Drop) (96 Drop)
+      (97 (Local (Vec 9))) (98 Drop) (99 Drop) (100 (Tee (Vec 11) (Ref 102)))
+      (101 Stack) (102 (Local (Vec 2))) (103 (Tee (Vec 12) (Ref 105)))
+      (104 Stack) (105 (Local (Vec 6))) (106 (Local (Vec 9))) (107 Drop)
+      (108 Drop) (109 (Local (Vec 8))) (110 Drop) (111 Drop) (112 Drop)
+      (113 Drop) (114 (Local (Vec 11))) (115 Drop) (116 Drop)
+      (117 (Tee (Vec 9) (Ref 119))) (118 Stack) (119 Stack) (120 (Variable esp))
+      (121 (Tee (Vec 2) (Ref 122))) (122 (Local (Int 0))) (123 (Local (Vec 12)))
+      (124 Drop) (125 Drop) (126 (Local (Vec 11))) (127 Drop) (128 Drop)
+      (129 (Local (Int 1))) (130 (Local (Vec 6))) (131 Stack)
+      (132 (Tee (Vec 8) (Ref 134))) (133 Stack) (134 (Local (Vec 7)))
+      (135 (Local (Long 0))) (136 (Local (Vec 1))) (137 Stack) (138 Stack)
+      (139 (Local (Vec 5))) (140 Stack) (141 Stack) (142 (Local (Vec 4)))
       (143 Stack) (144 Stack) (145 (Local (Vec 3))) (146 (Local (Vec 4)))
-      (147 Stack) (148 (Tee (Int 1))) (149 Stack) (150 (Local (Int 0)))
-      (151 Drop) (152 Drop) (153 Drop) (154 Drop) (155 Drop) (156 Drop)
-      (157 Drop) (158 Drop) (159 Drop) (160 Drop)))
+      (147 (Local (Int 1))) (148 (Tee (Int 1) (Ref 150))) (149 Stack)
+      (150 (Local (Int 0))) (151 Drop) (152 Drop) (153 Drop) (154 Drop)
+      (155 Drop) (156 Drop) (157 Drop) (158 Drop) (159 Drop) (160 Drop)))
+    ((int 2) (long 1) (float 0) (vec 15))
 
         global.get $edx
         (local.set $__int_scratch_1)
         global.get $xmm1
         (local.get $__int_scratch_1)
         i32x4.replace_lane 0
-        (local.set $__vec_scratch_13)
+        (local.set $__vec_scratch_2)
         global.get $xmm0
-        (local.get $__vec_scratch_13)
+        (local.get $__vec_scratch_2)
         i64x2.add
         i32.const 8
         i64x2.shr_u
         f64x2.convert_low_i32x4_s
-        (local.set $__vec_scratch_5)
+        (local.set $__vec_scratch_10)
         i32.const 4803656
-        (local.get $__vec_scratch_13)
+        (local.set $__int_scratch_1)
+        (local.get $__vec_scratch_2)
+        (local.get $__int_scratch_1)
         v128.load64_lane 0
+        (local.set $__vec_scratch_2)
         global.get $xmm3
         global.get $xmm7
-        (local.tee $__vec_scratch_13)
+        (local.tee $__vec_scratch_0)
         i32.const 38
         i64x2.shr_u
         (local.tee $__vec_scratch_4)
         i16x8.extract_lane_u 0
         i32.const 4803568
         v128.load
-        (local.set $__vec_scratch_1)
+        (local.set $__vec_scratch_7)
         global.get $xmm4
-        (local.get $__vec_scratch_1)
+        (local.get $__vec_scratch_7)
         v128.and
-        (local.set $__vec_scratch_1)
+        (local.set $__vec_scratch_7)
         i32.const 255
         i32.and
         i32.const 1
@@ -834,67 +910,77 @@ let%expect_test "_sd" =
         i32.const 4
         i32.mult
         v128.load64_zero offset 4792192
-        (local.get $__vec_scratch_13)
+        (local.set $__vec_scratch_3)
+        (local.get $__vec_scratch_0)
+        (local.get $__vec_scratch_3)
         f64x2.mul
-        (local.set $__vec_scratch_13)
+        (local.set $__vec_scratch_3)
         i64x2.extract_lane 1
-        (local.get $__vec_scratch_13)
+        (local.set $__long_scratch_0)
+        (local.get $__vec_scratch_3)
+        (local.get $__long_scratch_0)
         i64x2.replace_lane 1
-        (local.set $__vec_scratch_14)
         global.get $xmm5
         (local.tee $__vec_scratch_0)
         i32.const 4
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.mult
         v128.load64_zero offset 4792192
         f64x2.mul
-        (local.set $__vec_scratch_7)
+        (local.set $__vec_scratch_5)
         (local.get $__int_scratch_1)
         (local.get $__int_scratch_1)
         i32.add
         i32.const 4
         i32.mult
         v128.load offset 4793232
-        (local.set $__vec_scratch_3)
+        (local.set $__vec_scratch_9)
         global.get $xmm6
-        (local.get $__vec_scratch_3)
+        (local.get $__vec_scratch_9)
         f64x2.add
-        (local.tee $__vec_scratch_3)
+        (local.tee $__vec_scratch_9)
         i32.const 4803584
         v128.load
+        (local.set $__vec_scratch_1)
+        (local.get $__vec_scratch_7)
         (local.get $__vec_scratch_1)
         v128.or
         (local.set $__vec_scratch_1)
-        (local.get $__vec_scratch_5)
+        (local.get $__vec_scratch_10)
         f64x2.add
-        (local.get $__vec_scratch_3)
+        (local.get $__vec_scratch_9)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
-        (local.set $__vec_scratch_3)
+        (local.set $__vec_scratch_9)
+        (local.get $__vec_scratch_2)
         (local.get $__vec_scratch_1)
         v128.and
-        (local.tee $__vec_scratch_2)
+        (local.set $__vec_scratch_2)
         global.get $xmm2
-        (local.set $__vec_scratch_6)
+        (local.set $__vec_scratch_7)
         i32.const 31
-        (local.get $__vec_scratch_14)
         i64x2.shr_u
-        (local.tee $__vec_scratch_14)
+        (local.tee $__vec_scratch_6)
         i16x8.extract_lane_u 0
-        (local.set $__int_scratch_1)
         i32.const 4803656
-        (local.get $__vec_scratch_5)
-        v128.load64_lane 0
-        (local.set $__vec_scratch_5)
-        (local.get $__vec_scratch_1)
-        f64x2.add
-        (local.tee $__vec_scratch_12)
-        i32.const 4803664
-        (local.get $__vec_scratch_4)
-        v128.load64_lane 0
-        (local.tee $__vec_scratch_4)
-        i32.const 511
+        (local.set $__int_scratch_1)
+        (local.get $__vec_scratch_10)
         (local.get $__int_scratch_1)
+        v128.load64_lane 0
+        (local.set $__vec_scratch_10)
+        (local.get $__vec_scratch_1)
+        (local.get $__vec_scratch_2)
+        f64x2.add
+        (local.set $__vec_scratch_13)
+        i32.const 4803664
+        (local.set $__int_scratch_1)
+        (local.get $__vec_scratch_4)
+        (local.get $__int_scratch_1)
+        v128.load64_lane 0
+        (local.set $__vec_scratch_4)
+        i32.const 511
         i32.and
         i32.const 1
         i32.add
@@ -904,129 +990,154 @@ let%expect_test "_sd" =
         i32.const 4
         i32.mult
         v128.load64_zero offset 4795296
-        (local.get $__vec_scratch_7)
+        (local.set $__vec_scratch_8)
+        (local.get $__vec_scratch_5)
+        (local.get $__vec_scratch_8)
         f64x2.mul
-        (local.tee $__vec_scratch_7)
+        (local.tee $__vec_scratch_8)
         (local.get $__vec_scratch_0)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
+        (local.set $__vec_scratch_5)
         i32.const 4
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.mult
         v128.load64_zero offset 4795296
-        (local.get $__vec_scratch_13)
+        (local.set $__vec_scratch_14)
+        (local.get $__vec_scratch_3)
+        (local.get $__vec_scratch_14)
         f64x2.mul
-        (local.set $__vec_scratch_13)
+        (local.set $__vec_scratch_14)
         i32.const 8
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.mult
         v128.load offset 4797360
+        (local.set $__vec_scratch_3)
+        (local.get $__vec_scratch_9)
         (local.get $__vec_scratch_3)
         f64x2.add
-        (local.set $__vec_scratch_3)
+        (local.tee $__vec_scratch_3)
+        (local.get $__vec_scratch_10)
         (local.get $__vec_scratch_5)
         v128.and
-        (local.tee $__vec_scratch_5)
-        (local.get $__vec_scratch_7)
+        (local.set $__vec_scratch_5)
+        (local.get $__vec_scratch_8)
+        (local.get $__vec_scratch_5)
         f64x2.add
-        (local.tee $__vec_scratch_7)
+        (local.tee $__vec_scratch_8)
         (local.get $__vec_scratch_0)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
         (local.set $__vec_scratch_0)
-        (local.get $__vec_scratch_13)
+        (local.get $__vec_scratch_4)
+        (local.get $__vec_scratch_14)
         f64x2.add
-        (local.set $__vec_scratch_9)
+        (local.tee $__vec_scratch_10)
         (local.get $__vec_scratch_5)
         (local.get $__vec_scratch_2)
         f64x2.mul
-        (local.set $__vec_scratch_10)
+        (local.set $__vec_scratch_9)
         (local.get $__vec_scratch_2)
-        (local.get $__vec_scratch_7)
+        (local.get $__vec_scratch_8)
         f64x2.mul
-        (local.tee $__vec_scratch_8)
+        (local.tee $__vec_scratch_11)
         (local.get $__vec_scratch_2)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
         (local.set $__vec_scratch_2)
         (local.get $__vec_scratch_5)
+        (local.get $__vec_scratch_13)
         f64x2.mul
-        (local.tee $__vec_scratch_11)
-        (local.get $__vec_scratch_14)
+        (local.tee $__vec_scratch_12)
+        (local.get $__vec_scratch_6)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
-        (local.get $__vec_scratch_13)
-        (local.get $__vec_scratch_10)
-        f64x2.add
-        (local.get $__vec_scratch_12)
-        (local.get $__vec_scratch_7)
-        f64x2.mul
-        (local.set $__vec_scratch_7)
-        (local.get $__vec_scratch_8)
-        f64x2.add
-        (local.get $__vec_scratch_3)
+        (local.set $__vec_scratch_6)
+        (local.get $__vec_scratch_14)
         (local.get $__vec_scratch_9)
         f64x2.add
-        (local.tee $__vec_scratch_8)
+        (local.set $__vec_scratch_9)
+        (local.get $__vec_scratch_13)
+        (local.get $__vec_scratch_8)
+        f64x2.mul
+        (local.set $__vec_scratch_8)
+        (local.get $__vec_scratch_9)
+        (local.get $__vec_scratch_11)
+        f64x2.add
+        (local.set $__vec_scratch_11)
+        f64x2.add
+        (local.tee $__vec_scratch_9)
         (local.get $__vec_scratch_3)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
-        (local.set $__vec_scratch_12)
         (local.get $__vec_scratch_2)
         (global.get $esp)
         v128.load64_lane offset 12 0
         (local.tee $__vec_scratch_2)
         i16x8.extract_lane_u 3
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         (local.get $__vec_scratch_11)
+        (local.get $__vec_scratch_12)
+        f64x2.add
+        (local.set $__vec_scratch_12)
+        (local.get $__vec_scratch_3)
+        (local.get $__vec_scratch_9)
         f64x2.add
         (local.set $__vec_scratch_11)
-        (local.get $__vec_scratch_3)
+        i32.const 4803656
+        (local.set $__int_scratch_1)
+        (local.get $__vec_scratch_6)
+        (local.get $__int_scratch_1)
+        v128.load64_lane 0
+        (local.set $__vec_scratch_6)
+        i16x8.extract_lane_u 3
+        (local.get $__vec_scratch_12)
         (local.get $__vec_scratch_8)
         f64x2.add
-        (local.set $__vec_scratch_10)
-        i32.const 4803656
-        v128.load64_lane 0
-        (local.get $__vec_scratch_12)
-        i16x8.extract_lane_u 3
-        (local.get $__vec_scratch_11)
+        (local.tee $__vec_scratch_8)
         (local.get $__vec_scratch_7)
-        f64x2.add
-        (local.tee $__vec_scratch_7)
-        (local.get $__vec_scratch_6)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
-        (local.set $__vec_scratch_6)
-        (local.get $__vec_scratch_8)
+        (local.set $__vec_scratch_7)
+        (local.get $__vec_scratch_9)
         i64x2.extract_lane 0
+        (local.set $__long_scratch_0)
         (local.get $__vec_scratch_1)
+        (local.get $__long_scratch_0)
         i64x2.replace_lane 0
         (local.set $__vec_scratch_1)
+        (local.get $__vec_scratch_11)
         (local.get $__vec_scratch_10)
-        (local.get $__vec_scratch_9)
         f64x2.add
         (local.get $__vec_scratch_5)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
         (local.set $__vec_scratch_5)
-        (local.get $__vec_scratch_9)
-        (local.get $__vec_scratch_7)
+        (local.get $__vec_scratch_10)
+        (local.get $__vec_scratch_8)
         f64x2.add
         (local.get $__vec_scratch_4)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
-        (local.tee $__vec_scratch_4)
+        (local.set $__vec_scratch_4)
+        (local.get $__vec_scratch_9)
         (local.get $__vec_scratch_8)
-        (local.get $__vec_scratch_7)
         f64x2.add
         (local.get $__vec_scratch_3)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
         (local.set $__vec_scratch_3)
         (local.get $__vec_scratch_4)
+        (local.get $__vec_scratch_4)
         i8x16.shuffle 0 1 2 3 4 5 6 7 16 17 18 19 20 21 22 23
         (local.set $__vec_scratch_4)
         i32.const 32752
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         i32.and
         (local.tee $__int_scratch_1)
@@ -1034,8 +1145,9 @@ let%expect_test "_sd" =
         i32.ge_u
         (local.set $__int_scratch_0)
         global.set $edx
-        (local.get $__vec_scratch_6)
+        (local.get $__vec_scratch_7)
         global.set $xmm2
+        (local.get $__vec_scratch_6)
         global.set $xmm3
         (local.get $__int_scratch_1)
         global.set $eax
@@ -1050,7 +1162,8 @@ let%expect_test "_sd" =
         (local.get $__vec_scratch_1)
         global.set $xmm4
         (local.get $__vec_scratch_0)
-        global.set $xmm5((id 2)
+        global.set $xmm5
+    ((id 2)
      (instrs
       ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
        (1 (GetGlobalOp (var xmm1) (global ((name xmm1) (typ Vec)))))
@@ -1306,14 +1419,13 @@ let%expect_test "bt" =
   test_trans_block 0x00486fa8;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Variable esp)) (4 Stack)
-      (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack)
-      (11 (Local (Int 0))) (12 Drop)))
+     ((0 Stack) (1 Stack) (2 Stack) (3 (Variable esp)) (4 Stack) (5 Stack)
+      (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack) (11 (Local (Int 0)))
+      (12 Drop)))
+    ((int 1) (long 0) (float 0) (vec 0))
 
         global.get $esi
-        (local.set $__int_scratch_0)
         i32.const 1
-        (local.get $__int_scratch_0)
         i32.add
         (global.get $esp)
         i32.load
@@ -1325,7 +1437,8 @@ let%expect_test "bt" =
         i32.and
         i32.eqz
         (local.set $__int_scratch_0)
-        global.set $esi((id 5)
+        global.set $esi
+    ((id 5)
      (instrs
       ((0 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
        (1 (Const __i32 1))
@@ -1348,14 +1461,13 @@ let%expect_test "bts" =
   test_trans_block 0x00486f8d;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Variable esp)) (4 Stack)
-      (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack) (11 Drop)
+     ((0 Stack) (1 Stack) (2 Stack) (3 (Variable esp)) (4 Stack) (5 Stack)
+      (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 (Local (Int 0))) (11 Drop)
       (12 Drop)))
+    ((int 1) (long 0) (float 0) (vec 0))
 
         global.get $edx
-        (local.set $__int_scratch_0)
         i32.const 1
-        (local.get $__int_scratch_0)
         i32.add
         (global.get $esp)
         i32.load
@@ -1365,9 +1477,12 @@ let%expect_test "bts" =
         i32.and
         i32.shl
         i32.or
+        (local.set $__int_scratch_0)
         (global.get $esp)
+        (local.get $__int_scratch_0)
         i32.store
-        global.set $edx((id 2)
+        global.set $edx
+    ((id 2)
      (instrs
       ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
        (1 (Const __i32 1))
@@ -1388,22 +1503,24 @@ let%expect_test "rol, xlatb" =
   test_trans_block 0x00483ad4;
   [%expect {|
     (locs
-     ((0 (Local (Int 3))) (1 Drop) (2 (Tee (Int 2))) (3 Drop) (4 Stack)
-      (5 (Tee (Int 3))) (6 (Local (Float 0))) (7 (Tee (Int 0))) (8 Drop)
-      (9 Stack) (10 Drop) (11 Drop) (12 Stack) (13 Drop) (14 Stack) (15 Drop)
-      (16 (Local (Int 2))) (17 Drop) (18 Drop) (19 Stack) (20 Stack) (21 Drop)
-      (22 Stack) (23 Drop) (24 Stack) (25 Stack) (26 Drop) (27 (Local (Int 1)))
-      (28 Stack) (29 (Tee (Int 1))) (30 (Local (Int 2))) (31 Drop) (32 Drop)
-      (33 Drop) (34 Drop) (35 Drop) (36 Stack) (37 Stack) (38 Drop) (39 Stack)
-      (40 Stack) (41 (Tee (Int 1))) (42 Drop) (43 Drop) (44 Stack)
-      (45 (Local (Int 2))) (46 Drop) (47 Stack) (48 Stack) (49 (Tee (Int 0)))
-      (50 Stack) (51 Drop) (52 Drop) (53 Drop) (54 Drop) (55 (Variable esp))
-      (56 Drop) (57 (Variable esp))))
+     ((0 (Local (Int 3))) (1 Drop) (2 (Tee (Int 4) (Ref 3))) (3 Drop) (4 Stack)
+      (5 (Tee (Int 3) (Ref 6))) (6 (Local (Float 0))) (7 (Local (Int 1)))
+      (8 Drop) (9 (Local (Int 0))) (10 Drop) (11 Drop) (12 (Local (Int 0)))
+      (13 Drop) (14 Stack) (15 Drop) (16 (Local (Int 4))) (17 Drop) (18 Drop)
+      (19 Stack) (20 Stack) (21 Drop) (22 Stack) (23 Drop) (24 Stack) (25 Stack)
+      (26 Drop) (27 (Local (Int 0))) (28 (Local (Int 2))) (29 (Local (Int 0)))
+      (30 (Local (Int 4))) (31 Drop) (32 Drop) (33 Drop) (34 Drop) (35 Drop)
+      (36 (Local (Int 2))) (37 Stack) (38 Drop) (39 Stack) (40 Stack)
+      (41 (Local (Int 2))) (42 Drop) (43 Drop) (44 (Local (Int 0))) (45 Stack)
+      (46 Drop) (47 Stack) (48 Stack) (49 (Tee (Int 1) (Ref 50)))
+      (50 (Local (Int 0))) (51 Drop) (52 Drop) (53 Drop) (54 Drop)
+      (55 (Variable esp)) (56 Drop) (57 (Variable esp))))
+    ((int 5) (long 0) (float 1) (vec 0))
 
         global.get $ebx
         (local.set $__int_scratch_3)
         global.get $ebp
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_4)
         (local.get $__int_scratch_3)
         i32.store16 offset -162
         i32.const 4841516
@@ -1412,62 +1529,76 @@ let%expect_test "rol, xlatb" =
         f64.load
         (local.set $__float_scratch_0)
         global.get $edx
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_2)
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_4)
+        (local.get $__int_scratch_1)
         i32.store offset -148
         i32.const 0
-        (local.get $__int_scratch_2)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_4)
+        (local.get $__int_scratch_0)
         i32.store16 offset -160
         i32.const 0
-        (local.get $__int_scratch_2)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_4)
+        (local.get $__int_scratch_0)
         i32.store8 offset -144
-        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_4)
         i32.load8_s offset -159
         global.get $ecx
-        (local.set $__int_scratch_2)
+        (local.set $__int_scratch_4)
         i32.const 1
         i32.shl
         i32.extend8_s
         i32.const 1
         i32.shr_s
         i32.const 1
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         i32.extend8_s
-        (local.get $__int_scratch_1)
-        i32.rotl
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_2)
-        (i32.const 0xFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFFFF00) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.set $__int_scratch_2)
+        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
+        i32.rotl
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_4)
+        (i32.const 0xFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFFFF00) (i32.and) (local.get __instr_scratch) (i32.or)
+        (local.set $__int_scratch_4)
         i32.const 15
-        (local.get $__int_scratch_1)
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_2)
         i32.and
         i32.extend8_s
         i32.add
         i32.load8_s
-        (local.tee $__int_scratch_1)
-        i32.const 1028
-        (local.get $__int_scratch_2)
-        i32.and
         (local.set $__int_scratch_2)
+        i32.const 1028
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_4)
         (local.get $__int_scratch_0)
+        i32.and
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         i32.add
         i32.const 16
         i32.add
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_1)
         i32.load
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_3)
         (local.get $__float_scratch_0)
         f64.store
-        (local.get $__int_scratch_2)
         global.set $ecx
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         global.set $eax
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         global.set $ebx
+        (local.get $__int_scratch_0)
         (global.get $esp)
         call_indirect (type $__FUNCi_i)
-        (global.set $esp)((id 3)
+        (global.set $esp)
+    ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ebx) (global ((name ebx) (typ Int))))) (1 Nop)
        (2 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -1522,24 +1653,28 @@ let%expect_test "shufpd" =
   test_trans_block 0x0048be1e;
   [%expect {|
     (locs
-     ((0 (Local (Vec 0))) (1 Drop) (2 (Tee (Vec 0))) (3 Drop) (4 (Local (Vec 4)))
-      (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack) (11 Stack)
-      (12 Stack) (13 Stack) (14 Stack) (15 Stack) (16 Stack) (17 Stack)
-      (18 (Tee (Vec 4))) (19 (Tee (Vec 3))) (20 Stack) (21 (Tee (Vec 1)))
-      (22 Drop) (23 (Tee (Vec 1))) (24 Stack) (25 Drop) (26 Drop)
-      (27 (Tee (Vec 3))) (28 (Tee (Vec 2))) (29 Stack) (30 Stack)
-      (31 (Tee (Vec 2))) (32 Stack) (33 Stack) (34 Stack) (35 (Variable esp))
-      (36 Drop) (37 (Local (Float 0))) (38 Stack) (39 (Variable __ret_addr__))
-      (40 Stack) (41 Drop) (42 Stack) (43 (Variable esp)) (44 (Tee (Int 0)))
-      (45 Drop) (46 Stack) (47 Stack) (48 Drop) (49 Drop) (50 Drop) (51 Drop)
-      (52 Drop)))
+     ((0 (Local (Vec 0))) (1 Drop) (2 (Local (Vec 0))) (3 Drop)
+      (4 (Local (Vec 4))) (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack)
+      (10 (Local (Vec 3))) (11 Stack) (12 Stack) (13 Stack) (14 (Local (Vec 3)))
+      (15 Stack) (16 Stack) (17 Stack) (18 (Local (Vec 4)))
+      (19 (Tee (Vec 3) (Ref 21))) (20 Stack) (21 (Local (Vec 1))) (22 Drop)
+      (23 (Local (Vec 1))) (24 Stack) (25 Drop) (26 Drop)
+      (27 (Tee (Vec 3) (Ref 28))) (28 (Tee (Vec 2) (Ref 30))) (29 Stack)
+      (30 Stack) (31 (Tee (Vec 2) (Ref 33))) (32 Stack) (33 Stack)
+      (34 (Local (Long 0))) (35 (Variable esp)) (36 Drop) (37 (Local (Float 0)))
+      (38 (Local (Int 1))) (39 (Variable __ret_addr__)) (40 Stack) (41 Drop)
+      (42 (Local (Int 1))) (43 (Variable esp)) (44 (Tee (Int 1) (Ref 45)))
+      (45 Drop) (46 (Local (Int 0))) (47 Stack) (48 Drop) (49 Drop) (50 Drop)
+      (51 Drop) (52 Drop)))
+    ((int 2) (long 1) (float 1) (vec 5))
 
         global.get $xmm2
         (local.set $__vec_scratch_0)
         (local.get $__vec_scratch_0)
         (local.get $__vec_scratch_0)
         f64x2.mul
-        (local.tee $__vec_scratch_0)
+        (local.set $__vec_scratch_0)
+        (local.get $__vec_scratch_0)
         (local.get $__vec_scratch_0)
         f64x2.mul
         (local.set $__vec_scratch_4)
@@ -1550,28 +1685,35 @@ let%expect_test "shufpd" =
         i32.const 4820560
         v128.load
         f64x2.add
+        (local.set $__vec_scratch_3)
+        (local.get $__vec_scratch_3)
         (local.get $__vec_scratch_4)
         f64x2.mul
         i32.const 4820544
         v128.load
         f64x2.add
+        (local.set $__vec_scratch_3)
+        (local.get $__vec_scratch_3)
         (local.get $__vec_scratch_4)
         f64x2.mul
         i32.const 4820528
         v128.load
         f64x2.add
-        (local.tee $__vec_scratch_4)
+        (local.set $__vec_scratch_4)
+        (local.get $__vec_scratch_4)
         (local.get $__vec_scratch_0)
         f64x2.mul
         (local.tee $__vec_scratch_3)
         (local.get $__vec_scratch_4)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
-        (local.tee $__vec_scratch_1)
+        (local.set $__vec_scratch_1)
+        (local.get $__vec_scratch_1)
         (local.get $__vec_scratch_1)
         i8x16.shuffle 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
-        (local.tee $__vec_scratch_1)
+        (local.set $__vec_scratch_1)
         (local.get $__vec_scratch_3)
+        (local.get $__vec_scratch_1)
         f64x2.add
         global.get $xmm7
         (local.tee $__vec_scratch_3)
@@ -1589,25 +1731,33 @@ let%expect_test "shufpd" =
         i64x2.replace_lane 1
         (local.get $__vec_scratch_2)
         i64x2.extract_lane 0
+        (local.set $__long_scratch_0)
         (global.get $esp)
+        (local.get $__long_scratch_0)
         i64.store offset 4
         (global.get $esp)
         f64.load offset 4
         (local.set $__float_scratch_0)
         (global.get $esp)
         i32.load
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
         (global.get $__ret_addr__)
         i32.eq
         (if (result) (then) (else unreachable))
         i32.const 4
+        (local.set $__int_scratch_1)
         (global.get $esp)
+        (local.get $__int_scratch_1)
         i32.add
         (global.set $esp)
         global.get $__fpuStack__
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_1)
         (local.get $__float_scratch_0)
         f64.store offset 8
         i32.const 8
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.add
         (local.get $__vec_scratch_1)
@@ -1616,7 +1766,8 @@ let%expect_test "shufpd" =
         global.set $xmm7
         (local.get $__vec_scratch_0)
         global.set $xmm1
-        global.set $xmm5((id 4)
+        global.set $xmm5
+    ((id 4)
      (instrs
       ((0 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec))))) (1 Nop)
        (2
@@ -1712,28 +1863,30 @@ let%expect_test "movq, comisd jae" =
   test_trans_block 0x0048bed8;
   [%expect {|
     (locs
-     ((0 (Local (Vec 0))) (1 (Local (Float 0))) (2 Stack) (3 Stack)
-      (4 (Tee (Vec 0))) (5 Stack) (6 Stack) (7 Stack) (8 Stack)
+     ((0 Stack) (1 (Local (Float 0))) (2 Stack) (3 Stack)
+      (4 (Tee (Vec 1) (Ref 5))) (5 Stack) (6 Stack) (7 (Local (Vec 0))) (8 Stack)
       (9 (Local (Int 0))) (10 Drop)))
+    ((int 1) (long 0) (float 1) (vec 2))
 
         global.get $xmm7
-        (local.set $__vec_scratch_0)
-        (local.get $__vec_scratch_0)
         f64x2.extract_lane 0
         (local.set $__float_scratch_0)
         global.get $xmm6
         (local.get $__float_scratch_0)
         f64x2.replace_lane 0
         global.get $xmm2
-        (local.tee $__vec_scratch_0)
+        (local.tee $__vec_scratch_1)
         v128.xor
         i32.const 4820656
         v128.load
+        (local.set $__vec_scratch_0)
+        (local.get $__vec_scratch_1)
         (local.get $__vec_scratch_0)
         f64x2.gt
         i32x4.extract_lane 0
         (local.set $__int_scratch_0)
-        global.set $xmm6((id 7)
+        global.set $xmm6
+    ((id 7)
      (instrs
       ((0 (GetGlobalOp (var xmm7) (global ((name xmm7) (typ Vec)))))
        (1 (VecExtractLaneOp (var __fl) (src (Ref 0)) (shape F64) (lane 0)))
@@ -1760,10 +1913,11 @@ let%expect_test "comisd jp" =
   [%expect {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Vec 2)))
-      (3 (Tee (Vec 2))) (4 Drop) (5 Stack) (6 Stack) (7 (Tee (Vec 1))) (8 Stack)
-      (9 (Tee (Vec 0))) (10 (Local (Vec 3))) (11 Stack) (12 Stack)
-      (13 (Local (Int 0))) (14 Drop) (15 Drop) (16 Stack) (17 Stack)
+      (3 (Tee (Vec 2) (Ref 7))) (4 Drop) (5 Stack) (6 Stack) (7 (Local (Vec 1)))
+      (8 Stack) (9 (Local (Vec 0))) (10 (Local (Vec 3))) (11 Stack) (12 Stack)
+      (13 Stack) (14 Drop) (15 Drop) (16 Stack) (17 Stack)
       (18 (Variable __input_compare_arg__))))
+    ((int 0) (long 0) (float 0) (vec 4))
 
         (global.get $esp)
         i32.load
@@ -1777,19 +1931,20 @@ let%expect_test "comisd jp" =
         i32.const 4820352
         v128.load
         v128.and
-        (local.tee $__vec_scratch_1)
+        (local.set $__vec_scratch_1)
         i32.const 4820720
         v128.load
-        (local.tee $__vec_scratch_0)
+        (local.set $__vec_scratch_0)
+        (local.get $__vec_scratch_0)
         (local.get $__vec_scratch_0)
         f64x2.eq
         (local.set $__vec_scratch_3)
+        (local.get $__vec_scratch_1)
         (local.get $__vec_scratch_1)
         f64x2.eq
         (local.get $__vec_scratch_3)
         v128.or
         i32x4.extract_lane 0
-        (local.set $__int_scratch_0)
         (local.get $__vec_scratch_1)
         global.set $xmm2
         (local.get $__vec_scratch_2)
@@ -1799,7 +1954,8 @@ let%expect_test "comisd jp" =
         f64x2.gt
         i32x4.extract_lane 0
 
-        (global.set $__input_compare_arg__)((id 0)
+        (global.set $__input_compare_arg__)
+    ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -1838,11 +1994,13 @@ let%expect_test "fprem" =
   [%expect {|
     (locs
      ((0 (Variable esp)) (1 (Local (Int 1))) (2 Stack) (3 Drop) (4 Stack)
-      (5 (Local (Int 1))) (6 Stack) (7 Stack) (8 (Tee (Int 0))) (9 Drop)
-      (10 Stack) (11 Stack) (12 Stack) (13 Stack) (14 Stack) (15 Stack) (16 Drop)
-      (17 Stack) (18 (Tee (Int 0))) (19 (Tee (Int 2))) (20 Drop) (21 Stack)
-      (22 Stack) (23 Drop) (24 Stack) (25 Drop) (26 Drop) (27 (Local (Float 0)))
-      (28 Stack) (29 Stack) (30 Drop) (31 Drop) (32 Drop) (33 Drop) (34 Drop)))
+      (5 (Local (Int 1))) (6 Stack) (7 Stack) (8 (Tee (Int 2) (Ref 10)))
+      (9 Drop) (10 Stack) (11 Stack) (12 Stack) (13 Stack) (14 (Local (Int 0)))
+      (15 Stack) (16 Drop) (17 (Local (Int 0))) (18 (Tee (Int 0) (Ref 19)))
+      (19 (Local (Int 2))) (20 Drop) (21 (Local (Int 3))) (22 Stack) (23 Drop)
+      (24 Stack) (25 Drop) (26 Drop) (27 (Local (Float 0))) (28 (Local (Int 3)))
+      (29 Stack) (30 Drop) (31 Drop) (32 Drop) (33 Drop) (34 Drop)))
+    ((int 4) (long 0) (float 1) (vec 0))
 
         i32.const 40
         (local.set $__int_scratch_1)
@@ -1857,25 +2015,32 @@ let%expect_test "fprem" =
         i32.load offset 48
         i32.const 32767
         i32.and
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_2)
         (local.get $__int_scratch_1)
         i32.subtract
         i32.const 7
         i32.and
         i32.const 4
         i32.or
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_0)
         i32.subtract
         i32.const 32768
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.and
         (local.tee $__int_scratch_0)
         i32.or
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_2)
         (global.get $esp)
+        (local.get $__int_scratch_2)
         i32.store offset 24
         i32.const 16
+        (local.set $__int_scratch_3)
         (global.get $esp)
+        (local.get $__int_scratch_3)
         i32.add
         call $__load_big_float__
         (global.get $esp)
@@ -1884,7 +2049,9 @@ let%expect_test "fprem" =
         call $__float_mod__
         (local.set $__float_scratch_0)
         i32.const 40
+        (local.set $__int_scratch_3)
         (global.get $esp)
+        (local.get $__int_scratch_3)
         i32.add
         (local.get $__float_scratch_0)
         call $__store_big_float__
@@ -1893,7 +2060,8 @@ let%expect_test "fprem" =
         (local.get $__int_scratch_1)
         global.set $eax
         (local.get $__int_scratch_0)
-        global.set $ebx((id 9)
+        global.set $ebx
+    ((id 9)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int))) (1 (Const __i32 40))
        (2 (BiOp (var __i32) (op Add) (lhs (Ref 0)) (rhs (Ref 1))))
@@ -1933,15 +2101,14 @@ let%expect_test "sub ja" =
   test_trans_block 0x0048929e;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Local (Int 1))) (2 Stack) (3 Stack) (4 Stack)
-      (5 (Local (Int 1))) (6 Stack) (7 Stack) (8 (Tee (Int 0))) (9 Stack)
+     ((0 (Variable esp)) (1 Stack) (2 Stack) (3 Stack) (4 Stack)
+      (5 (Local (Int 1))) (6 Stack) (7 Stack) (8 (Tee (Int 0) (Ref 9))) (9 Stack)
       (10 (Local (Int 0))) (11 Drop) (12 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load offset 24
-        (local.set $__int_scratch_1)
         i32.const 32767
-        (local.get $__int_scratch_1)
         i32.and
         i32.const 63
         i32.add
@@ -1959,7 +2126,8 @@ let%expect_test "sub ja" =
         (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
         global.set $eax
-        global.set $ebx((id 7)
+        global.set $ebx
+    ((id 7)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 24)))
@@ -1985,14 +2153,14 @@ let%expect_test "sahf je" =
   test_trans_block 0x0048582f;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 (Tee (Float 1))) (2 Stack) (3 Stack)
-      (4 (Tee (Float 0))) (5 (Tee (Float 2))) (6 (Local (Int 1)))
+     ((0 (Tee (Int 2) (Ref 1))) (1 (Tee (Float 1) (Ref 4))) (2 Stack) (3 Stack)
+      (4 (Tee (Float 0) (Ref 5))) (5 (Local (Float 2))) (6 Stack)
       (7 (Local (Int 0))) (8 Stack) (9 (Local (Int 0))) (10 Drop) (11 Drop)
-      (12 Stack) (13 Stack) (14 Drop) (15 Drop)))
+      (12 (Local (Int 1))) (13 (Local (Int 1))) (14 Drop) (15 Drop)))
+    ((int 3) (long 0) (float 3) (vec 0))
 
         global.get $__fpuStack__
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_2)
+        (local.tee $__int_scratch_2)
         f64.load
         (local.tee $__float_scratch_1)
         i32.const 4841890
@@ -2000,9 +2168,9 @@ let%expect_test "sahf je" =
         f64.mult
         (local.tee $__float_scratch_0)
         f64.nearest
-        (local.tee $__float_scratch_2)
+        (local.set $__float_scratch_2)
         i32.const 0xDEADBEEF
-        (local.set $__int_scratch_1)
+        (local.get $__float_scratch_2)
         (local.get $__float_scratch_0)
         f64.le
         (local.set $__int_scratch_0)
@@ -2019,11 +2187,15 @@ let%expect_test "sahf je" =
         (local.get $__float_scratch_0)
         f64.store offset 8
         i32.const 8
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_2)
-        i32.add
         (local.get $__int_scratch_1)
+        i32.add
+        (local.set $__int_scratch_1)
         global.set $eax
-        global.set $__fpuStack__((id 1)
+        (local.get $__int_scratch_1)
+        global.set $__fpuStack__
+    ((id 1)
      (instrs
       ((0
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
@@ -2053,21 +2225,23 @@ let%expect_test "add jae" =
   test_trans_block 0x00488a1e;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Local (Int 0))) (2 (Tee (Int 1)))
-      (3 (Local (Int 0))) (4 Drop)))
+     ((0 (Variable esp)) (1 (Local (Int 1))) (2 (Local (Int 0))) (3 Stack)
+      (4 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load offset 8
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
-        (local.get $__int_scratch_0)
-        i32.add
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_0)
-        i32.ge_u
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_1)
-        global.set $eax((id 1)
+        (local.get $__int_scratch_1)
+        i32.add
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
+        i32.ge_u
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -2085,22 +2259,24 @@ let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
   test_trans_block 0x00484ef1;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 Stack) (2 Stack) (3 Stack) (4 (Tee (Int 2)))
-      (5 Stack) (6 Stack) (7 (Local (Vec 1))) (8 Stack) (9 Stack) (10 Stack)
-      (11 (Local (Vec 1))) (12 Stack) (13 Stack) (14 Stack) (15 Stack)
-      (16 (Tee (Vec 1))) (17 (Tee (Vec 0))) (18 Stack) (19 Stack)
-      (20 (Tee (Vec 2))) (21 (Local (Int 1))) (22 Drop) (23 Stack)
-      (24 (Tee (Int 3))) (25 Stack) (26 (Local (Int 0))) (27 Drop) (28 Drop)
+     ((0 (Local (Int 1))) (1 Stack) (2 Stack) (3 Stack)
+      (4 (Tee (Int 1) (Ref 24))) (5 Stack) (6 Stack) (7 (Local (Vec 1)))
+      (8 Stack) (9 Stack) (10 (Local (Int 0))) (11 (Local (Vec 1))) (12 Stack)
+      (13 Stack) (14 Stack) (15 Stack) (16 (Tee (Vec 1) (Ref 17)))
+      (17 (Tee (Vec 0) (Ref 18))) (18 Stack) (19 (Local (Vec 2)))
+      (20 (Tee (Vec 2) (Ref 21))) (21 (Local (Int 0))) (22 Drop) (23 Stack)
+      (24 (Tee (Int 2) (Ref 26))) (25 Stack) (26 Stack) (27 Drop) (28 Drop)
       (29 Drop) (30 Drop) (31 Drop) (32 Drop)))
+    ((int 3) (long 0) (float 0) (vec 3))
 
         global.get $edx
-        (local.set $__int_scratch_2)
+        (local.set $__int_scratch_1)
         i32.const 0
-        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_1)
         i32.subtract
         i32.const 32751
         i32.add
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         global.get $xmm3
         i32.const 52
         i64x2.shl
@@ -2109,7 +2285,9 @@ let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
         (local.get $__vec_scratch_1)
         v128.or
         i32.const 1011
+        (local.set $__int_scratch_0)
         (local.get $__vec_scratch_1)
+        (local.get $__int_scratch_0)
         i32x4.replace_lane 0
         (local.set $__vec_scratch_1)
         global.get $xmm1
@@ -2123,29 +2301,31 @@ let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
         (local.tee $__vec_scratch_0)
         i32x4.extract_lane 0
         i64x2.shl
+        (local.set $__vec_scratch_2)
+        (local.get $__vec_scratch_2)
         (local.get $__vec_scratch_1)
         i32x4.eq
         (local.tee $__vec_scratch_2)
         i8x16.bitmask
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         i32.const 32767
         i32.and
-        (local.tee $__int_scratch_3)
+        (local.tee $__int_scratch_2)
         i32.const 32752
         i32.ge_u
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_3)
-        global.set $edx
         (local.get $__int_scratch_2)
+        global.set $edx
+        (local.get $__int_scratch_1)
         global.set $ecx
         (local.get $__vec_scratch_2)
         global.set $xmm2
         (local.get $__vec_scratch_1)
         global.set $xmm3
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         global.set $eax
         (local.get $__vec_scratch_0)
-        global.set $xmm1((id 9)
+        global.set $xmm1
+    ((id 9)
      (instrs
       ((0 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
        (1 (Const __i32 0))
@@ -2203,17 +2383,17 @@ let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
   test_trans_block 0x00484fd8;
   [%expect {|
     (locs
-     ((0 (Local (Vec 3))) (1 Stack) (2 (Tee (Vec 3))) (3 Stack) (4 Stack)
+     ((0 Stack) (1 Stack) (2 (Tee (Vec 3) (Ref 10))) (3 Stack) (4 Stack)
       (5 (Local (Vec 1))) (6 Stack) (7 Stack) (8 (Local (Vec 2)))
-      (9 (Tee (Vec 0))) (10 Stack) (11 Stack) (12 Stack) (13 (Tee (Int 2)))
-      (14 Stack) (15 (Tee (Vec 0))) (16 (Local (Int 1))) (17 Stack)
+      (9 (Tee (Vec 0) (Ref 10))) (10 Stack) (11 Stack) (12 Stack)
+      (13 (Tee (Int 2) (Ref 18))) (14 (Local (Int 1)))
+      (15 (Tee (Vec 0) (Ref 16))) (16 (Local (Int 1))) (17 Stack)
       (18 (Local (Int 0))) (19 Drop) (20 Drop) (21 Drop) (22 Drop) (23 Drop)
       (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 4))
 
         vec128.const i64x2 00
-        (local.set $__vec_scratch_3)
         i32.const 17392
-        (local.get $__vec_scratch_3)
         i16x8.replace_lane_u 3
         (local.tee $__vec_scratch_3)
         global.get $xmm7
@@ -2234,7 +2414,9 @@ let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
         i32x4.extract_lane 0
         (local.tee $__int_scratch_2)
         i32.const 32
+        (local.set $__int_scratch_1)
         (local.get $__vec_scratch_0)
+        (local.get $__int_scratch_1)
         i64x2.shr_u
         (local.tee $__vec_scratch_0)
         i32x4.extract_lane 0
@@ -2252,7 +2434,8 @@ let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
         (local.get $__vec_scratch_1)
         global.set $xmm7
         (local.get $__vec_scratch_0)
-        global.set $xmm4((id 18)
+        global.set $xmm4
+    ((id 18)
      (instrs
       ((0 (VecConst (var xmm0) (lower_bits 0) (upper_bits 0)))
        (1 (Const eax 17392))
@@ -2300,61 +2483,65 @@ let%expect_test "pextrw, mulsd" =
   test_trans_block 0x00485561;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Local (Int 2))) (2 Stack) (3 (Variable esp))
-      (4 (Tee (Vec 0))) (5 Stack) (6 Stack) (7 Drop) (8 Drop) (9 Stack)
-      (10 (Local (Vec 2))) (11 Drop) (12 Drop) (13 (Tee (Vec 3)))
-      (14 (Tee (Vec 1))) (15 Stack) (16 Stack) (17 Stack) (18 Stack)
-      (19 (Tee (Vec 0))) (20 Stack) (21 Stack) (22 (Tee (Int 1)))
-      (23 (Local (Int 3))) (24 Stack) (25 (Local (Int 0))) (26 Drop) (27 Drop)
-      (28 Drop) (29 Drop) (30 Drop)))
+     ((0 (Variable esp)) (1 Stack) (2 (Local (Int 1))) (3 (Variable esp))
+      (4 (Tee (Vec 1) (Ref 6))) (5 Stack) (6 Stack) (7 Drop) (8 Drop) (9 Stack)
+      (10 (Local (Vec 3))) (11 Drop) (12 Drop) (13 (Tee (Vec 0) (Ref 14)))
+      (14 (Tee (Vec 2) (Ref 16))) (15 Stack) (16 (Local (Vec 0))) (17 Stack)
+      (18 Stack) (19 (Tee (Vec 1) (Ref 20))) (20 Stack) (21 Stack)
+      (22 (Tee (Int 1) (Ref 25))) (23 (Local (Int 2))) (24 Stack)
+      (25 (Local (Int 0))) (26 Drop) (27 Drop) (28 Drop) (29 Drop) (30 Drop)))
+    ((int 3) (long 0) (float 0) (vec 4))
 
         (global.get $esp)
         i32.load
-        (local.set $__int_scratch_2)
         i32.const 4
+        (local.set $__int_scratch_1)
         (global.get $esp)
+        (local.get $__int_scratch_1)
         i32.add
         (global.set $esp)
         global.get $xmm0
-        (local.tee $__vec_scratch_0)
+        (local.tee $__vec_scratch_1)
         global.get $xmm1
         f64x2.add
         global.get $xmm7
         f64x2.mul
-        (local.set $__vec_scratch_2)
+        (local.set $__vec_scratch_3)
         global.get $xmm6
-        (local.tee $__vec_scratch_3)
-        (local.get $__vec_scratch_2)
-        f64x2.mul
-        (local.tee $__vec_scratch_1)
+        (local.tee $__vec_scratch_0)
         (local.get $__vec_scratch_3)
-        i64x2.extract_lane 1
-        i64x2.replace_lane 1
-        (local.get $__vec_scratch_2)
-        (local.get $__vec_scratch_1)
-        f64x2.add
+        f64x2.mul
+        (local.tee $__vec_scratch_2)
         (local.get $__vec_scratch_0)
         i64x2.extract_lane 1
         i64x2.replace_lane 1
-        (local.tee $__vec_scratch_0)
+        (local.set $__vec_scratch_0)
+        (local.get $__vec_scratch_3)
+        (local.get $__vec_scratch_2)
+        f64x2.add
+        (local.get $__vec_scratch_1)
+        i64x2.extract_lane 1
+        i64x2.replace_lane 1
+        (local.tee $__vec_scratch_1)
         i16x8.extract_lane_u 3
         i32.const 32752
         i32.and
         (local.tee $__int_scratch_1)
         i32.const 24
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_2)
         i32.const 32752
         i32.eq
         (local.set $__int_scratch_0)
-        (local.get $__int_scratch_3)
-        global.set $edx
         (local.get $__int_scratch_2)
+        global.set $edx
         global.set $esi
         (local.get $__int_scratch_1)
         global.set $eax
-        (local.get $__vec_scratch_0)
+        (local.get $__vec_scratch_1)
         global.set $xmm0
-        global.set $xmm6((id 69)
+        (local.get $__vec_scratch_0)
+        global.set $xmm6
+    ((id 69)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var esi) (op Load32) (addr (Ref 0)))) (2 (Const __i32 4))
@@ -2404,8 +2591,9 @@ let%expect_test "movsd" =
   test_trans_block 0x004852c9;
   [%expect {|
     (locs
-     ((0 (Local (Vec 1))) (1 (Tee (Vec 0))) (2 Stack) (3 Stack) (4 Stack)
+     ((0 (Local (Vec 1))) (1 (Tee (Vec 0) (Ref 3))) (2 Stack) (3 Stack) (4 Stack)
       (5 Stack) (6 (Local (Vec 0))) (7 Stack) (8 Drop) (9 Drop) (10 Drop)))
+    ((int 0) (long 0) (float 0) (vec 2))
 
         global.get $xmm2
         (local.set $__vec_scratch_1)
@@ -2425,7 +2613,8 @@ let%expect_test "movsd" =
         global.set $edx
         global.set $xmm2
         (local.get $__vec_scratch_0)
-        global.set $xmm0((id 52)
+        global.set $xmm0
+    ((id 52)
      (instrs
       ((0 (GetGlobalOp (var xmm2) (global ((name xmm2) (typ Vec)))))
        (1
@@ -2449,91 +2638,55 @@ let%expect_test "movsd" =
 
 let%expect_test "backward direction" =
   test_trans_block 0x0047d9d7;
-  [%expect {|
-    (locs
-     ((0 (Local (Int 2))) (1 Stack) (2 (Tee (Int 2))) (3 Stack)
-      (4 (Local (Int 1))) (5 Stack) (6 (Local (Int 0))) (7 Stack)
-      (8 (Tee (Int 1))) (9 Drop) (10 Stack) (11 Stack) (12 Stack)
-      (13 (Local (Int 1))) (14 Stack) (15 (Local (Int 0))) (16 Drop) (17 Drop)
-      (18 Drop)))
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("wrong value on stack" (expected (Ref 6)) (found (Ref 8)))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Mir__Instr.fold_right in file "mir/instr.ml", line 513, characters 11-26
+  Called from Mir__Wasm_backend.validate_stack.(fun) in file "mir/wasm_backend.ml", line 287, characters 22-64
+  Called from Base__Array.foldi in file "src/array.ml", line 417, characters 11-36
+  Called from Mir__Wasm_backend.validate_stack in file "mir/wasm_backend.ml", lines 284-288, characters 4-53
+  Called from Test_towhowcaml.test_trans_block in file "test/test_towhowcaml.ml", line 38, characters 2-29
+  Called from Test_towhowcaml.(fun) in file "test/test_towhowcaml.ml", line 2453, characters 2-29
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
 
-        global.get $ecx
-        (local.set $__int_scratch_2)
-        i32.const 2
-        (local.get $__int_scratch_2)
-        i32.shl
-        (local.tee $__int_scratch_2)
-        i32.const 1
-        i32.subtract
-        (local.set $__int_scratch_1)
-        global.get $esi
-        (local.get $__int_scratch_1)
-        i32.subtract
-        (local.set $__int_scratch_0)
-        global.get $edi
-        (local.get $__int_scratch_1)
-        i32.subtract
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_0)
-        (local.get $__int_scratch_2)
-        memory.copy
-        i32.const 1
-        (local.get $__int_scratch_0)
-        i32.subtract
-        i32.const 1
-        (local.get $__int_scratch_1)
-        i32.subtract
-        (local.set $__int_scratch_1)
-        i32.const 0
-        global.get $edx
-        (local.set $__int_scratch_0)
-        global.set $ecx
-        global.set $esi
-        (local.get $__int_scratch_1)
-        global.set $edi((id 23)
-     (instrs
-      ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
-       (1 (Const __i32 2))
-       (2 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 0)) (rhs (Ref 1))))
-       (3 (Const __i32 1))
-       (4 (BiOp (var __i32) (op Subtract) (lhs (Ref 2)) (rhs (Ref 3))))
-       (5 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
-       (6 (BiOp (var esi) (op Subtract) (lhs (Ref 5)) (rhs (Ref 4))))
-       (7 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
-       (8 (BiOp (var edi) (op Subtract) (lhs (Ref 7)) (rhs (Ref 4))))
-       (9 (Memcopy (count (Ref 2)) (src (Ref 6)) (dest (Ref 8))))
-       (10 (Const __i32 1))
-       (11 (BiOp (var esi) (op Subtract) (lhs (Ref 6)) (rhs (Ref 10))))
-       (12 (Const __i32 1))
-       (13 (BiOp (var edi) (op Subtract) (lhs (Ref 8)) (rhs (Ref 12))))
-       (14 (Const ecx 0))
-       (15 (GetGlobalOp (var edx) (global ((name edx) (typ Int)))))
-       (16 (SetGlobalOp (value (Ref 14)) (global ((name ecx) (typ Int)))))
-       (17 (SetGlobalOp (value (Ref 11)) (global ((name esi) (typ Int)))))
-       (18 (SetGlobalOp (value (Ref 13)) (global ((name edi) (typ Int)))))))
-     (terminator
-      (Switch (cases ((Block 29) (Block 30) (Block 31) (Block 32)))
-       (default (Block 33)) (switch_on (Ref 15))))
-     (roots ()))
-    |}]
+  Trailing output
+  ---------------
+  (locs
+   ((0 Stack) (1 Stack) (2 (Tee (Int 1) (Ref 4))) (3 Stack) (4 (Local (Int 0)))
+    (5 Stack) (6 (Tee (Int 2) (Ref 9))) (7 (Local (Int 3))) (8 (Local (Int 0)))
+    (9 Drop) (10 (Local (Int 1))) (11 Stack) (12 (Local (Int 1)))
+    (13 (Local (Int 1))) (14 Stack) (15 (Local (Int 0))) (16 Drop) (17 Drop)
+    (18 Drop)))
+  ((int 4) (long 0) (float 0) (vec 0))
+  |}]
 
 let%expect_test "int3" =
   test_trans_block 0x00487ff1;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0)))
-      (4 Drop) (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop)
-      (10 (Variable esp))))
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop) (10 (Variable esp))))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         i32.const 3
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         i32.const 4
+        (local.set $__int_scratch_1)
         (global.get $esp)
-        i32.subtract
-        (local.tee $__int_scratch_0)
         (local.get $__int_scratch_1)
+        i32.subtract
+        (local.tee $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.store
         i32.const 4
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.subtract
         (local.tee $__int_scratch_0)
@@ -2541,7 +2694,8 @@ let%expect_test "int3" =
         i32.store
         (local.get $__int_scratch_0)
         call $__func47f9da__
-        (global.set $esp)((id 10)
+        (global.set $esp)
+    ((id 10)
      (instrs
       ((0 (Const __i32 3)) (1 (OutsideContext (var esp) (typ Int)))
        (2 (Const __i32 4))
@@ -2561,179 +2715,207 @@ let%expect_test "mmx stuff" =
   test_trans_block 0x00476bce;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Vec 5)))
-      (5 (Tee (Int 1))) (6 Stack) (7 Stack) (8 (Local (Vec 3))) (9 (Tee (Vec 6)))
-      (10 (Tee (Int 3))) (11 Stack) (12 Stack) (13 Stack) (14 Stack) (15 Stack)
-      (16 Stack) (17 (Local (Vec 3))) (18 Stack) (19 Stack) (20 Stack)
-      (21 (Tee (Vec 2))) (22 Drop) (23 Stack) (24 Drop) (25 Stack) (26 Stack)
-      (27 (Local (Vec 4))) (28 Stack) (29 (Tee (Vec 1))) (30 Drop) (31 Stack)
-      (32 (Local (Vec 5))) (33 Drop) (34 (Local (Vec 1))) (35 Stack) (36 Stack)
-      (37 Stack) (38 (Local (Vec 1))) (39 Drop) (40 Stack) (41 Drop) (42 Stack)
-      (43 Stack) (44 (Local (Vec 4))) (45 Stack) (46 (Local (Vec 0))) (47 Stack)
-      (48 Stack) (49 Stack) (50 Stack) (51 (Local (Vec 5))) (52 Stack)
-      (53 (Tee (Vec 1))) (54 Stack) (55 (Tee (Vec 4))) (56 Stack) (57 Stack)
-      (58 (Local (Vec 5))) (59 Drop) (60 Stack) (61 Stack) (62 (Local (Vec 3)))
-      (63 Stack) (64 Stack) (65 Stack) (66 (Local (Vec 6))) (67 Stack)
-      (68 (Local (Vec 0))) (69 Drop) (70 Stack) (71 (Local (Vec 3))) (72 Stack)
-      (73 Stack) (74 Stack) (75 (Tee (Vec 4))) (76 Stack) (77 Stack)
-      (78 (Local (Vec 5))) (79 Stack) (80 (Local (Vec 6))) (81 Stack) (82 Stack)
-      (83 Drop) (84 Stack) (85 (Tee (Vec 5))) (86 Stack) (87 (Local (Vec 0)))
-      (88 Stack) (89 Drop) (90 (Local (Vec 6))) (91 Stack) (92 Stack) (93 Stack)
-      (94 (Tee (Vec 4))) (95 Stack) (96 Stack) (97 (Local (Vec 3))) (98 Drop)
-      (99 Stack) (100 Stack) (101 Stack) (102 Stack) (103 Stack) (104 Stack)
-      (105 (Local (Vec 6))) (106 Stack) (107 (Tee (Vec 2))) (108 Stack)
-      (109 Stack) (110 (Local (Int 4))) (111 (Local (Vec 0))) (112 Stack)
-      (113 (Local (Vec 7))) (114 Stack) (115 Stack) (116 Stack)
-      (117 (Local (Int 2))) (118 Stack) (119 Drop) (120 (Tee (Vec 2)))
-      (121 Stack) (122 (Local (Vec 7))) (123 Stack) (124 (Local (Int 3)))
-      (125 Stack) (126 Drop) (127 Stack) (128 (Tee (Vec 2))) (129 (Tee (Vec 7)))
-      (130 Stack) (131 (Local (Int 1))) (132 Stack) (133 Drop)
-      (134 (Local (Int 0))) (135 Stack) (136 (Tee (Int 0))) (137 Drop) (138 Drop)
-      (139 Drop) (140 Drop) (141 Drop) (142 Drop) (143 Drop) (144 Drop)
-      (145 Drop) (146 Drop) (147 Drop) (148 Drop) (149 Drop)))
+     ((0 (Tee (Int 3) (Ref 1))) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Vec 3)))
+      (5 (Tee (Int 0) (Ref 6))) (6 Stack) (7 Stack) (8 (Local (Vec 7)))
+      (9 (Tee (Vec 6) (Ref 29))) (10 (Tee (Int 1) (Ref 11))) (11 Stack)
+      (12 Stack) (13 Stack) (14 Stack) (15 Stack) (16 Stack) (17 (Local (Vec 7)))
+      (18 Stack) (19 Stack) (20 Stack) (21 (Local (Vec 4))) (22 Drop) (23 Stack)
+      (24 Drop) (25 Stack) (26 Stack) (27 (Local (Vec 2))) (28 Stack)
+      (29 (Tee (Vec 1) (Ref 31))) (30 Drop) (31 (Local (Vec 0)))
+      (32 (Local (Vec 3))) (33 Drop) (34 Stack) (35 (Local (Vec 0))) (36 Stack)
+      (37 Stack) (38 Stack) (39 Drop) (40 Stack) (41 Drop) (42 Stack) (43 Stack)
+      (44 (Local (Vec 2))) (45 (Local (Int 4))) (46 (Local (Vec 0))) (47 Stack)
+      (48 Stack) (49 Stack) (50 Stack) (51 (Local (Vec 3))) (52 Stack)
+      (53 (Local (Vec 1))) (54 (Local (Int 4))) (55 (Local (Vec 2))) (56 Stack)
+      (57 (Local (Int 4))) (58 (Local (Vec 3))) (59 Drop) (60 Stack) (61 Stack)
+      (62 Stack) (63 Stack) (64 Stack) (65 Stack) (66 (Local (Vec 6)))
+      (67 (Local (Vec 4))) (68 (Local (Vec 0))) (69 Drop) (70 Stack)
+      (71 (Tee (Vec 2) (Ref 94))) (72 Stack) (73 Stack) (74 (Local (Vec 7)))
+      (75 (Local (Vec 7))) (76 Stack) (77 (Local (Vec 5))) (78 (Local (Vec 5)))
+      (79 (Local (Int 4))) (80 (Tee (Vec 6) (Ref 88))) (81 (Local (Vec 4)))
+      (82 Stack) (83 Drop) (84 (Local (Vec 0))) (85 (Tee (Vec 5) (Ref 86)))
+      (86 (Local (Vec 0))) (87 (Local (Vec 0))) (88 (Local (Vec 7))) (89 Drop)
+      (90 (Local (Vec 6))) (91 Stack) (92 Stack) (93 Stack) (94 (Local (Vec 4)))
+      (95 Stack) (96 (Local (Vec 3))) (97 (Local (Vec 3))) (98 Drop)
+      (99 (Local (Vec 7))) (100 (Local (Vec 7))) (101 Stack)
+      (102 (Local (Vec 2))) (103 Stack) (104 (Local (Vec 6)))
+      (105 (Local (Vec 6))) (106 Stack) (107 (Local (Vec 2))) (108 Stack)
+      (109 Stack) (110 (Tee (Int 4) (Ref 119))) (111 (Tee (Vec 0) (Ref 118)))
+      (112 (Local (Vec 7))) (113 (Local (Vec 7))) (114 (Local (Int 2)))
+      (115 (Local (Vec 2))) (116 (Local (Int 2))) (117 (Local (Int 2)))
+      (118 Stack) (119 Drop) (120 (Tee (Vec 2) (Ref 125))) (121 (Local (Int 3)))
+      (122 (Local (Vec 7))) (123 (Local (Int 3))) (124 (Local (Int 3)))
+      (125 (Local (Int 1))) (126 Drop) (127 (Local (Int 1)))
+      (128 (Local (Vec 2))) (129 (Tee (Vec 7) (Ref 132))) (130 (Local (Int 1)))
+      (131 (Local (Int 1))) (132 (Local (Int 0))) (133 Drop)
+      (134 (Local (Int 0))) (135 Stack) (136 (Tee (Int 0) (Ref 144))) (137 Drop)
+      (138 Drop) (139 Drop) (140 Drop) (141 Drop) (142 Drop) (143 Drop)
+      (144 Drop) (145 Drop) (146 Drop) (147 Drop) (148 Drop) (149 Drop)))
+    ((int 5) (long 0) (float 0) (vec 8))
 
         global.get $eax
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_2)
-        i32.load
-        i64.extend_i32_u
-        i64x2splat
-        vec128.const i64x2 00
-        (local.set $__vec_scratch_5)
-        global.get $ebx
-        (local.tee $__int_scratch_1)
-        i32.load
-        i64.extend_i32_u
-        i64x2splat
-        (local.set $__vec_scratch_3)
-        i16x8.extend_low_i8x16_u
-        (local.tee $__vec_scratch_6)
-        global.get $ecx
         (local.tee $__int_scratch_3)
         i32.load
         i64.extend_i32_u
         i64x2splat
-        (local.get $__vec_scratch_3)
-        i16x8.extend_low_i8x16_u
-        i32.const 4835064
-        v128.load64_zero
-        i16x8.sub_sat_s
+        vec128.const i64x2 00
         (local.set $__vec_scratch_3)
+        global.get $ebx
+        (local.tee $__int_scratch_0)
+        i32.load
+        i64.extend_i32_u
+        i64x2splat
+        (local.set $__vec_scratch_7)
+        i16x8.extend_low_i8x16_u
+        (local.tee $__vec_scratch_6)
+        global.get $ecx
+        (local.tee $__int_scratch_1)
+        i32.load
+        i64.extend_i32_u
+        i64x2splat
+        (local.get $__vec_scratch_7)
         i16x8.extend_low_i8x16_u
         i32.const 4835064
         v128.load64_zero
         i16x8.sub_sat_s
-        (local.tee $__vec_scratch_2)
-        (local.get $__vec_scratch_3)
+        (local.set $__vec_scratch_7)
+        i16x8.extend_low_i8x16_u
+        i32.const 4835064
+        v128.load64_zero
+        i16x8.sub_sat_s
+        (local.set $__vec_scratch_4)
+        (local.get $__vec_scratch_7)
+        (local.get $__vec_scratch_4)
         i8x16.shuffle 0 1 16 17 2 3 18 19 0 0 0 0 0 0 0 0
         i32.const 4835072
         v128.load64_zero
         i32x4.dot_i16x8_s
-        (local.set $__vec_scratch_4)
+        (local.set $__vec_scratch_2)
         i32.const 8
         i16x8.shl
         (local.tee $__vec_scratch_1)
         i32x4.extend_low_i16x8_u
+        (local.set $__vec_scratch_0)
         (local.get $__vec_scratch_1)
-        (local.get $__vec_scratch_5)
-        i8x16.shuffle 4 5 20 21 6 7 22 23 0 0 0 0 0 0 0 0
-        (local.set $__vec_scratch_5)
         (local.get $__vec_scratch_3)
-        (local.get $__vec_scratch_2)
         i8x16.shuffle 4 5 20 21 6 7 22 23 0 0 0 0 0 0 0 0
-        (local.set $__vec_scratch_1)
+        (local.set $__vec_scratch_3)
+        (local.get $__vec_scratch_7)
         (local.get $__vec_scratch_4)
+        i8x16.shuffle 4 5 20 21 6 7 22 23 0 0 0 0 0 0 0 0
+        (local.get $__vec_scratch_2)
+        (local.get $__vec_scratch_0)
         i32x4.add
+        (local.set $__vec_scratch_0)
         i32.const 4835072
         v128.load64_zero
-        (local.get $__vec_scratch_1)
         i32x4.dot_i16x8_s
-        (local.set $__vec_scratch_1)
-        (local.get $__vec_scratch_2)
+        (local.get $__vec_scratch_4)
         (local.get $__vec_scratch_6)
         i8x16.shuffle 0 1 16 17 2 3 18 19 0 0 0 0 0 0 0 0
         i32.const 4835080
         v128.load64_zero
         i32x4.dot_i16x8_s
-        (local.set $__vec_scratch_4)
+        (local.set $__vec_scratch_2)
         i32.const 8
+        (local.set $__int_scratch_4)
+        (local.get $__vec_scratch_0)
+        (local.get $__int_scratch_4)
         i64x2.shr_s
         (local.set $__vec_scratch_0)
-        (local.get $__vec_scratch_1)
-        (local.get $__vec_scratch_5)
-        i32x4.add
         (local.get $__vec_scratch_3)
+        i32x4.add
+        (local.get $__vec_scratch_7)
         (local.get $__vec_scratch_6)
         i8x16.shuffle 0 1 16 17 2 3 18 19 0 0 0 0 0 0 0 0
         i32.const 4835088
         v128.load64_zero
         i32x4.dot_i16x8_s
-        (local.set $__vec_scratch_5)
+        (local.set $__vec_scratch_3)
         i32.const 8
         i64x2.shr_s
-        (local.tee $__vec_scratch_1)
+        (local.set $__vec_scratch_1)
         i32.const 8
-        (local.get $__vec_scratch_4)
+        (local.set $__int_scratch_4)
+        (local.get $__vec_scratch_2)
+        (local.get $__int_scratch_4)
         i64x2.shr_s
-        (local.tee $__vec_scratch_4)
-        (local.get $__vec_scratch_3)
+        (local.set $__vec_scratch_2)
+        (local.get $__vec_scratch_7)
         (local.get $__vec_scratch_6)
         i8x16.shuffle 4 5 20 21 6 7 22 23 0 0 0 0 0 0 0 0
         i32.const 8
-        (local.get $__vec_scratch_5)
+        (local.set $__int_scratch_4)
+        (local.get $__vec_scratch_3)
+        (local.get $__int_scratch_4)
         i64x2.shr_s
-        (local.set $__vec_scratch_5)
+        (local.set $__vec_scratch_3)
         i32.const 4835088
         v128.load64_zero
         i32x4.dot_i16x8_s
-        (local.set $__vec_scratch_3)
-        (local.get $__vec_scratch_2)
+        (local.get $__vec_scratch_4)
         (local.get $__vec_scratch_6)
         i8x16.shuffle 4 5 20 21 6 7 22 23 0 0 0 0 0 0 0 0
         i32.const 4835080
         v128.load64_zero
         i32x4.dot_i16x8_s
         (local.set $__vec_scratch_6)
+        (local.get $__vec_scratch_2)
         (local.get $__vec_scratch_0)
         i8x16.shuffle 0 1 2 3 16 17 18 19 0 0 0 0 0 0 0 0
-        (local.get $__vec_scratch_4)
+        (local.set $__vec_scratch_4)
+        (local.get $__vec_scratch_2)
         (local.get $__vec_scratch_0)
         i8x16.shuffle 4 5 6 7 20 21 22 23 0 0 0 0 0 0 0 0
         (local.set $__vec_scratch_0)
         i32.const 8
-        (local.get $__vec_scratch_3)
         i64x2.shr_s
-        (local.set $__vec_scratch_3)
+        (local.tee $__vec_scratch_2)
         i32.const 4847464
         i32.load
         i32x4splat
-        (local.get $__vec_scratch_5)
+        (local.set $__vec_scratch_7)
+        (local.get $__vec_scratch_3)
+        (local.get $__vec_scratch_7)
         i8x16.shuffle 0 1 2 3 16 17 18 19 0 0 0 0 0 0 0 0
-        (local.tee $__vec_scratch_4)
+        (local.set $__vec_scratch_7)
         i32.const 4847464
         v128.load64_zero
+        (local.set $__vec_scratch_5)
+        (local.get $__vec_scratch_3)
         (local.get $__vec_scratch_5)
         i8x16.shuffle 4 5 6 7 20 21 22 23 0 0 0 0 0 0 0 0
         (local.set $__vec_scratch_5)
         i32.const 8
+        (local.set $__int_scratch_4)
         (local.get $__vec_scratch_6)
+        (local.get $__int_scratch_4)
         i64x2.shr_s
-        (local.set $__vec_scratch_6)
-        i16x8.narrow_i32x4_s
+        (local.tee $__vec_scratch_6)
         (local.get $__vec_scratch_4)
+        (local.get $__vec_scratch_7)
+        i16x8.narrow_i32x4_s
+        (local.set $__vec_scratch_4)
+        (local.get $__vec_scratch_4)
+        (local.get $__vec_scratch_7)
         i8x16.shuffle 0 1 2 3 8 9 10 11 4 4 4 4 4 4 4 4
         (local.get $__vec_scratch_0)
         (local.get $__vec_scratch_5)
         i16x8.narrow_i32x4_s
+        (local.set $__vec_scratch_0)
+        (local.get $__vec_scratch_0)
         (local.get $__vec_scratch_5)
         i8x16.shuffle 0 1 2 3 8 9 10 11 4 4 4 4 4 4 4 4
         (local.tee $__vec_scratch_5)
         i8x16.narrow_i16x8_u
+        (local.set $__vec_scratch_0)
+        (local.get $__vec_scratch_0)
         (local.get $__vec_scratch_5)
         i8x16.shuffle 0 1 2 3 8 9 10 11 4 4 4 4 4 4 4 4
         (local.set $__vec_scratch_0)
-        (local.get $__vec_scratch_6)
+        (local.get $__vec_scratch_1)
         i8x16.shuffle 0 1 2 3 16 17 18 19 0 0 0 0 0 0 0 0
+        (local.set $__vec_scratch_7)
         (local.get $__vec_scratch_6)
         (local.get $__vec_scratch_1)
         i8x16.shuffle 4 5 6 7 20 21 22 23 0 0 0 0 0 0 0 0
@@ -2741,80 +2923,111 @@ let%expect_test "mmx stuff" =
         i32.const 4847464
         i32.load
         i32x4splat
-        (local.get $__vec_scratch_3)
         i8x16.shuffle 0 1 2 3 16 17 18 19 0 0 0 0 0 0 0 0
-        (local.tee $__vec_scratch_4)
+        (local.set $__vec_scratch_4)
         i32.const 4847464
         v128.load64_zero
+        (local.set $__vec_scratch_3)
+        (local.get $__vec_scratch_2)
         (local.get $__vec_scratch_3)
         i8x16.shuffle 4 5 6 7 20 21 22 23 0 0 0 0 0 0 0 0
         (local.set $__vec_scratch_3)
+        (local.get $__vec_scratch_7)
+        (local.get $__vec_scratch_4)
         i16x8.narrow_i32x4_s
+        (local.set $__vec_scratch_7)
+        (local.get $__vec_scratch_7)
         (local.get $__vec_scratch_4)
         i8x16.shuffle 0 1 2 3 8 9 10 11 4 4 4 4 4 4 4 4
+        (local.set $__vec_scratch_7)
         i32.const 4835096
         v128.load64_zero
+        (local.set $__vec_scratch_2)
         (local.get $__vec_scratch_0)
+        (local.get $__vec_scratch_2)
         v128.and
         (local.get $__vec_scratch_6)
         (local.get $__vec_scratch_3)
         i16x8.narrow_i32x4_s
+        (local.set $__vec_scratch_6)
+        (local.get $__vec_scratch_6)
         (local.get $__vec_scratch_3)
         i8x16.shuffle 0 1 2 3 8 9 10 11 4 4 4 4 4 4 4 4
         (local.set $__vec_scratch_6)
         i32.const 8
         i64x2.shr_u
-        (local.tee $__vec_scratch_2)
+        (local.set $__vec_scratch_2)
         global.get $edx
         i32.const 12
         i32.add
-        (local.set $__int_scratch_4)
+        (local.tee $__int_scratch_4)
         (local.get $__vec_scratch_0)
+        (local.get $__vec_scratch_2)
         v128.or
-        (local.set $__vec_scratch_0)
+        (local.tee $__vec_scratch_0)
+        (local.get $__vec_scratch_7)
         (local.get $__vec_scratch_6)
         i8x16.narrow_i16x8_u
+        (local.set $__vec_scratch_7)
+        (local.get $__vec_scratch_7)
         (local.get $__vec_scratch_6)
         i8x16.shuffle 0 1 2 3 8 9 10 11 4 4 4 4 4 4 4 4
         (local.set $__vec_scratch_7)
         i32.const 32
+        (local.set $__int_scratch_2)
         (local.get $__vec_scratch_2)
+        (local.get $__int_scratch_2)
         i64x2.shr_u
+        (local.set $__vec_scratch_2)
         i32.const 4
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_2)
         i32.add
         (local.set $__int_scratch_2)
-        (local.get $__vec_scratch_0)
         i32x4.extract_lane 0
-        (local.get $__int_scratch_4)
         i32.store offset -12
+        (local.get $__vec_scratch_2)
         (local.get $__vec_scratch_7)
         i8x16.shuffle 0 1 16 17 2 3 18 19 0 0 0 0 0 0 0 0
         (local.tee $__vec_scratch_2)
         i32.const 24
+        (local.set $__int_scratch_3)
         (local.get $__vec_scratch_7)
+        (local.get $__int_scratch_3)
         i64x2.shr_u
         (local.set $__vec_scratch_7)
         i32.const 4
+        (local.set $__int_scratch_3)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_3)
         i32.add
         (local.set $__int_scratch_3)
         i32x4.extract_lane 0
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_4)
+        (local.get $__int_scratch_1)
         i32.store offset -8
         i32.const 48
+        (local.set $__int_scratch_1)
         (local.get $__vec_scratch_2)
+        (local.get $__int_scratch_1)
         i64x2.shr_u
-        (local.tee $__vec_scratch_2)
+        (local.set $__vec_scratch_2)
         (local.get $__vec_scratch_7)
+        (local.get $__vec_scratch_2)
         v128.or
         (local.tee $__vec_scratch_7)
         i32.const 4
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         i32.add
         (local.set $__int_scratch_1)
         i32x4.extract_lane 0
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_4)
+        (local.get $__int_scratch_0)
         i32.store offset -4
         i32.const 1
         (local.set $__int_scratch_0)
@@ -2846,7 +3059,8 @@ let%expect_test "mmx stuff" =
         (local.get $__vec_scratch_1)
         global.set $mm5
         (local.get $__vec_scratch_0)
-        global.set $mm0((id 1)
+        global.set $mm0
+    ((id 1)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
        (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0))))
@@ -3104,20 +3318,17 @@ let%expect_test "mmx stuff" =
 let%expect_test "xor je" =
   test_trans_block 0x0046fcb3;
   [%expect {|
-    (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 (Local (Int 0)))
-      (4 Drop)))
+    (locs ((0 Stack) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
+    ((int 1) (long 0) (float 0) (vec 0))
 
         global.get $eax
-        (local.set $__int_scratch_1)
         global.get $esi
-        (local.get $__int_scratch_1)
         i32.xor
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_1)
-        global.set $eax((id 6)
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 6)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
        (1 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
@@ -3133,52 +3344,62 @@ let%expect_test "imul byte" =
   test_trans_block 0x0046e208;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 Drop) (3 Drop) (4 Drop) (5 Stack)
-      (6 Drop) (7 Drop) (8 (Tee (Int 0))) (9 Drop) (10 Drop) (11 Drop) (12 Stack)
-      (13 Stack) (14 Stack) (15 Stack) (16 Stack) (17 Drop) (18 Stack)
-      (19 (Tee (Int 0))) (20 Drop) (21 (Variable esp)) (22 Stack) (23 Stack)
-      (24 (Tee (Int 1))) (25 Stack) (26 (Variable __ret_addr__)) (27 Stack)
-      (28 Drop) (29 Stack) (30 (Variable esp)) (31 Drop) (32 Drop)))
+     ((0 (Tee (Int 2) (Ref 1))) (1 Stack) (2 Drop) (3 Drop) (4 Drop) (5 Stack)
+      (6 Drop) (7 Drop) (8 (Local (Int 0))) (9 Drop) (10 Drop) (11 Drop)
+      (12 Stack) (13 Stack) (14 Stack) (15 Stack) (16 Stack) (17 Drop) (18 Stack)
+      (19 (Local (Int 0))) (20 Drop) (21 (Variable esp)) (22 Stack)
+      (23 (Local (Int 2))) (24 (Tee (Int 2) (Ref 25))) (25 (Local (Int 1)))
+      (26 (Variable __ret_addr__)) (27 Stack) (28 Drop) (29 (Local (Int 1)))
+      (30 (Variable esp)) (31 Drop) (32 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         global.get $ecx
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_2)
         i32.load8_s offset 24
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         i32.load8_s offset 29
         i32.mult
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_1)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.store8 offset 30
         (local.get $__int_scratch_0)
         (i32.const 0xFF) (i32.and)
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         i32.load
         i32.mult
         i32.const 7
         i32.add
         i32.const 3
         i32.shr_u
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_1)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.store offset 12
         (global.get $esp)
         i32.load
         i32.const 4
+        (local.set $__int_scratch_2)
         (global.get $esp)
+        (local.get $__int_scratch_2)
         i32.add
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_2)
         i32.load
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
         (global.get $__ret_addr__)
         i32.eq
         (if (result) (then) (else unreachable))
         i32.const 4
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_1)
         i32.add
         (global.set $esp)
         (local.get $__int_scratch_0)
         global.set $eax
-        global.set $ebx((id 32)
+        global.set $ebx
+    ((id 32)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
        (1
@@ -3219,26 +3440,32 @@ let%expect_test "tail indirect call" =
   test_trans_block 0x0047efac;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 5)))
-      (4 Drop) (5 Stack) (6 Stack) (7 Stack) (8 (Tee (Int 5))) (9 Stack)
-      (10 Drop) (11 Drop) (12 Drop) (13 Stack) (14 (Tee (Int 5))) (15 Drop)
-      (16 (Local (Int 2))) (17 (Local (Int 3))) (18 (Local (Int 4)))
-      (19 (Tee (Int 0))) (20 Stack) (21 (Local (Int 1))) (22 Stack) (23 Stack)
+     ((0 (Local (Int 5))) (1 (Variable esp)) (2 (Local (Int 2)))
+      (3 (Tee (Int 2) (Ref 4))) (4 Drop) (5 Stack) (6 Stack) (7 (Local (Int 5)))
+      (8 (Tee (Int 5) (Ref 10))) (9 Stack) (10 Drop) (11 Drop) (12 Drop)
+      (13 Stack) (14 (Tee (Int 5) (Ref 16))) (15 Drop) (16 (Local (Int 2)))
+      (17 (Local (Int 3))) (18 (Local (Int 4))) (19 (Tee (Int 0) (Ref 22)))
+      (20 Stack) (21 (Local (Int 1))) (22 (Local (Int 6))) (23 (Local (Int 1)))
       (24 Stack) (25 Stack) (26 Stack) (27 (Local (Int 0))) (28 (Local (Int 1)))
       (29 Drop) (30 Drop) (31 Drop) (32 Drop) (33 Drop) (34 Drop)
       (35 (Variable esp))))
+    ((int 7) (long 0) (float 0) (vec 0))
 
         i32.const 0
-        (local.set $__int_scratch_2)
+        (local.set $__int_scratch_5)
         i32.const 4
+        (local.set $__int_scratch_2)
         (global.get $esp)
-        i32.subtract
-        (local.tee $__int_scratch_5)
         (local.get $__int_scratch_2)
+        i32.subtract
+        (local.tee $__int_scratch_2)
+        (local.get $__int_scratch_5)
         i32.store
         global.get $ebx
         i32.load offset 20
         i32.const 4
+        (local.set $__int_scratch_5)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_5)
         i32.subtract
         (local.tee $__int_scratch_5)
@@ -3263,8 +3490,12 @@ let%expect_test "tail indirect call" =
         i32.const 0
         (local.set $__int_scratch_1)
         i32.lt_u
+        (local.set $__int_scratch_6)
+        (local.get $__int_scratch_6)
         (local.get $__int_scratch_1)
         i32.add
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.add
         (local.get $__int_scratch_5)
@@ -3287,7 +3518,8 @@ let%expect_test "tail indirect call" =
         (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         call_indirect (type $__FUNCi_i)
-        (global.set $esp)((id 8)
+        (global.set $esp)
+    ((id 8)
      (instrs
       ((0 (Const __i32 0)) (1 (OutsideContext (var esp) (typ Int)))
        (2 (Const __i32 4))
@@ -5045,391 +5277,556 @@ let%expect_test "nonzero switch" =
          (WasmSeq (WasmCode (Block 82)) (WasmBr 1))))
        (WasmSeq (WasmCode (Block 81)) WasmFallthrough)))
      (WasmCodeReturn (Block 83)))
-        ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 3))) (3 Stack)
-     (4 (Tee (Int 2))) (5 Stack) (6 Drop) (7 Drop) (8 Drop) (9 Stack)
-     (10 (Local (Int 2))) (11 Stack) (12 (Tee (Int 3))) (13 Drop) (14 Stack)
-     (15 Stack) (16 (Variable esp)) (17 Drop) (18 Stack) (19 (Tee (Int 3)))
-     (20 (Tee (Int 2))) (21 (Tee (Int 1))) (22 (Local (Int 0))) (23 Drop)
-     (24 Drop) (25 Drop) (26 Stack) (27 (Variable __input_compare_arg__)))
-    ((int 4) (long 0) (float 0) (vec 0))
-       ((0 (Variable __input_compare_arg__)))
-    ((int 0) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 2))) (1 (Tee (Int 1))) (2 (Local (Int 0))) (3 Stack)
-     (4 (Variable __input_compare_arg__)))
+        (locs
+     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 Stack)
+      (3 (Local (Int 2))) (4 (Tee (Int 2) (Ref 6))) (5 Stack) (6 Drop) (7 Drop)
+      (8 Drop) (9 Stack) (10 (Local (Int 2))) (11 Stack) (12 (Local (Int 0)))
+      (13 Drop) (14 (Local (Int 2))) (15 (Local (Int 1))) (16 (Variable esp))
+      (17 Drop) (18 Stack) (19 (Tee (Int 2) (Ref 20)))
+      (20 (Tee (Int 1) (Ref 22))) (21 (Tee (Int 0) (Ref 22))) (22 Stack)
+      (23 Drop) (24 Drop) (25 Drop) (26 Stack)
+      (27 (Variable __input_compare_arg__))))
     ((int 3) (long 0) (float 0) (vec 0))
-       ((0 (Variable __input_compare_arg__)))
+       (locs ((0 (Variable __input_compare_arg__))))
     ((int 0) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 Stack)
-     (4 (Local (Int 0))) (5 Drop))
+       (locs
+     ((0 (Tee (Int 1) (Ref 2))) (1 (Tee (Int 0) (Ref 2))) (2 Stack) (3 Stack)
+      (4 (Variable __input_compare_arg__))))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))))
+       (locs ((0 (Variable __input_compare_arg__))))
+    ((int 0) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 Stack) (1 Stack) (2 (Tee (Int 0) (Ref 4))) (3 Stack) (4 Stack) (5 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       	((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
+       (locs ((0 Stack) (1 Stack) (2 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       	(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
        
-    ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 2))) (1 (Tee (Int 1))) (2 (Local (Int 0))) (3 Stack)
-     (4 (Variable __input_compare_arg__)))
+    (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
     ((int 3) (long 0) (float 0) (vec 0))
-       ((0 (Variable __input_compare_arg__)))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Tee (Int 1) (Ref 2))) (1 (Tee (Int 0) (Ref 2))) (2 Stack) (3 Stack)
+      (4 (Variable __input_compare_arg__))))
+    ((int 2) (long 0) (float 0) (vec 0))
+       (locs ((0 (Variable __input_compare_arg__))))
     ((int 0) (long 0) (float 0) (vec 0))
-        ((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 (Local (Int 0)))
-     (4 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       !((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 (Local (Int 0)))
-     (4 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       "((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 (Local (Int 0)))
-     (4 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       #((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 (Local (Int 0)))
-     (4 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       $((0 (Local (Int 0))) (1 Stack) (2 (Tee (Int 0))) (3 Drop))
+        (locs ((0 Stack) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       %((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       &((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       '((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       (((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       )((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       *((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       +((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ,((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       -((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       .((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       /((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       0((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       1((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 (Local (Int 0)))
-     (4 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       2((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 (Local (Int 0)))
-     (4 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       3((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 (Local (Int 0)))
-     (4 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       4((0 (Local (Int 0))) (1 Stack) (2 (Tee (Int 0))) (3 Drop))
+       !(locs ((0 Stack) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       5((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       6((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       7((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       8((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       9((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       :((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ;((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Local (Int 0))) (17 Drop) (18 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       <((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 (Local (Int 1))) (6 Stack) (7 (Tee (Int 0))) (8 Drop) (9 (Local (Int 1)))
-     (10 Stack) (11 (Tee (Int 0))) (12 Drop) (13 Stack) (14 Drop) (15 Stack)
-     (16 (Tee (Int 0))) (17 Stack) (18 Drop) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       =((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Tee (Int 0))) (17 Drop) (18 Stack) (19 Drop) (20 (Local (Int 0)))
-     (21 Drop) (22 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       >((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 Drop) (7 Stack) (8 (Tee (Int 0))) (9 Stack) (10 Drop) (11 Drop)
-     (12 Drop) (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ?((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))))
+       "(locs
+     ((0 (Local (Int 0))) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       @((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))))
+       #(locs
+     ((0 (Local (Int 0))) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       A((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))))
+       $(locs ((0 Stack) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       B((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))))
+       %(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       &(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       '(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       ((locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       )(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       *(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       +(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       ,(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       -(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       .(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       /(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       0(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       1(locs ((0 Stack) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       C((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))))
+       2(locs
+     ((0 (Local (Int 0))) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       D((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))))
+       3(locs
+     ((0 (Local (Int 0))) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       E((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Tee (Int 0))) (17 Drop) (18 Stack) (19 Stack) (20 Stack) (21 Drop)
-     (22 (Local (Int 0))) (23 Drop) (24 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       F((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 Drop) (7 Stack) (8 (Tee (Int 0))) (9 Stack) (10 Drop) (11 Drop)
-     (12 Drop) (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       G((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Tee (Int 0))) (17 Drop) (18 Stack) (19 Drop) (20 (Local (Int 0)))
-     (21 Drop) (22 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       H((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 Drop) (7 Stack) (8 (Tee (Int 0))) (9 Stack) (10 Drop) (11 Drop)
-     (12 Drop) (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       I((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Tee (Int 0))) (17 Drop) (18 Stack) (19 Drop) (20 (Local (Int 0)))
-     (21 Drop) (22 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       J((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 Drop) (7 Stack) (8 (Tee (Int 0))) (9 Stack) (10 Drop) (11 Drop)
-     (12 Drop) (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       K((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Tee (Int 0))) (17 Drop) (18 Stack) (19 Drop) (20 (Local (Int 0)))
-     (21 Drop) (22 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       L((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 Drop) (7 Stack) (8 (Tee (Int 0))) (9 Stack) (10 Drop) (11 Drop)
-     (12 Drop) (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       M((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Tee (Int 0))) (17 Drop) (18 Stack) (19 Drop) (20 (Local (Int 0)))
-     (21 Drop) (22 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       N((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 Drop) (7 Stack) (8 (Tee (Int 0))) (9 Stack) (10 Drop) (11 Drop)
-     (12 Drop) (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       O((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Variable esp))
-     (16 (Tee (Int 0))) (17 Drop) (18 Stack) (19 Drop) (20 (Local (Int 0)))
-     (21 Drop) (22 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       P((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 Drop) (7 Stack) (8 (Tee (Int 0))) (9 Stack) (10 Drop) (11 Drop)
-     (12 Drop) (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       Q((0 (Local (Int 0))) (1 Drop) (2 Drop))
+       4(locs ((0 (Local (Int 0))) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       R((0 (Local (Int 0))) (1 Drop))
-    ((int 1) (long 0) (float 0) (vec 0))
-       S((0 (Local (Int 3))) (1 (Tee (Int 2))) (2 (Variable esp)) (3 (Local (Int 0)))
-     (4 Stack) (5 Stack) (6 (Local (Int 1))) (7 Drop) (8 Drop) (9 Drop) (10 Drop)
-     (11 Stack) (12 Stack) (13 (Tee (Int 3))) (14 Stack)
-     (15 (Variable __ret_addr__)) (16 Stack) (17 Drop) (18 Stack)
-     (19 (Variable esp)) (20 Drop) (21 Drop) (22 Drop) (23 Drop))
-    ((int 4) (long 0) (float 0) (vec 0))
-       T((0 Drop))
+       5(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       6(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       7(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       8(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       9(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       :(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       ;(locs
+     ((0 (Local (Int 2))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 2)))
+      (6 (Tee (Int 2) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 2) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 0))) (15 (Variable esp)) (16 (Local (Int 0))) (17 Drop)
+      (18 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       <(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0))) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 0))) (10 (Local (Int 1)))
+      (11 (Tee (Int 1) (Ref 12))) (12 Drop) (13 Stack) (14 Drop)
+      (15 (Local (Int 0))) (16 (Tee (Int 0) (Ref 18))) (17 Stack) (18 Drop)
+      (19 Drop) (20 Drop) (21 (Variable esp)) (22 (Local (Int 0))) (23 Stack)
+      (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       =(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 0) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 2))) (15 (Variable esp)) (16 (Local (Int 2))) (17 Drop)
+      (18 (Local (Int 0))) (19 Drop) (20 (Local (Int 0))) (21 Drop) (22 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       >(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 Stack) (6 Drop) (7 (Local (Int 0)))
+      (8 (Tee (Int 0) (Ref 10))) (9 Stack) (10 Drop) (11 Drop) (12 Drop)
+      (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       ?(locs ((0 Stack) (1 Stack) (2 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       @(locs ((0 Stack) (1 Stack) (2 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       A(locs ((0 Stack) (1 Stack) (2 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       B(locs ((0 Stack) (1 Stack) (2 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       C(locs ((0 Stack) (1 Stack) (2 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       D(locs ((0 Stack) (1 Stack) (2 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       E(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 0) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 2))) (15 (Variable esp)) (16 (Local (Int 2))) (17 Drop)
+      (18 Stack) (19 Stack) (20 (Local (Int 0))) (21 Drop) (22 (Local (Int 0)))
+      (23 Drop) (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       F(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 Stack) (6 Drop) (7 (Local (Int 0)))
+      (8 (Tee (Int 0) (Ref 10))) (9 Stack) (10 Drop) (11 Drop) (12 Drop)
+      (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       G(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 0) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 2))) (15 (Variable esp)) (16 (Local (Int 2))) (17 Drop)
+      (18 (Local (Int 0))) (19 Drop) (20 (Local (Int 0))) (21 Drop) (22 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       H(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 Stack) (6 Drop) (7 (Local (Int 0)))
+      (8 (Tee (Int 0) (Ref 10))) (9 Stack) (10 Drop) (11 Drop) (12 Drop)
+      (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       I(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 0) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 2))) (15 (Variable esp)) (16 (Local (Int 2))) (17 Drop)
+      (18 (Local (Int 0))) (19 Drop) (20 (Local (Int 0))) (21 Drop) (22 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       J(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 Stack) (6 Drop) (7 (Local (Int 0)))
+      (8 (Tee (Int 0) (Ref 10))) (9 Stack) (10 Drop) (11 Drop) (12 Drop)
+      (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       K(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 0) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 2))) (15 (Variable esp)) (16 (Local (Int 2))) (17 Drop)
+      (18 (Local (Int 0))) (19 Drop) (20 (Local (Int 0))) (21 Drop) (22 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       L(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 Stack) (6 Drop) (7 (Local (Int 0)))
+      (8 (Tee (Int 0) (Ref 10))) (9 Stack) (10 Drop) (11 Drop) (12 Drop)
+      (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       M(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 0) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 2))) (15 (Variable esp)) (16 (Local (Int 2))) (17 Drop)
+      (18 (Local (Int 0))) (19 Drop) (20 (Local (Int 0))) (21 Drop) (22 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       N(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 Stack) (6 Drop) (7 (Local (Int 0)))
+      (8 (Tee (Int 0) (Ref 10))) (9 Stack) (10 Drop) (11 Drop) (12 Drop)
+      (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       O(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 0) (Ref 13))) (11 (Local (Int 1))) (12 Drop) (13 Stack)
+      (14 (Local (Int 2))) (15 (Variable esp)) (16 (Local (Int 2))) (17 Drop)
+      (18 (Local (Int 0))) (19 Drop) (20 (Local (Int 0))) (21 Drop) (22 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       P(locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 Stack) (6 Drop) (7 (Local (Int 0)))
+      (8 (Tee (Int 0) (Ref 10))) (9 Stack) (10 Drop) (11 Drop) (12 Drop)
+      (13 (Variable esp)) (14 (Local (Int 0))) (15 Stack) (16 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       Q(locs ((0 Stack) (1 Drop) (2 Drop)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       R(locs ((0 Stack) (1 Drop)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       S(locs
+     ((0 (Tee (Int 3) (Ref 1))) (1 (Tee (Int 2) (Ref 9))) (2 (Variable esp))
+      (3 (Local (Int 0))) (4 (Local (Int 1))) (5 Stack) (6 (Local (Int 1)))
+      (7 Drop) (8 Drop) (9 Drop) (10 Drop) (11 Stack) (12 (Local (Int 4)))
+      (13 (Tee (Int 4) (Ref 14))) (14 (Local (Int 3)))
+      (15 (Variable __ret_addr__)) (16 Stack) (17 Drop) (18 (Local (Int 3)))
+      (19 (Variable esp)) (20 Drop) (21 Drop) (22 Drop) (23 Drop)))
+    ((int 5) (long 0) (float 0) (vec 0))
+       T(locs ((0 Drop)))
     ((int 0) (long 0) (float 0) (vec 0))
     |}]
 
@@ -5437,74 +5834,88 @@ let%expect_test "fistp dword" =
   test_trans_block 0x00465929;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 (Tee (Int 2))) (2 Stack) (3 Stack) (4 Stack)
-      (5 Drop) (6 Drop) (7 Stack) (8 Stack) (9 (Local (Int 3)))
-      (10 (Variable esp)) (11 Stack) (12 (Tee (Int 1))) (13 Drop) (14 Stack)
-      (15 (Tee (Int 1))) (16 Drop) (17 Stack) (18 Stack) (19 Stack) (20 Stack)
-      (21 (Tee (Float 0))) (22 Drop) (23 Drop) (24 Stack) (25 (Tee (Int 1)))
-      (26 Stack) (27 Drop) (28 Drop) (29 Drop) (30 Drop) (31 Stack) (32 Drop)
-      (33 Stack) (34 Stack) (35 (Tee (Int 1))) (36 (Local (Float 0)))
-      (37 (Tee (Int 2))) (38 Drop) (39 Drop) (40 Stack) (41 (Variable esp))
-      (42 Stack) (43 Stack) (44 Drop) (45 (Tee (Int 2))) (46 Stack) (47 Stack)
-      (48 Stack) (49 (Local (Int 0))) (50 Stack) (51 (Local (Int 1))) (52 Drop)
+     ((0 (Tee (Int 3) (Ref 1))) (1 (Local (Int 2))) (2 Stack) (3 Stack)
+      (4 (Local (Int 1))) (5 Drop) (6 Drop) (7 Stack) (8 Stack)
+      (9 (Local (Int 1))) (10 (Variable esp)) (11 (Local (Int 4)))
+      (12 (Tee (Int 4) (Ref 13))) (13 Drop) (14 (Local (Int 0)))
+      (15 (Local (Int 0))) (16 Drop) (17 Stack) (18 Stack) (19 Stack) (20 Stack)
+      (21 (Local (Float 0))) (22 Drop) (23 Drop) (24 (Local (Int 3)))
+      (25 (Tee (Int 3) (Ref 27))) (26 Stack) (27 Drop) (28 Drop) (29 Drop)
+      (30 Drop) (31 Stack) (32 Drop) (33 Stack) (34 Stack)
+      (35 (Tee (Int 3) (Ref 36))) (36 (Local (Float 0)))
+      (37 (Tee (Int 2) (Ref 38))) (38 Drop) (39 Drop) (40 Stack)
+      (41 (Variable esp)) (42 Stack) (43 (Local (Int 0))) (44 Drop)
+      (45 (Tee (Int 2) (Ref 47))) (46 Stack) (47 Stack) (48 (Local (Int 0)))
+      (49 (Local (Int 0))) (50 (Local (Int 1))) (51 (Local (Int 1))) (52 Drop)
       (53 Drop) (54 Drop)))
+    ((int 5) (long 0) (float 1) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         i32.load offset -4
-        (local.tee $__int_scratch_2)
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_3)
         i32.load offset -32
         i32.const 0
         i32.and
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_1)
         i32.store offset -32
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_2)
         i32.store offset -36
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_3)
         i64.load offset -36
         f64.convert_i64_s
         global.get $ecx
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_1)
         i32.const 4
+        (local.set $__int_scratch_4)
         (global.get $esp)
+        (local.get $__int_scratch_4)
         i32.subtract
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_3)
+        (local.tee $__int_scratch_4)
+        (local.get $__int_scratch_1)
         i32.store
         i32.const 4
-        (local.get $__int_scratch_1)
-        i32.subtract
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_3)
-        i32.store
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_4)
         (local.get $__int_scratch_0)
+        i32.subtract
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
+        i32.store
+        (local.get $__int_scratch_3)
         (f32.load offset -16) (f64.promote_f32)
         f64.mult
         i32.const 4819536
         (f32.load) (f64.promote_f32)
         f64.sub
-        (local.tee $__float_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.set $__float_scratch_0)
+        (local.get $__int_scratch_3)
+        (local.get $__float_scratch_0)
         i32.store offset -8
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__float_scratch_0)
         f64.store
         i32.const 4
-        (local.get $__int_scratch_1)
+        (local.set $__int_scratch_3)
+        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_3)
         i32.subtract
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_3)
         i32.const 4610332
         i32.store
         (local.get $__int_scratch_2)
         global.set $eax
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_3)
         call $__func47ee10__
         i32.const 4
         i32.add
         global.get $__fpuStack__
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_3)
         f64.load
         (local.set $__float_scratch_0)
         global.get $ebp
@@ -5517,7 +5928,9 @@ let%expect_test "fistp dword" =
         (local.get $__int_scratch_2)
         (f32.load offset -12) (f64.promote_f32)
         i32.trunc_f64_s
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.store offset -20
         (local.get $__int_scratch_2)
         i32.load offset -20
@@ -5525,10 +5938,14 @@ let%expect_test "fistp dword" =
         i32.const 1
         i32.add
         i32.const 0
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.ge_s
         (local.set $__int_scratch_0)
         i32.const -8
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_1)
         i32.add
         (local.set $__int_scratch_1)
@@ -5536,7 +5953,8 @@ let%expect_test "fistp dword" =
         (local.get $__int_scratch_2)
         global.set $eax
         (local.get $__int_scratch_1)
-        global.set $__fpuStack__((id 3)
+        global.set $__fpuStack__
+    ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -5600,17 +6018,21 @@ let%expect_test "fistp dword" =
 let%expect_test "fsubrp" =
   test_trans_block 0x0046336d;
   [%expect {|
-    (locs ((0 (Local (Float 0))) (1 (Tee (Int 0))) (2 Stack) (3 Stack) (4 Drop)))
+    (locs
+     ((0 Stack) (1 (Tee (Int 0) (Ref 2))) (2 Stack) (3 (Local (Float 0)))
+      (4 Drop)))
+    ((int 1) (long 0) (float 1) (vec 0))
 
         f64.const 1.
-        (local.set $__float_scratch_0)
         global.get $__fpuStack__
         (local.tee $__int_scratch_0)
         f64.load
-        (local.get $__float_scratch_0)
         f64.sub
+        (local.set $__float_scratch_0)
         (local.get $__int_scratch_0)
-        f64.store((id 37)
+        (local.get $__float_scratch_0)
+        f64.store
+    ((id 37)
      (instrs
       ((0 (FloatConst __fl 1))
        (1
@@ -5625,17 +6047,17 @@ let%expect_test "psrlq, andpd, psubd" =
   test_trans_block 0x0047ee50;
   [%expect {|
     (locs
-     ((0 (Local (Vec 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Vec 1)))
-      (4 Stack) (5 (Local (Vec 3))) (6 Drop) (7 Drop) (8 Stack) (9 (Tee (Vec 2)))
-      (10 (Tee (Int 1))) (11 Stack) (12 Stack) (13 (Tee (Vec 2)))
-      (14 (Tee (Vec 3))) (15 Stack) (16 (Local (Vec 0))) (17 Stack)
-      (18 (Local (Int 0))) (19 Drop) (20 Drop) (21 Drop) (22 Drop) (23 Drop)))
+     ((0 Stack) (1 (Variable esp)) (2 Stack) (3 (Tee (Vec 1) (Ref 9))) (4 Stack)
+      (5 (Local (Vec 3))) (6 Drop) (7 Drop) (8 Stack) (9 (Tee (Vec 0) (Ref 10)))
+      (10 (Tee (Int 0) (Ref 18))) (11 Stack) (12 (Local (Vec 2)))
+      (13 (Local (Vec 2))) (14 (Tee (Vec 3) (Ref 15))) (15 (Local (Int 1)))
+      (16 (Local (Vec 0))) (17 Stack) (18 Stack) (19 Drop) (20 Drop) (21 Drop)
+      (22 Drop) (23 Drop)))
+    ((int 2) (long 0) (float 0) (vec 4))
 
         vec128.const i64x2 00
-        (local.set $__vec_scratch_1)
         (global.get $esp)
         i64.load offset 4
-        (local.get $__vec_scratch_1)
         i64x2.replace_lane 0
         (local.tee $__vec_scratch_1)
         i32.const 4785856
@@ -5643,34 +6065,39 @@ let%expect_test "psrlq, andpd, psubd" =
         (local.set $__vec_scratch_3)
         i32.const 52
         i64x2.shr_u
-        (local.tee $__vec_scratch_2)
+        (local.tee $__vec_scratch_0)
         i32x4.extract_lane 0
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         i32.const 4785904
         v128.load
+        (local.set $__vec_scratch_2)
+        (local.get $__vec_scratch_0)
         (local.get $__vec_scratch_2)
         v128.and
-        (local.tee $__vec_scratch_2)
+        (local.set $__vec_scratch_2)
         (local.get $__vec_scratch_3)
+        (local.get $__vec_scratch_2)
         i32x4.add
         (local.tee $__vec_scratch_3)
         i32x4.extract_lane 0
+        (local.set $__int_scratch_1)
         (local.get $__vec_scratch_1)
+        (local.get $__int_scratch_1)
         i64x2.shr_u
         (local.set $__vec_scratch_0)
         i32.const 2048
         i32.and
-        (local.set $__int_scratch_0)
         (local.get $__vec_scratch_3)
         global.set $xmm2
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         global.set $eax
         (local.get $__vec_scratch_2)
         global.set $xmm0
         (local.get $__vec_scratch_1)
         global.set $xmm7
         (local.get $__vec_scratch_0)
-        global.set $xmm1((id 5)
+        global.set $xmm1
+    ((id 5)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
        (1 (OutsideContext (var esp) (typ Int)))
@@ -5711,15 +6138,14 @@ let%expect_test "movq, psllq, cmpltpd" =
   test_trans_block 0x0047eed2;
   [%expect {|
     (locs
-     ((0 (Local (Vec 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Vec 1)))
-      (4 Stack) (5 Stack) (6 Stack) (7 (Tee (Vec 0))) (8 Drop) (9 Stack)
-      (10 Stack) (11 Stack) (12 (Local (Int 0))) (13 Drop) (14 Drop) (15 Drop)))
+     ((0 Stack) (1 (Variable esp)) (2 Stack) (3 (Tee (Vec 1) (Ref 9))) (4 Stack)
+      (5 Stack) (6 Stack) (7 (Tee (Vec 0) (Ref 9))) (8 Drop) (9 Stack) (10 Stack)
+      (11 Stack) (12 (Local (Int 0))) (13 Drop) (14 Drop) (15 Drop)))
+    ((int 1) (long 0) (float 0) (vec 2))
 
         vec128.const i64x2 00
-        (local.set $__vec_scratch_1)
         (global.get $esp)
         i64.load offset 4
-        (local.get $__vec_scratch_1)
         i64x2.replace_lane 0
         (local.tee $__vec_scratch_1)
         global.get $xmm1
@@ -5736,7 +6162,8 @@ let%expect_test "movq, psllq, cmpltpd" =
         global.set $xmm3
         global.set $xmm0
         (local.get $__vec_scratch_0)
-        global.set $xmm1((id 12)
+        global.set $xmm1
+    ((id 12)
      (instrs
       ((0 (VecConst (var __vec) (lower_bits 0) (upper_bits 0)))
        (1 (OutsideContext (var esp) (typ Int)))
@@ -5770,19 +6197,18 @@ let%expect_test "branch return" =
   test_trans_block 0x0047ee10;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 0)))
-      (3 Stack) (4 Stack) (5 (Local (Int 0)))))
+     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 Stack) (3 Stack)
+      (4 Stack) (5 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load
         (global.set $__ret_addr__)
         i32.const 20336900
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
         i32.load
         i32.const 0
         i32.eq
-        (local.set $__int_scratch_0)((id 0)
+    ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -5798,53 +6224,62 @@ let%expect_test "and jbe" =
   test_trans_block 0x0046632e;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 1)))
-      (3 Stack) (4 Stack) (5 (Variable esp)) (6 Drop) (7 (Tee (Int 2))) (8 Drop)
-      (9 Stack) (10 Stack) (11 Stack) (12 Drop) (13 Stack) (14 Stack) (15 Stack)
-      (16 Drop) (17 Drop) (18 Stack) (19 (Tee (Int 3))) (20 Drop)
-      (21 (Local (Int 0))) (22 Drop) (23 Drop) (24 Drop)))
+     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Tee (Int 0) (Ref 19)))
+      (3 (Local (Int 1))) (4 (Local (Int 2))) (5 (Variable esp)) (6 Drop)
+      (7 (Tee (Int 1) (Ref 9))) (8 Drop) (9 Stack) (10 Stack)
+      (11 (Local (Int 2))) (12 Drop) (13 Stack) (14 Stack) (15 (Local (Int 2)))
+      (16 Drop) (17 Drop) (18 Stack) (19 (Tee (Int 2) (Ref 21))) (20 Drop)
+      (21 Stack) (22 Drop) (23 Drop) (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load
         (global.set $__ret_addr__)
         (global.get $esp)
         i32.load offset 12
-        (local.set $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         global.get $esi
+        (local.set $__int_scratch_1)
         i32.const 4
+        (local.set $__int_scratch_2)
         (global.get $esp)
+        (local.get $__int_scratch_2)
         i32.subtract
         (global.set $esp)
         (global.get $esp)
+        (local.get $__int_scratch_1)
         i32.store
         global.get $ecx
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         i32.load offset 4
         i32.const 0
         i32.and
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_2)
         i32.store offset 4
-        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_1)
         i32.load
         i32.const 0
         i32.and
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_2)
         i32.store
         i32.const 65535
-        (local.get $__int_scratch_1)
         i32.and
-        (local.tee $__int_scratch_3)
-        (local.get $__int_scratch_2)
+        (local.tee $__int_scratch_2)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.store offset 8
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_3)
-        global.set $ecx
         (local.get $__int_scratch_2)
-        global.set $esi
+        global.set $ecx
         (local.get $__int_scratch_1)
-        global.set $eax((id 0)
+        global.set $esi
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -5889,18 +6324,17 @@ let%expect_test "frndint" =
   test_trans_block 0x0044f059;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 Stack) (4 Stack)
-      (5 (Local (Float 0))) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack)
-      (11 (Local (Float 1))) (12 Stack) (13 Stack) (14 Stack) (15 Stack)
-      (16 Stack) (17 (Local (Float 2))) (18 Stack) (19 Stack) (20 Stack)
-      (21 Stack) (22 Stack) (23 (Local (Float 3))) (24 Stack) (25 Drop)
-      (26 Stack) (27 Drop) (28 Stack) (29 Drop) (30 Stack) (31 Drop) (32 Stack)
-      (33 Drop) (34 Stack) (35 Drop) (36 Stack) (37 Drop) (38 Stack) (39 Drop)
-      (40 Drop)))
+     ((0 Stack) (1 Stack) (2 Stack) (3 Stack) (4 Stack) (5 (Local (Float 0)))
+      (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack) (11 (Local (Float 1)))
+      (12 Stack) (13 Stack) (14 Stack) (15 Stack) (16 Stack)
+      (17 (Local (Float 2))) (18 Stack) (19 Stack) (20 Stack) (21 Stack)
+      (22 Stack) (23 (Local (Float 3))) (24 Stack) (25 Drop) (26 (Local (Int 0)))
+      (27 Drop) (28 Stack) (29 Drop) (30 (Local (Int 0))) (31 Drop) (32 Stack)
+      (33 Drop) (34 (Local (Int 0))) (35 Drop) (36 Stack) (37 Drop)
+      (38 (Local (Int 0))) (39 Drop) (40 Drop)))
+    ((int 1) (long 0) (float 4) (vec 0))
 
         i32.const 4956072
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
         (f32.load) (f64.promote_f32)
         f64.nearest
         i32.const 4819536
@@ -5932,26 +6366,35 @@ let%expect_test "frndint" =
         (local.get $__float_scratch_3)
         i32.store
         i32.const 4956160
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (local.get $__float_scratch_3)
         i32.store
         i32.const 4956076
         (local.get $__float_scratch_2)
         i32.store
         i32.const 4956104
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (local.get $__float_scratch_2)
         i32.store
         i32.const 4956100
         (local.get $__float_scratch_1)
         i32.store
         i32.const 4956156
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (local.get $__float_scratch_1)
         i32.store
         i32.const 4956072
         (local.get $__float_scratch_0)
         i32.store
         i32.const 4956128
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (local.get $__float_scratch_0)
-        i32.store((id 1)
+        i32.store
+    ((id 1)
      (instrs
       ((0 (Const __i32 4956072))
        (1 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0))))
@@ -6000,25 +6443,28 @@ let%expect_test "test eax,eax jae" =
   test_trans_block 0x0045dbcd;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 (Tee (Int 1))) (2 (Local (Int 0))) (3 Stack)
-      (4 Stack) (5 (Local (Int 0))) (6 Drop) (7 Drop)))
+     ((0 (Tee (Int 2) (Ref 1))) (1 (Tee (Int 1) (Ref 3))) (2 (Local (Int 2)))
+      (3 (Local (Int 0))) (4 Stack) (5 (Local (Int 0))) (6 Drop) (7 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.tee $__int_scratch_2)
         i32.load offset -52
         (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_2)
         i32.load offset -44
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_2)
         i32.load offset 108
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_0)
         i32.subtract
         i32.const 0
         (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
         global.set $edx
-        global.set $eax((id 5)
+        global.set $eax
+    ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -52)))
@@ -6037,21 +6483,21 @@ let%expect_test "test eax,eax jbe" =
   test_trans_block 0x0047e73c;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 (Tee (Int 1))) (2 Drop) (3 (Local (Int 0)))
-      (4 Drop)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 (Local (Int 0))) (2 Drop) (3 Stack) (4 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
-        i32.load offset 16
         (local.tee $__int_scratch_1)
+        i32.load offset 16
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.store offset 28
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_1)
-        global.set $eax((id 2)
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 2)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 16)))
@@ -6067,37 +6513,45 @@ let%expect_test "shld" =
   test_trans_block 0x00481fa8;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 (Tee (Int 0))) (2 Stack) (3 Stack)
-      (4 (Local (Int 1))) (5 Stack) (6 Stack) (7 (Tee (Int 1))) (8 Stack)
-      (9 (Tee (Int 0))) (10 Drop) (11 Drop) (12 Drop) (13 Drop)))
+     ((0 (Tee (Int 2) (Ref 1))) (1 (Tee (Int 3) (Ref 6))) (2 Stack) (3 Stack)
+      (4 (Local (Int 0))) (5 Stack) (6 (Local (Int 1))) (7 (Local (Int 1)))
+      (8 (Local (Int 0))) (9 (Local (Int 0))) (10 Drop) (11 Drop) (12 Drop)
+      (13 Drop)))
+    ((int 4) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_2)
+        (local.tee $__int_scratch_2)
         i32.load offset -92
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         (local.get $__int_scratch_2)
         i32.load offset -88
         i32.const 3
         i32.shl
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         i32.const 29
         i32.shr_u
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         i32.or
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_1)
         i32.const 3
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_0)
         i32.shl
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.store offset -92
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_1)
         i32.store offset -88
         (local.get $__int_scratch_1)
         global.set $ecx
         (local.get $__int_scratch_0)
-        global.set $eax((id 211)
+        global.set $eax
+    ((id 211)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -92)))
@@ -6120,164 +6574,103 @@ let%expect_test "shld" =
 
 let%expect_test "repne scasb" =
   test_trans_block 0x0047dcc4;
-  [%expect {|
-    (locs
-     ((0 (Local (Int 3))) (1 Drop) (2 (Tee (Int 1))) (3 (Local (Int 4)))
-      (4 Drop) (5 (Local (Int 2))) (6 Stack) (7 Drop) (8 (Local (Int 5)))
-      (9 Stack) (10 Stack) (11 (Local (Int 5))) (12 Drop) (13 Stack) (14 Drop)
-      (15 (Tee (Int 5))) (16 (Local (Int 4))) (17 Drop) (18 Drop) (19 Drop)
-      (20 (Tee (Int 1))) (21 Drop) (22 Stack) (23 Stack) (24 (Local (Int 2)))
-      (25 Stack) (26 Drop) (27 (Local (Int 0))) (28 Drop) (29 Drop) (30 Drop)
-      (31 Drop) (32 Drop) (33 Drop) (34 Stack) (35 Stack)
-      (36 (Variable __input_compare_arg__))))
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("wrong value on stack" (expected (Ref 0)) (found (Ref 3)))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Base__List0.fold in file "src/list0.ml", line 43, characters 27-37
+  Called from Mir__Wasm_backend.validate_stack.(fun) in file "mir/wasm_backend.ml", line 287, characters 22-64
+  Called from Base__Array.foldi in file "src/array.ml", line 417, characters 11-36
+  Called from Mir__Wasm_backend.validate_stack in file "mir/wasm_backend.ml", lines 284-288, characters 4-53
+  Called from Test_towhowcaml.test_trans_block in file "test/test_towhowcaml.ml", line 38, characters 2-29
+  Called from Test_towhowcaml.(fun) in file "test/test_towhowcaml.ml", line 6124, characters 2-29
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
 
-        global.get $ecx
-        (local.set $__int_scratch_3)
-        global.get $ebp
-        (local.tee $__int_scratch_1)
-        i32.load offset 8
-        (local.set $__int_scratch_4)
-        i32.const 0
-        (local.set $__int_scratch_2)
-        i32.const 0
-        (local.get $__int_scratch_4)
-        (local.get $__int_scratch_3)
-        call $__find_byte__
-        (local.set $__int_scratch_5)
-        i32.const 0
-        (local.get $__int_scratch_5)
-        i32.subtract
-        (local.get $__int_scratch_3)
-        i32.add
-        (local.set $__int_scratch_5)
-        (local.get $__int_scratch_1)
-        i32.load offset 12
-        (local.get $__int_scratch_4)
-        (local.get $__int_scratch_5)
-        call $__byte_diff__
-        (local.tee $__int_scratch_5)
-        (local.set $__int_scratch_4)
-        (drop)
-        i32.load8_s offset -1
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_2)
-        (i32.const 0xFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFFFF00) (i32.and) (local.get __instr_scratch) (i32.or)
-        i32.const 0
-        (local.get $__int_scratch_4)
-        i32.load8_u offset -1
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_1)
-        (i32.const 0xFF) (i32.and)
-        (local.get $__int_scratch_2)
-        i32.gt_u
-        (local.set $__int_scratch_0)
-        global.set $ecx
-        (local.get $__int_scratch_5)
-        global.set $esi
-        global.set $eax
-        (local.get $__int_scratch_4)
-        global.set $edi
-        (local.get $__int_scratch_3)
-        global.set $ebx
-        (local.get $__int_scratch_2)
-        i32.extend8_s
-        (local.get $__int_scratch_1)
-        i32.eq
-
-        (global.set $__input_compare_arg__)((id 1)
-     (instrs
-      ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int))))) (1 Nop)
-       (2 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
-       (3 (LoadOp (var edi) (op Load32) (addr (Ref 2)) (offset 8))) (4 Nop)
-       (5 (Const eax 0)) (6 (Const __i32 0))
-       (7 (CallOp (func __find_byte__) (args ((Ref 6) (Ref 3) (Ref 0)))))
-       (8 (ReturnedOp (var ecx) (typ Int))) (9 (Const __i32 0))
-       (10 (BiOp (var ecx) (op Subtract) (lhs (Ref 9)) (rhs (Ref 8))))
-       (11 (BiOp (var ecx) (op Add) (lhs (Ref 10)) (rhs (Ref 0)))) (12 Nop)
-       (13 (LoadOp (var esi) (op Load32) (addr (Ref 2)) (offset 12)))
-       (14 (CallOp (func __byte_diff__) (args ((Ref 13) (Ref 3) (Ref 11)))))
-       (15 (ReturnedOp (var esi) (typ Int)))
-       (16 (ReturnedOp (var edi) (typ Int)))
-       (17 (ReturnedOp (var ecx) (typ Int))) (18 Nop) (19 Nop)
-       (20
-        (SignedLoadOp (var __i32) (op Load8) (addr (Ref 15)) (signed true)
-         (offset -1)))
-       (21 Nop)
-       (22 (BiOp (var eax) (op MergeTruncLow8) (lhs (Ref 20)) (rhs (Ref 5))))
-       (23 (Const ecx 0))
-       (24
-        (SignedLoadOp (var __i32) (op Load8) (addr (Ref 16)) (signed false)
-         (offset -1)))
-       (25 (UniOp (var __i32) (op ZeroExtendLow8) (operand (Ref 20)))) (26 Nop)
-       (27
-        (SignedBiOp (var __i32) (op GreaterThan) (signed false) (lhs (Ref 25))
-         (rhs (Ref 24))))
-       (28 (SetGlobalOp (value (Ref 23)) (global ((name ecx) (typ Int)))))
-       (29 (SetGlobalOp (value (Ref 15)) (global ((name esi) (typ Int)))))
-       (30 (SetGlobalOp (value (Ref 22)) (global ((name eax) (typ Int)))))
-       (31 (SetGlobalOp (value (Ref 16)) (global ((name edi) (typ Int)))))
-       (32 (SetGlobalOp (value (Ref 0)) (global ((name ebx) (typ Int)))))
-       (33 Nop) (34 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 24))))
-       (35 (BiOp (var __i32) (op Equal) (lhs (Ref 20)) (rhs (Ref 34))))
-       (36 (DupVar (var __input_compare_arg__) (src (Ref 35)) (typ Int)))))
-     (terminator
-      (Branch (succeed (Block 4)) (fail (Block 2)) (condition (Ref 27))))
-     (roots ((Ref 36))))
-    |}]
+  Trailing output
+  ---------------
+  (locs
+   ((0 (Tee (Int 3) (Ref 7))) (1 Drop) (2 (Tee (Int 4) (Ref 3)))
+    (3 (Local (Int 5))) (4 Drop) (5 (Local (Int 1))) (6 (Local (Int 2)))
+    (7 Drop) (8 (Local (Int 2))) (9 Stack) (10 (Local (Int 2))) (11 Stack)
+    (12 Drop) (13 (Local (Int 4))) (14 Drop) (15 (Tee (Int 5) (Ref 20)))
+    (16 (Local (Int 4))) (17 Drop) (18 Drop) (19 Drop) (20 (Local (Int 2)))
+    (21 Drop) (22 Stack) (23 Stack) (24 (Local (Int 1))) (25 Stack) (26 Drop)
+    (27 (Local (Int 0))) (28 Drop) (29 Drop) (30 Drop) (31 Drop) (32 Drop)
+    (33 Drop) (34 (Local (Int 1))) (35 Stack)
+    (36 (Variable __input_compare_arg__))))
+  ((int 6) (long 0) (float 0) (vec 0))
+  |}]
 
 let%expect_test "jecxz" =
   test_trans_block 0x0047dcb9;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 0)))
-      (3 Stack) (4 (Tee (Int 1))) (5 Drop) (6 Drop) (7 (Local (Int 0))) (8 Stack)
-      (9 (Tee (Int 2))) (10 Drop) (11 (Local (Int 0))) (12 Stack)
-      (13 (Tee (Int 2))) (14 Drop) (15 Stack) (16 Stack) (17 (Variable esp))
-      (18 Drop) (19 (Tee (Int 2))) (20 (Local (Int 0))) (21 Drop) (22 Drop)))
+     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 1)))
+      (3 (Local (Int 0))) (4 (Tee (Int 0) (Ref 5))) (5 Drop) (6 Drop)
+      (7 (Local (Int 1))) (8 (Local (Int 2))) (9 (Tee (Int 2) (Ref 10)))
+      (10 Drop) (11 (Local (Int 1))) (12 (Local (Int 3)))
+      (13 (Tee (Int 3) (Ref 14))) (14 Drop) (15 (Local (Int 1)))
+      (16 (Local (Int 2))) (17 (Variable esp)) (18 Drop)
+      (19 (Tee (Int 1) (Ref 20))) (20 Stack) (21 Drop) (22 Drop)))
+    ((int 4) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load
         (global.set $__ret_addr__)
         global.get $ebp
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         i32.const 4
+        (local.set $__int_scratch_0)
         (global.get $esp)
-        i32.subtract
-        (local.tee $__int_scratch_1)
         (local.get $__int_scratch_0)
+        i32.subtract
+        (local.tee $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store
         global.get $edi
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         i32.const 4
-        (local.get $__int_scratch_1)
-        i32.subtract
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_2)
         (local.get $__int_scratch_0)
-        i32.store
-        global.get $esi
-        (local.set $__int_scratch_0)
-        i32.const 4
         (local.get $__int_scratch_2)
         i32.subtract
         (local.tee $__int_scratch_2)
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
+        i32.store
+        global.get $esi
+        (local.set $__int_scratch_1)
+        i32.const 4
+        (local.set $__int_scratch_3)
+        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_3)
+        i32.subtract
+        (local.tee $__int_scratch_3)
+        (local.get $__int_scratch_1)
         i32.store
         global.get $ebx
+        (local.set $__int_scratch_1)
         i32.const 4
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_2)
         i32.subtract
         (global.set $esp)
         (global.get $esp)
+        (local.get $__int_scratch_1)
         i32.store
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset 16
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_2)
-        global.set $ecx
         (local.get $__int_scratch_1)
-        global.set $ebp((id 0)
+        global.set $ecx
+        (local.get $__int_scratch_0)
+        global.set $ebp
+    ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -6310,22 +6703,22 @@ let%expect_test "double fadd" =
   test_trans_block 0x00444017;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 (Tee (Int 2))) (2 (Local (Int 3))) (3 (Tee (Int 1)))
-      (4 Drop) (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack)
-      (11 Stack) (12 (Tee (Float 0))) (13 Stack) (14 Drop) (15 Stack) (16 Stack)
-      (17 Stack) (18 (Local (Int 1))) (19 Drop) (20 Stack) (21 (Local (Int 0)))
-      (22 Drop) (23 Drop) (24 Drop) (25 Drop)))
+     ((0 Stack) (1 (Tee (Int 1) (Ref 2))) (2 (Local (Int 2)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 Stack) (6 Stack) (7 Stack) (8 Stack)
+      (9 Stack) (10 Stack) (11 Stack) (12 (Local (Float 0)))
+      (13 (Local (Float 0))) (14 Drop) (15 Stack) (16 Stack) (17 Stack)
+      (18 (Local (Int 0))) (19 Drop) (20 Stack) (21 Stack) (22 Drop) (23 Drop)
+      (24 Drop) (25 Drop)))
+    ((int 3) (long 0) (float 1) (vec 0))
 
         i32.const 6447736
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_2)
         i32.load
-        (local.tee $__int_scratch_2)
-        i32.load
-        (local.set $__int_scratch_3)
-        global.get $ebp
         (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_3)
+        i32.load
+        (local.set $__int_scratch_2)
+        global.get $ebp
+        (local.tee $__int_scratch_0)
+        (local.get $__int_scratch_2)
         i32.store offset -156
         i32.const 5724880
         (f32.load) (f64.promote_f32)
@@ -6335,26 +6728,29 @@ let%expect_test "double fadd" =
         i32.const 4819536
         (f32.load) (f64.promote_f32)
         f64.sub
-        (local.tee $__float_scratch_0)
+        (local.set $__float_scratch_0)
+        (local.get $__float_scratch_0)
         (local.get $__float_scratch_0)
         f64.add
-        (local.get $__int_scratch_1)
+        (local.set $__float_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__float_scratch_0)
         i32.store offset -20
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (f32.load offset -20) (f64.promote_f32)
         i32.const 4819532
         (f32.load) (f64.promote_f32)
         i32.const 0xDEADBEEF
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         f64.lt
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_3)
-        global.set $edx
         (local.get $__int_scratch_2)
-        global.set $ecx
+        global.set $edx
         (local.get $__int_scratch_1)
-        global.set $eax((id 23)
+        global.set $ecx
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 23)
      (instrs
       ((0 (Const __i32 6447736))
        (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0))))
@@ -6389,49 +6785,53 @@ let%expect_test "rcr" =
   test_trans_block 0x00482a92;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 0))) (3 Drop) (4 Drop) (5 Stack)
-      (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 (Local (Int 1)))
-      (11 (Tee (Int 2))) (12 Stack) (13 (Local (Int 3))) (14 Drop) (15 Drop)
-      (16 Stack) (17 Stack) (18 Stack) (19 Stack) (20 Stack) (21 (Local (Int 2)))
-      (22 (Tee (Int 0))) (23 Drop) (24 Drop) (25 Drop) (26 Drop)))
+     ((0 (Tee (Int 1) (Ref 2))) (1 Stack) (2 (Local (Int 0))) (3 Drop) (4 Drop)
+      (5 (Local (Int 2))) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack)
+      (11 (Tee (Int 2) (Ref 13))) (12 Stack) (13 Stack) (14 Drop) (15 Drop)
+      (16 (Local (Int 1))) (17 Stack) (18 Stack) (19 Stack) (20 Stack)
+      (21 (Local (Int 1))) (22 (Local (Int 0))) (23 Drop) (24 Drop) (25 Drop)
+      (26 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         global.get $ecx
-        (local.set $__int_scratch_1)
+        (local.tee $__int_scratch_1)
         i32.const 1
-        (local.get $__int_scratch_1)
         i32.shr_u
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
         i32.const 31
+        (local.set $__int_scratch_2)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         i32.shl
         global.get $ebx
         i32.const 1
         i32.shr_u
         i32.or
-        (local.set $__int_scratch_1)
         global.get $edx
         (local.tee $__int_scratch_2)
         i32.const 1
         i32.shr_u
-        (local.set $__int_scratch_3)
         i32.const 31
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_2)
+        (local.get $__int_scratch_1)
         i32.shl
         global.get $eax
         i32.const 1
         i32.shr_u
         i32.or
-        (local.set $__int_scratch_2)
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_0)
         i32.or
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_3)
+        (local.set $__int_scratch_0)
         global.set $edx
+        (local.get $__int_scratch_0)
         global.set $ecx
-        (local.get $__int_scratch_2)
-        global.set $eax
         (local.get $__int_scratch_1)
-        global.set $ebx((id 3)
+        global.set $eax
+        global.set $ebx
+    ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
        (1 (Const __i32 1))
@@ -6473,11 +6873,12 @@ let%expect_test "dumb div" =
   test_trans_block 0x00482a7c;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Local (Int 2))) (2 (Tee (Int 1))) (3 Drop)
-      (4 (Tee (Int 0))) (5 Stack) (6 Drop) (7 Stack) (8 (Local (Long 0)))
-      (9 Stack) (10 Stack) (11 Stack) (12 Stack) (13 Stack) (14 Stack)
-      (15 (Local (Int 1))) (16 Drop) (17 Drop) (18 Drop) (19 Drop) (20 Drop)
-      (21 Drop) (22 Drop)))
+     ((0 (Variable esp)) (1 (Local (Int 2))) (2 (Tee (Int 1) (Ref 4))) (3 Drop)
+      (4 (Tee (Int 0) (Ref 19))) (5 Stack) (6 Drop) (7 Stack)
+      (8 (Local (Long 1))) (9 Stack) (10 Stack) (11 (Local (Long 0))) (12 Stack)
+      (13 Stack) (14 Stack) (15 (Local (Int 1))) (16 Drop) (17 Drop) (18 Drop)
+      (19 Drop) (20 Drop) (21 Drop) (22 Drop)))
+    ((int 3) (long 2) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load offset 20
@@ -6494,10 +6895,12 @@ let%expect_test "dumb div" =
         (global.get $esp)
         i32.load offset 12
         i64.extend_i32_u
-        (local.set $__long_scratch_0)
+        (local.set $__long_scratch_1)
         i64.extend_i32_u
         i64.const 32
         i64.shl
+        (local.set $__long_scratch_0)
+        (local.get $__long_scratch_1)
         (local.get $__long_scratch_0)
         i64.or
         (local.get $__int_scratch_2)
@@ -6511,7 +6914,8 @@ let%expect_test "dumb div" =
         (local.get $__int_scratch_1)
         global.set $eax
         (local.get $__int_scratch_0)
-        global.set $ebx((id 1)
+        global.set $ebx
+    ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset 20)))
@@ -6545,36 +6949,42 @@ let%expect_test "mul" =
   test_trans_block 0x004816d4;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Local (Int 0))) (2 Stack) (3 Stack) (4 Stack)
-      (5 (Tee (Long 0))) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack)
-      (11 (Variable __ret_addr__)) (12 Stack) (13 Drop) (14 Stack)
-      (15 (Variable esp)) (16 Drop) (17 Drop)))
+     ((0 (Variable esp)) (1 Stack) (2 Stack) (3 Stack) (4 Stack)
+      (5 (Tee (Long 1) (Ref 6))) (6 Stack) (7 (Local (Long 0))) (8 Stack)
+      (9 Stack) (10 (Local (Int 0))) (11 (Variable __ret_addr__)) (12 Stack)
+      (13 Drop) (14 (Local (Int 0))) (15 (Variable esp)) (16 Drop) (17 Drop)))
+    ((int 1) (long 2) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load offset 4
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
         i64.extend_i32_u
         global.get $ecx
         i64.extend_i32_u
         i64.mult
-        (local.tee $__long_scratch_0)
+        (local.tee $__long_scratch_1)
         i32.wrap_i64
         i64.const 32
+        (local.set $__long_scratch_0)
+        (local.get $__long_scratch_1)
         (local.get $__long_scratch_0)
         i64.shr_u
         i32.wrap_i64
         (global.get $esp)
         i32.load
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (global.get $__ret_addr__)
         i32.eq
         (if (result) (then) (else unreachable))
         i32.const 20
+        (local.set $__int_scratch_0)
         (global.get $esp)
+        (local.get $__int_scratch_0)
         i32.add
         (global.set $esp)
         global.set $edx
-        global.set $eax((id 1)
+        global.set $eax
+    ((id 1)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 4)))
@@ -6602,122 +7012,156 @@ let%expect_test "stosw" =
   test_trans_block 0x00439633;
   [%expect {|
     (locs
-     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 3)))
-      (3 Stack) (4 (Tee (Int 0))) (5 Drop) (6 Drop) (7 Stack) (8 Stack)
-      (9 (Local (Int 3))) (10 Stack) (11 (Tee (Int 2))) (12 Drop) (13 Stack)
-      (14 Drop) (15 Stack) (16 Stack) (17 Stack) (18 Drop) (19 Stack) (20 Stack)
-      (21 Stack) (22 Drop) (23 Stack) (24 Stack) (25 Stack) (26 Drop) (27 Stack)
-      (28 (Local (Int 3))) (29 Stack) (30 (Tee (Int 2))) (31 Drop)
-      (32 (Local (Int 3))) (33 Stack) (34 (Tee (Int 2))) (35 Drop)
-      (36 (Local (Int 3))) (37 Stack) (38 (Tee (Int 2))) (39 Drop) (40 Stack)
-      (41 Stack) (42 Stack) (43 (Local (Int 3))) (44 (Tee (Int 1))) (45 Stack)
-      (46 (Tee (Int 2))) (47 Drop) (48 Stack) (49 Stack) (50 Stack)
-      (51 (Tee (Int 2))) (52 Stack) (53 Drop) (54 Drop) (55 Drop) (56 Drop)
-      (57 Drop) (58 (Variable esp)) (59 (Local (Int 2))) (60 (Tee (Int 0)))
-      (61 Stack) (62 (Tee (Int 1))) (63 Drop) (64 Stack) (65 (Tee (Int 1)))
-      (66 Drop) (67 Stack) (68 (Tee (Int 1))) (69 Drop) (70 Stack)
-      (71 (Tee (Int 1))) (72 Stack) (73 Drop) (74 Stack) (75 Stack) (76 Stack)
-      (77 Stack) (78 Drop) (79 Drop) (80 Drop) (81 Drop) (82 Stack) (83 Drop)
-      (84 Stack) (85 Drop) (86 Stack) (87 (Tee (Int 1))) (88 Drop) (89 Stack)
-      (90 Stack) (91 (Local (Int 0))) (92 Drop) (93 Drop)))
+     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 4)))
+      (3 (Local (Int 1))) (4 (Tee (Int 1) (Ref 5))) (5 Drop) (6 Drop)
+      (7 (Local (Int 4))) (8 Stack) (9 (Local (Int 4))) (10 Stack)
+      (11 (Local (Int 3))) (12 Drop) (13 (Local (Int 4))) (14 Drop) (15 Stack)
+      (16 Stack) (17 (Local (Int 4))) (18 Drop) (19 Stack) (20 Stack)
+      (21 (Local (Int 4))) (22 Drop) (23 Stack) (24 Stack) (25 (Local (Int 4)))
+      (26 Drop) (27 (Local (Int 4))) (28 (Local (Int 4))) (29 (Local (Int 0)))
+      (30 (Tee (Int 0) (Ref 31))) (31 Drop) (32 (Local (Int 4)))
+      (33 (Local (Int 3))) (34 (Tee (Int 3) (Ref 35))) (35 Drop)
+      (36 (Local (Int 4))) (37 (Local (Int 0))) (38 (Tee (Int 0) (Ref 39)))
+      (39 Drop) (40 Stack) (41 Stack) (42 Stack) (43 (Local (Int 4)))
+      (44 (Tee (Int 3) (Ref 49))) (45 (Local (Int 5))) (46 (Local (Int 5)))
+      (47 Drop) (48 Stack) (49 (Local (Int 0))) (50 (Local (Int 2)))
+      (51 (Tee (Int 2) (Ref 53))) (52 Stack) (53 Drop) (54 Drop) (55 Drop)
+      (56 Drop) (57 Drop) (58 (Variable esp)) (59 (Local (Int 2)))
+      (60 (Tee (Int 0) (Ref 62))) (61 Stack) (62 (Tee (Int 1) (Ref 63)))
+      (63 Drop) (64 (Local (Int 3))) (65 (Local (Int 3))) (66 Drop)
+      (67 (Local (Int 1))) (68 (Local (Int 1))) (69 Drop) (70 (Local (Int 2)))
+      (71 (Tee (Int 2) (Ref 73))) (72 Stack) (73 Drop) (74 (Local (Int 1)))
+      (75 Stack) (76 Stack) (77 (Local (Int 1))) (78 Drop) (79 Drop) (80 Drop)
+      (81 Drop) (82 (Local (Int 1))) (83 Drop) (84 (Local (Int 1))) (85 Drop)
+      (86 Stack) (87 (Local (Int 1))) (88 Drop) (89 Stack) (90 Stack)
+      (91 (Local (Int 0))) (92 Drop) (93 Drop)))
+    ((int 6) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load
         (global.set $__ret_addr__)
         global.get $ebp
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_4)
         i32.const 4
+        (local.set $__int_scratch_1)
         (global.get $esp)
+        (local.get $__int_scratch_1)
         i32.subtract
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_3)
+        (local.tee $__int_scratch_1)
+        (local.get $__int_scratch_4)
         i32.store
         i32.const 80
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_4)
         i32.subtract
         global.get $edi
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_4)
         i32.const 4
         i32.subtract
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_3)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_4)
         i32.store
         global.get $ecx
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_4)
         i32.store offset -76
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset -24
         i32.const 0
         i32.and
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_4)
         i32.store offset -24
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset -20
         i32.const 0
         i32.and
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_4)
         i32.store offset -20
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset -28
         i32.const 0
         i32.and
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_4)
         i32.store offset -28
         i32.const -28
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_4)
         i32.add
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_4)
         i32.const 4
-        (local.get $__int_scratch_2)
-        i32.subtract
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
+        i32.subtract
+        (local.tee $__int_scratch_0)
+        (local.get $__int_scratch_4)
         i32.store
         i32.const 0
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_4)
         i32.const 4
-        (local.get $__int_scratch_2)
-        i32.subtract
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_3)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_3)
+        i32.subtract
+        (local.tee $__int_scratch_3)
+        (local.get $__int_scratch_4)
         i32.store
         i32.const 0
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_4)
         i32.const 4
-        (local.get $__int_scratch_2)
-        i32.subtract
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
+        i32.subtract
+        (local.tee $__int_scratch_0)
+        (local.get $__int_scratch_4)
         i32.store
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset -76
         i32.load offset 8
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset -76
         i32.load offset 8
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_4)
         i32.load
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_3)
         i32.const 4
-        (local.get $__int_scratch_2)
+        (local.set $__int_scratch_5)
+        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_5)
         i32.subtract
-        (local.tee $__int_scratch_2)
-        (local.get $__int_scratch_3)
+        (local.set $__int_scratch_5)
+        (local.get $__int_scratch_5)
+        (local.get $__int_scratch_4)
         i32.store
         i32.const 64
         i32.add
+        (local.set $__int_scratch_0)
         i32.const 4
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_5)
         (local.get $__int_scratch_2)
         i32.subtract
         (local.tee $__int_scratch_2)
         i32.const 4429352
         i32.store
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_4)
         global.set $ecx
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_3)
         global.set $eax
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         global.set $ebp
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_2)
         call_indirect (type $__FUNCi_i)
         (global.set $esp)
@@ -6731,42 +7175,59 @@ let%expect_test "stosw" =
         (local.get $__int_scratch_2)
         i32.store
         i32.const 4
+        (local.set $__int_scratch_3)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_3)
         i32.add
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_3)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_2)
         i32.store
         i32.const 4
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_1)
         i32.add
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_2)
         i32.store
         i32.const 4
+        (local.set $__int_scratch_2)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         i32.add
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_2)
         i32.const 0
         i32.store16
         i32.const 2
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_1)
         i32.add
         i32.const 4812696
         i32.load16_s
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store16 offset -16
         i32.const 54
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store offset -6
         (local.get $__int_scratch_0)
         i32.load offset -6
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store offset -14
         (local.get $__int_scratch_0)
         i32.load offset -76
         i32.load offset 232
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store offset -80
         (local.get $__int_scratch_0)
         i32.load offset -80
@@ -6775,7 +7236,8 @@ let%expect_test "stosw" =
         (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
         global.set $eax
-        global.set $edi((id 0)
+        global.set $edi
+    ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -6874,13 +7336,15 @@ let%expect_test "tail intrinsic" =
   [%expect {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 Drop) (3 (Variable esp))))
+    ((int 0) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load
         (global.set $__ret_addr__)
         (global.get $esp)
         call $USER32.dll_WINNLSEnableIME
-        (global.set $esp)((id 0)
+        (global.set $esp)
+    ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -6893,49 +7357,53 @@ let%expect_test "movsw" =
   test_trans_block 0x004399e1;
   [%expect {|
     (locs
-     ((0 Drop) (1 (Local (Int 0))) (2 Stack) (3 Drop) (4 Drop)
-      (5 (Local (Int 0))) (6 Stack) (7 Drop) (8 Stack) (9 Stack) (10 Drop)
-      (11 Drop) (12 Stack) (13 (Local (Int 0))) (14 Stack) (15 Drop) (16 Stack)
-      (17 Stack) (18 Drop) (19 Drop) (20 Stack) (21 (Local (Int 0))) (22 Stack)
-      (23 Drop) (24 Stack) (25 (Local (Int 0))) (26 Stack) (27 Drop) (28 Drop)
-      (29 Stack) (30 Drop) (31 Stack) (32 Stack) (33 Drop) (34 Drop) (35 Stack)
-      (36 Drop) (37 Stack) (38 Stack) (39 Drop) (40 Drop) (41 Stack) (42 Drop)
-      (43 Stack) (44 Stack) (45 Drop) (46 Drop) (47 Stack) (48 Drop) (49 Stack)
-      (50 Stack) (51 Drop) (52 Drop) (53 Drop) (54 Stack) (55 Drop) (56 Stack)
-      (57 Drop) (58 (Local (Int 0))) (59 Stack) (60 Drop) (61 Stack) (62 Stack)
-      (63 Drop) (64 Drop) (65 Stack) (66 (Local (Int 0))) (67 Stack) (68 Drop)
-      (69 Drop) (70 (Local (Int 0))) (71 Stack) (72 Drop) (73 Drop) (74 Drop)))
+     ((0 Drop) (1 (Local (Int 1))) (2 Stack) (3 Drop) (4 Drop)
+      (5 (Local (Int 1))) (6 Stack) (7 Drop) (8 Stack) (9 Stack) (10 Drop)
+      (11 Drop) (12 Stack) (13 (Local (Int 1))) (14 Stack) (15 Drop) (16 Stack)
+      (17 Stack) (18 Drop) (19 Drop) (20 Stack) (21 (Local (Int 1))) (22 Stack)
+      (23 Drop) (24 Stack) (25 (Local (Int 1))) (26 (Local (Int 0))) (27 Drop)
+      (28 Drop) (29 Stack) (30 Drop) (31 Stack) (32 Stack) (33 Drop) (34 Drop)
+      (35 Stack) (36 Drop) (37 Stack) (38 Stack) (39 Drop) (40 Drop) (41 Stack)
+      (42 Drop) (43 Stack) (44 Stack) (45 Drop) (46 Drop) (47 Stack) (48 Drop)
+      (49 Stack) (50 Stack) (51 Drop) (52 Drop) (53 Drop) (54 Stack) (55 Drop)
+      (56 Stack) (57 Drop) (58 (Local (Int 0))) (59 Stack) (60 Drop) (61 Stack)
+      (62 Stack) (63 Drop) (64 Drop) (65 Stack) (66 (Local (Int 0))) (67 Stack)
+      (68 Drop) (69 Drop) (70 (Local (Int 0))) (71 Stack) (72 Drop) (73 Drop)
+      (74 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         i32.const 1
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         i32.const 5724808
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store8
         i32.const 1
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         i32.const 5724809
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store8
         i32.const 5724810
         i32.load8_s
         i32.const 0
         i32.and
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         i32.const 5724810
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store8
         i32.const 5724811
         i32.load8_s
         i32.const 0
         i32.and
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         i32.const 5724811
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store8
         i32.const 4845120
         i32.const 5724776
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         i32.load
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.store
         i32.const 5724780
@@ -6975,7 +7443,8 @@ let%expect_test "movsw" =
         (local.get $__int_scratch_0)
         i32.store8
         global.set $esi
-        global.set $edi((id 9)
+        global.set $edi
+    ((id 9)
      (instrs
       ((0 Nop) (1 (Const __i32 1)) (2 (Const __i32 5724808))
        (3 (StoreOp (op Store8) (addr (Ref 2)) (value (Ref 1)))) (4 Nop)
@@ -7028,16 +7497,20 @@ let%expect_test "sub jne" =
   test_trans_block 0x0047dc43;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Drop) (2 (Tee (Int 0))) (3 Drop) (4 Stack) (5 Stack)
-      (6 Stack) (7 Stack) (8 (Tee (Int 0))) (9 Drop) (10 Drop)))
+     ((0 (Local (Int 0))) (1 Drop) (2 (Tee (Int 1) (Ref 3))) (3 Drop)
+      (4 (Local (Int 0))) (5 Stack) (6 Stack) (7 Stack) (8 (Tee (Int 0) (Ref 9)))
+      (9 Drop) (10 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $eax
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         global.get $edi
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.store8
         i32.const 1
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.add
         global.get $edx
@@ -7045,7 +7518,8 @@ let%expect_test "sub jne" =
         i32.subtract
         (local.tee $__int_scratch_0)
         global.set $edx
-        global.set $edi((id 7)
+        global.set $edi
+    ((id 7)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (1 Nop)
        (2 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
@@ -7064,297 +7538,117 @@ let%expect_test "sub jne" =
 
 let%expect_test "rep stosd (nonzero)" =
   test_trans_block 0x0042d5ee;
-  [%expect {|
-    (locs
-     ((0 (Local (Int 2))) (1 Stack) (2 Stack) (3 (Local (Int 1)))
-      (4 (Tee (Int 0))) (5 Drop) (6 Stack) (7 Drop) (8 Drop) (9 Drop)))
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("wrong value on stack" (expected (Ref 0)) (found (Ref 3)))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Base__List0.fold in file "src/list0.ml", line 43, characters 27-37
+  Called from Mir__Wasm_backend.validate_stack.(fun) in file "mir/wasm_backend.ml", line 287, characters 22-64
+  Called from Base__Array.foldi in file "src/array.ml", line 417, characters 11-36
+  Called from Mir__Wasm_backend.validate_stack in file "mir/wasm_backend.ml", lines 284-288, characters 4-53
+  Called from Test_towhowcaml.test_trans_block in file "test/test_towhowcaml.ml", line 38, characters 2-29
+  Called from Test_towhowcaml.(fun) in file "test/test_towhowcaml.ml", line 7068, characters 2-29
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
 
-        i32.const 180
-        (local.set $__int_scratch_2)
-        global.get $eax
-        i32.const 4294967295
-        i32.or
-        (local.set $__int_scratch_1)
-        i32.const 5724496
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_1)
-        (local.get $__int_scratch_2)
-        call $__int_memset__
-        i32.const 0
-        global.set $ecx
-        (local.get $__int_scratch_1)
-        global.set $eax
-        (local.get $__int_scratch_0)
-        global.set $edi((id 1)
-     (instrs
-      ((0 (Const ecx 180))
-       (1 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
-       (2 (Const __i32 4294967295))
-       (3 (BiOp (var eax) (op Or) (lhs (Ref 1)) (rhs (Ref 2))))
-       (4 (Const edi 5724496))
-       (5 (CallOp (func __int_memset__) (args ((Ref 4) (Ref 3) (Ref 0)))))
-       (6 (Const ecx 0))
-       (7 (SetGlobalOp (value (Ref 6)) (global ((name ecx) (typ Int)))))
-       (8 (SetGlobalOp (value (Ref 3)) (global ((name eax) (typ Int)))))
-       (9 (SetGlobalOp (value (Ref 4)) (global ((name edi) (typ Int)))))))
-     (terminator (Goto (Block 2))) (roots ()))
-    |}]
+  Trailing output
+  ---------------
+  (locs
+   ((0 Stack) (1 Stack) (2 Stack) (3 (Local (Int 1))) (4 (Local (Int 0)))
+    (5 Drop) (6 Stack) (7 Drop) (8 Drop) (9 Drop)))
+  ((int 2) (long 0) (float 0) (vec 0))
+  |}]
 
 let%expect_test "rep movsb" =
   test_trans_block 0x004446bb;
-  [%expect {|
-    (locs
-     ((0 (Local (Int 4))) (1 Stack) (2 (Local (Int 0))) (3 Stack) (4 Stack)
-      (5 Stack) (6 Stack) (7 Drop) (8 (Tee (Int 0))) (9 Stack)
-      (10 (Local (Int 3))) (11 Stack) (12 Stack) (13 Stack) (14 Stack)
-      (15 (Local (Int 3))) (16 Stack) (17 Stack) (18 Stack) (19 Stack)
-      (20 (Local (Int 1))) (21 Drop) (22 Drop) (23 Stack) (24 Stack) (25 Stack)
-      (26 (Tee (Int 2))) (27 Drop) (28 (Local (Int 3))) (29 (Tee (Int 2)))
-      (30 Drop) (31 Drop) (32 Stack) (33 (Tee (Int 0))) (34 Drop) (35 Stack)
-      (36 (Local (Int 0))) (37 Drop) (38 (Tee (Int 2))) (39 (Local (Int 3)))
-      (40 Stack) (41 Stack) (42 Stack) (43 Drop) (44 Stack) (45 Stack)
-      (46 (Tee (Int 1))) (47 Drop) (48 Drop) (49 Drop) (50 Drop) (51 Drop)
-      (52 Drop)))
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("wrong value on stack" (expected (Ref 26)) (found (Ref 15)))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Mir__Instr.fold_right in file "mir/instr.ml", line 513, characters 17-25
+  Called from Mir__Wasm_backend.validate_stack.(fun) in file "mir/wasm_backend.ml", line 287, characters 22-64
+  Called from Base__Array.foldi in file "src/array.ml", line 417, characters 11-36
+  Called from Mir__Wasm_backend.validate_stack in file "mir/wasm_backend.ml", lines 284-288, characters 4-53
+  Called from Test_towhowcaml.test_trans_block in file "test/test_towhowcaml.ml", line 38, characters 2-29
+  Called from Test_towhowcaml.(fun) in file "test/test_towhowcaml.ml", line 7106, characters 2-29
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
 
-        global.get $ebp
-        (local.set $__int_scratch_4)
-        (local.get $__int_scratch_4)
-        i32.load offset -4
-        (local.get $__int_scratch_4)
-        i32.load offset -8
-        (local.set $__int_scratch_0)
-        i32.const 4
-        i32.mult
-        (local.get $__int_scratch_0)
-        i32.add
-        i32.load offset 36
-        (local.get $__int_scratch_4)
-        i32.store offset -24
-        (local.get $__int_scratch_4)
-        i32.load offset -24
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_4)
-        i32.load offset -8
-        i32.load offset 4
-        (local.set $__int_scratch_3)
-        (local.get $__int_scratch_4)
-        i32.load offset -4
-        i32.const 4
-        i32.mult
-        (local.get $__int_scratch_3)
-        i32.add
-        i32.load offset 56
-        (local.set $__int_scratch_3)
-        (local.get $__int_scratch_4)
-        i32.load offset -272
-        (local.get $__int_scratch_4)
-        i32.load offset -28
-        i32.add
-        i32.const -84
-        i32.add
-        (local.set $__int_scratch_1)
-        i32.const 2
-        i32.shr_u
-        i32.const 2
-        i32.shl
-        (local.tee $__int_scratch_2)
-        (local.get $__int_scratch_1)
-        (local.get $__int_scratch_3)
-        memory.copy
-        (local.get $__int_scratch_3)
-        (local.get $__int_scratch_2)
-        i32.add
-        (local.set $__int_scratch_3)
-        (local.get $__int_scratch_1)
-        (local.get $__int_scratch_2)
-        i32.add
-        (local.tee $__int_scratch_2)
-        i32.const 3
-        (local.get $__int_scratch_0)
-        i32.and
-        (local.tee $__int_scratch_0)
-        (local.get $__int_scratch_3)
-        memory.copy
-        (local.get $__int_scratch_3)
-        (local.get $__int_scratch_0)
-        i32.add
-        (local.get $__int_scratch_2)
-        (local.get $__int_scratch_0)
-        i32.add
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_4)
-        i32.load offset -4
-        (local.tee $__int_scratch_2)
-        (local.get $__int_scratch_4)
-        i32.load offset -272
-        (local.set $__int_scratch_3)
-        i32.const 4
-        i32.mult
-        (local.get $__int_scratch_4)
-        i32.add
-        (local.get $__int_scratch_3)
-        i32.store offset -208
-        (local.get $__int_scratch_4)
-        i32.load offset -272
-        (local.get $__int_scratch_4)
-        i32.load offset -24
-        i32.add
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_4)
-        i32.store offset -272
-        (local.get $__int_scratch_3)
-        global.set $edx
-        (local.get $__int_scratch_2)
-        global.set $ecx
-        global.set $esi
-        (local.get $__int_scratch_1)
-        global.set $eax
-        (local.get $__int_scratch_0)
-        global.set $edi((id 20)
-     (instrs
-      ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
-       (1 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -4)))
-       (2 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -8)))
-       (3 (Const __i32 4))
-       (4 (BiOp (var __i32) (op Multiply) (lhs (Ref 1)) (rhs (Ref 3))))
-       (5 (BiOp (var __i32) (op Add) (lhs (Ref 4)) (rhs (Ref 2))))
-       (6 (LoadOp (var ecx) (op Load32) (addr (Ref 5)) (offset 36)))
-       (7 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 6)) (offset -24)))
-       (8 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -24)))
-       (9 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -8)))
-       (10 (LoadOp (var eax) (op Load32) (addr (Ref 9)) (offset 4)))
-       (11 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -4)))
-       (12 (Const __i32 4))
-       (13 (BiOp (var __i32) (op Multiply) (lhs (Ref 11)) (rhs (Ref 12))))
-       (14 (BiOp (var __i32) (op Add) (lhs (Ref 13)) (rhs (Ref 10))))
-       (15 (LoadOp (var esi) (op Load32) (addr (Ref 14)) (offset 56)))
-       (16 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -272)))
-       (17 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -28)))
-       (18 (BiOp (var __i32) (op Add) (lhs (Ref 16)) (rhs (Ref 17))))
-       (19 (Const __i32 -84))
-       (20 (BiOp (var edi) (op Add) (lhs (Ref 18)) (rhs (Ref 19)))) (21 Nop)
-       (22 Nop) (23 (Const __i32 2))
-       (24
-        (SignedBiOp (var ecx) (op ShiftRight) (signed false) (lhs (Ref 8))
-         (rhs (Ref 23))))
-       (25 (Const __i32 2))
-       (26 (BiOp (var __i32) (op ShiftLeft) (lhs (Ref 24)) (rhs (Ref 25))))
-       (27 (Memcopy (count (Ref 26)) (src (Ref 15)) (dest (Ref 20))))
-       (28 (BiOp (var esi) (op Add) (lhs (Ref 15)) (rhs (Ref 26))))
-       (29 (BiOp (var edi) (op Add) (lhs (Ref 20)) (rhs (Ref 26)))) (30 Nop)
-       (31 Nop) (32 (Const __i32 3))
-       (33 (BiOp (var ecx) (op And) (lhs (Ref 8)) (rhs (Ref 32))))
-       (34 (Memcopy (count (Ref 33)) (src (Ref 28)) (dest (Ref 29))))
-       (35 (BiOp (var esi) (op Add) (lhs (Ref 28)) (rhs (Ref 33))))
-       (36 (BiOp (var edi) (op Add) (lhs (Ref 29)) (rhs (Ref 33)))) (37 Nop)
-       (38 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -4)))
-       (39 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -272)))
-       (40 (Const __i32 4))
-       (41 (BiOp (var __i32) (op Multiply) (lhs (Ref 38)) (rhs (Ref 40))))
-       (42 (BiOp (var __i32) (op Add) (lhs (Ref 41)) (rhs (Ref 0))))
-       (43 (StoreOp (op Store32) (addr (Ref 42)) (value (Ref 39)) (offset -208)))
-       (44 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -272)))
-       (45 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -24)))
-       (46 (BiOp (var eax) (op Add) (lhs (Ref 44)) (rhs (Ref 45))))
-       (47 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 46)) (offset -272)))
-       (48 (SetGlobalOp (value (Ref 39)) (global ((name edx) (typ Int)))))
-       (49 (SetGlobalOp (value (Ref 38)) (global ((name ecx) (typ Int)))))
-       (50 (SetGlobalOp (value (Ref 35)) (global ((name esi) (typ Int)))))
-       (51 (SetGlobalOp (value (Ref 46)) (global ((name eax) (typ Int)))))
-       (52 (SetGlobalOp (value (Ref 36)) (global ((name edi) (typ Int)))))))
-     (terminator (Goto (Block 21))) (roots ()))
-    |}]
+  Trailing output
+  ---------------
+  (locs
+   ((0 (Tee (Int 4) (Ref 1))) (1 Stack) (2 (Local (Int 1))) (3 Stack)
+    (4 (Local (Int 3))) (5 Stack) (6 (Local (Int 1))) (7 Drop)
+    (8 (Tee (Int 1) (Ref 24))) (9 Stack) (10 (Local (Int 3))) (11 Stack)
+    (12 Stack) (13 Stack) (14 Stack) (15 (Local (Int 3))) (16 Stack) (17 Stack)
+    (18 Stack) (19 Stack) (20 (Local (Int 0))) (21 Drop) (22 Drop) (23 Stack)
+    (24 Stack) (25 Stack) (26 (Tee (Int 2) (Ref 27))) (27 Drop)
+    (28 (Local (Int 3))) (29 (Tee (Int 2) (Ref 34))) (30 Drop) (31 Drop)
+    (32 (Local (Int 0))) (33 (Local (Int 0))) (34 Drop) (35 Stack)
+    (36 (Local (Int 0))) (37 Drop) (38 (Tee (Int 2) (Ref 41)))
+    (39 (Local (Int 3))) (40 Stack) (41 (Local (Int 1))) (42 (Local (Int 1)))
+    (43 Drop) (44 Stack) (45 Stack) (46 (Local (Int 1))) (47 Drop) (48 Drop)
+    (49 Drop) (50 Drop) (51 Drop) (52 Drop)))
+  ((int 5) (long 0) (float 0) (vec 0))
+  |}]
 
 let%expect_test "repe cmpsd" =
   test_trans_block 0x00444521;
-  [%expect {|
-    (locs
-     ((0 (Local (Int 3))) (1 Stack) (2 (Tee (Int 5))) (3 Stack) (4 Stack)
-      (5 (Local (Int 1))) (6 Stack) (7 (Local (Int 2))) (8 Drop)
-      (9 (Tee (Int 3))) (10 (Local (Int 1))) (11 (Local (Int 4))) (12 Stack)
-      (13 Stack) (14 (Local (Int 0))) (15 Drop) (16 Drop) (17 Drop) (18 Drop)
-      (19 Drop)))
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("wrong value on stack" (expected (Ref 0)) (found (Ref 5)))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Base__List0.fold in file "src/list0.ml", line 43, characters 27-37
+  Called from Mir__Wasm_backend.validate_stack.(fun) in file "mir/wasm_backend.ml", line 287, characters 22-64
+  Called from Base__Array.foldi in file "src/array.ml", line 417, characters 11-36
+  Called from Mir__Wasm_backend.validate_stack in file "mir/wasm_backend.ml", lines 284-288, characters 4-53
+  Called from Test_towhowcaml.test_trans_block in file "test/test_towhowcaml.ml", line 38, characters 2-29
+  Called from Test_towhowcaml.(fun) in file "test/test_towhowcaml.ml", line 7271, characters 2-29
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
 
-        i32.const 14
-        (local.set $__int_scratch_3)
-        global.get $ebp
-        i32.load offset -8
-        (local.tee $__int_scratch_5)
-        i32.load offset 4
-        i32.const 112
-        i32.add
-        (local.set $__int_scratch_1)
-        i32.const 5724776
-        i32.const 0
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_1)
-        (local.get $__int_scratch_3)
-        call $__int_diff__
-        (local.tee $__int_scratch_3)
-        (local.set $__int_scratch_1)
-        (local.set $__int_scratch_4)
-        i32.load
-        (local.get $__int_scratch_1)
-        i32.load
-        i32.eq
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_5)
-        global.set $edx
-        (local.get $__int_scratch_4)
-        global.set $ecx
-        (local.get $__int_scratch_3)
-        global.set $esi
-        (local.get $__int_scratch_2)
-        global.set $eax
-        (local.get $__int_scratch_1)
-        global.set $edi((id 3)
-     (instrs
-      ((0 (Const ecx 14))
-       (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
-       (2 (LoadOp (var edx) (op Load32) (addr (Ref 1)) (offset -8)))
-       (3 (LoadOp (var edi) (op Load32) (addr (Ref 2)) (offset 4)))
-       (4 (Const __i32 112))
-       (5 (BiOp (var edi) (op Add) (lhs (Ref 3)) (rhs (Ref 4))))
-       (6 (Const esi 5724776)) (7 (Const eax 0))
-       (8 (CallOp (func __int_diff__) (args ((Ref 6) (Ref 5) (Ref 0)))))
-       (9 (ReturnedOp (var esi) (typ Int))) (10 (ReturnedOp (var edi) (typ Int)))
-       (11 (ReturnedOp (var ecx) (typ Int)))
-       (12 (LoadOp (var __i32) (op Load32) (addr (Ref 9))))
-       (13 (LoadOp (var __i32) (op Load32) (addr (Ref 10))))
-       (14 (BiOp (var __i32) (op Equal) (lhs (Ref 12)) (rhs (Ref 13))))
-       (15 (SetGlobalOp (value (Ref 2)) (global ((name edx) (typ Int)))))
-       (16 (SetGlobalOp (value (Ref 11)) (global ((name ecx) (typ Int)))))
-       (17 (SetGlobalOp (value (Ref 9)) (global ((name esi) (typ Int)))))
-       (18 (SetGlobalOp (value (Ref 7)) (global ((name eax) (typ Int)))))
-       (19 (SetGlobalOp (value (Ref 10)) (global ((name edi) (typ Int)))))))
-     (terminator
-      (Branch (succeed (Block 5)) (fail (Block 4)) (condition (Ref 14))))
-     (roots ()))
-    |}]
+  Trailing output
+  ---------------
+  (locs
+   ((0 Stack) (1 Stack) (2 (Tee (Int 4) (Ref 3))) (3 Stack) (4 Stack)
+    (5 (Local (Int 2))) (6 (Local (Int 0))) (7 (Local (Int 1))) (8 Drop)
+    (9 (Tee (Int 2) (Ref 12))) (10 (Local (Int 0))) (11 (Local (Int 3)))
+    (12 Stack) (13 Stack) (14 Stack) (15 Drop) (16 Drop) (17 Drop) (18 Drop)
+    (19 Drop)))
+  ((int 5) (long 0) (float 0) (vec 0))
+  |}]
 
 let%expect_test "and jns" =
   test_trans_block 0x0043dbb0;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 (Tee (Int 1))) (2 Stack) (3 Stack) (4 (Tee (Int 2)))
-      (5 Stack) (6 (Local (Int 0))) (7 Drop) (8 Drop)))
+     ((0 Stack) (1 (Tee (Int 0) (Ref 2))) (2 Stack) (3 Stack)
+      (4 (Tee (Int 1) (Ref 6))) (5 Stack) (6 Stack) (7 Drop) (8 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
         i32.load offset -4
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         i32.load offset 836
         i32.const 2147483649
         i32.and
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         i32.const 0
         i32.ge_s
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_2)
-        global.set $edx
         (local.get $__int_scratch_1)
-        global.set $ecx((id 18)
+        global.set $edx
+        (local.get $__int_scratch_0)
+        global.set $ecx
+    ((id 18)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -7376,73 +7670,82 @@ let%expect_test "fidivr" =
   test_trans_block 0x00414d50;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 Stack) (3 (Local (Float 0))) (4 Stack)
-      (5 Stack) (6 Stack) (7 Drop) (8 Stack) (9 Stack) (10 (Local (Float 0)))
-      (11 Stack) (12 Stack) (13 Stack) (14 Drop) (15 Stack) (16 (Local (Int 3)))
-      (17 Stack) (18 Stack) (19 Drop) (20 Stack) (21 (Local (Int 3))) (22 Stack)
-      (23 Stack) (24 Drop) (25 (Tee (Int 1))) (26 Stack) (27 Drop) (28 Stack)
-      (29 (Tee (Int 2))) (30 (Local (Int 0))) (31 Drop) (32 Drop) (33 Drop)
+     ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Float 0)))
+      (4 Stack) (5 Stack) (6 (Local (Float 0))) (7 Drop) (8 Stack) (9 Stack)
+      (10 (Local (Float 0))) (11 Stack) (12 Stack) (13 (Local (Float 0)))
+      (14 Drop) (15 Stack) (16 (Local (Int 2))) (17 Stack) (18 (Local (Int 1)))
+      (19 Drop) (20 Stack) (21 (Local (Int 2))) (22 Stack) (23 (Local (Int 1)))
+      (24 Drop) (25 (Tee (Int 0) (Ref 26))) (26 Stack) (27 Drop) (28 Stack)
+      (29 (Tee (Int 1) (Ref 30))) (30 Stack) (31 Drop) (32 Drop) (33 Drop)
       (34 Drop)))
+    ((int 3) (long 0) (float 1) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         i32.load offset 8
         i32.load offset 11196
         f64.convert_i32_s
         (local.set $__float_scratch_0)
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset -1656
         f64.convert_i32_s
         (local.get $__float_scratch_0)
         f64.div
-        (local.get $__int_scratch_1)
+        (local.set $__float_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__float_scratch_0)
         i32.store offset -616
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset 8
         i32.load offset 11196
         f64.convert_i32_s
         (local.set $__float_scratch_0)
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset -1660
         f64.convert_i32_s
         (local.get $__float_scratch_0)
         f64.div
-        (local.get $__int_scratch_1)
+        (local.set $__float_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__float_scratch_0)
         i32.store offset -620
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset -60
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset -620
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_2)
         i32.const 4
         i32.mult
-        (local.get $__int_scratch_3)
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         i32.store offset 4848708
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset -60
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset -616
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_2)
         i32.const 4
         i32.mult
-        (local.get $__int_scratch_3)
-        i32.store offset 4848676
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
+        i32.store offset 4848676
+        (local.get $__int_scratch_0)
         i32.load offset -8
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         i32.load16_u offset 10
         i32.const 8
         i32.and
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_3)
-        global.set $edx
         (local.get $__int_scratch_2)
-        global.set $ecx
+        global.set $edx
         (local.get $__int_scratch_1)
-        global.set $eax((id 818)
+        global.set $ecx
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 818)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -7491,15 +7794,18 @@ let%expect_test "tib offset 0" =
   [%expect {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 2)))
-      (3 Stack) (4 (Tee (Int 0))) (5 Drop) (6 Drop) (7 (Local (Int 2))) (8 Stack)
-      (9 (Tee (Int 3))) (10 Drop) (11 (Local (Int 2))) (12 Stack)
-      (13 (Tee (Int 3))) (14 Drop) (15 (Local (Int 2))) (16 Stack)
-      (17 (Tee (Int 3))) (18 Drop) (19 Drop) (20 Stack) (21 Stack) (22 Stack)
-      (23 Drop) (24 (Local (Int 3))) (25 Stack) (26 (Tee (Int 1))) (27 Drop)
-      (28 Stack) (29 (Tee (Int 1))) (30 Stack) (31 Drop) (32 Drop) (33 Drop)
-      (34 Drop) (35 Stack) (36 Stack) (37 (Variable esp)) (38 (Local (Int 1)))
-      (39 (Tee (Int 0))) (40 Drop) (41 Stack) (42 Drop) (43 Stack) (44 Stack)
-      (45 (Local (Int 0)))))
+      (3 (Local (Int 0))) (4 (Tee (Int 0) (Ref 5))) (5 Drop) (6 Drop)
+      (7 (Local (Int 2))) (8 (Local (Int 3))) (9 (Tee (Int 3) (Ref 10)))
+      (10 Drop) (11 (Local (Int 2))) (12 (Local (Int 1)))
+      (13 (Tee (Int 1) (Ref 14))) (14 Drop) (15 (Local (Int 2)))
+      (16 (Local (Int 3))) (17 (Tee (Int 3) (Ref 18))) (18 Drop) (19 Drop)
+      (20 (Local (Int 1))) (21 Stack) (22 (Local (Int 1))) (23 Drop)
+      (24 (Local (Int 1))) (25 Stack) (26 (Local (Int 3))) (27 Drop)
+      (28 (Local (Int 1))) (29 (Tee (Int 1) (Ref 31))) (30 Stack) (31 Drop)
+      (32 Drop) (33 Drop) (34 Drop) (35 Stack) (36 Stack) (37 (Variable esp))
+      (38 (Local (Int 1))) (39 (Tee (Int 0) (Ref 40))) (40 Drop)
+      (41 (Local (Int 1))) (42 Drop) (43 Stack) (44 Stack) (45 Stack)))
+    ((int 4) (long 0) (float 0) (vec 0))
 
         (global.get $esp)
         i32.load
@@ -7507,7 +7813,9 @@ let%expect_test "tib offset 0" =
         global.get $ebp
         (local.set $__int_scratch_2)
         i32.const 4
+        (local.set $__int_scratch_0)
         (global.get $esp)
+        (local.get $__int_scratch_0)
         i32.subtract
         (local.tee $__int_scratch_0)
         (local.get $__int_scratch_2)
@@ -7515,7 +7823,9 @@ let%expect_test "tib offset 0" =
         i32.const -1
         (local.set $__int_scratch_2)
         i32.const 4
+        (local.set $__int_scratch_3)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_3)
         i32.subtract
         (local.tee $__int_scratch_3)
         (local.get $__int_scratch_2)
@@ -7523,14 +7833,18 @@ let%expect_test "tib offset 0" =
         i32.const 4768955
         (local.set $__int_scratch_2)
         i32.const 4
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_1)
         i32.subtract
-        (local.tee $__int_scratch_3)
+        (local.tee $__int_scratch_1)
         (local.get $__int_scratch_2)
         i32.store
         global.get $__seh_frame__
         (local.set $__int_scratch_2)
         i32.const 4
+        (local.set $__int_scratch_3)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_3)
         i32.subtract
         (local.tee $__int_scratch_3)
@@ -7539,19 +7853,26 @@ let%expect_test "tib offset 0" =
         (local.get $__int_scratch_3)
         global.set $__seh_frame__
         i32.const 20
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_1)
         i32.subtract
         global.get $ecx
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store offset -28
         i32.const 32
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_1)
         i32.const 4
         i32.subtract
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_3)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_1)
         i32.store
         i32.const 4
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_1)
         i32.subtract
         (local.tee $__int_scratch_1)
@@ -7573,13 +7894,15 @@ let%expect_test "tib offset 0" =
         (local.get $__int_scratch_1)
         i32.store offset -24
         i32.const 0
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store offset -4
         (local.get $__int_scratch_0)
         i32.load offset -24
         i32.const 0
         i32.eq
-        (local.set $__int_scratch_0)((id 0)
+    ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -7646,7 +7969,8 @@ let%expect_test "tail call" =
       ((__ret_addr__ ((name __ret_addr__) (typ Int)))
        (esp ((name esp) (typ Int))))))
     (WasmCodeReturn (Block 0))
-        ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 Drop) (3 (Variable esp)))
+        (locs
+     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 Drop) (3 (Variable esp))))
     ((int 0) (long 0) (float 0) (vec 0))
     |}]
 
@@ -7654,12 +7978,13 @@ let%expect_test "shl reg" =
   test_trans_block 0x0040f3de;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 Drop) (3 Stack) (4 (Tee (Int 1)))
-      (5 Stack) (6 (Tee (Int 2))) (7 (Tee (Int 0))) (8 Drop) (9 Drop) (10 Drop)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Drop) (3 Stack)
+      (4 (Tee (Int 1) (Ref 5))) (5 Stack) (6 (Tee (Int 2) (Ref 7)))
+      (7 (Tee (Int 0) (Ref 10))) (8 Drop) (9 Drop) (10 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_1)
         i32.load16_u offset 8
         i32.const 1
         (local.get $__int_scratch_1)
@@ -7674,7 +7999,8 @@ let%expect_test "shl reg" =
         global.set $edx
         (local.get $__int_scratch_1)
         global.set $ecx
-        global.set $eax((id 1)
+        global.set $eax
+    ((id 1)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1
@@ -7697,39 +8023,52 @@ let%expect_test "cld" =
   test_trans_block 0x0048c237;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 0))) (3 Stack)
-      (4 (Local (Int 1))) (5 Stack) (6 Drop) (7 Stack) (8 (Tee (Int 1)))
-      (9 Stack) (10 (Tee (Int 0))) (11 Stack) (12 Drop) (13 Stack) (14 Stack)
-      (15 Stack) (16 Stack) (17 Stack) (18 Stack) (19 Drop) (20 Drop) (21 Stack)
-      (22 (Local (Int 0))) (23 Drop) (24 Drop)))
+     ((0 (Tee (Int 2) (Ref 2))) (1 Stack) (2 (Tee (Int 0) (Ref 5)))
+      (3 (Local (Int 1))) (4 (Local (Int 1))) (5 (Local (Int 2))) (6 Drop)
+      (7 (Local (Int 2))) (8 (Tee (Int 2) (Ref 12))) (9 (Local (Int 1)))
+      (10 (Tee (Int 1) (Ref 11))) (11 Stack) (12 Drop) (13 (Local (Int 0)))
+      (14 Stack) (15 (Local (Int 0))) (16 Stack) (17 Stack) (18 Stack) (19 Drop)
+      (20 Drop) (21 Stack) (22 (Local (Int 0))) (23 Drop) (24 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_1)
+        (local.tee $__int_scratch_2)
         i32.const 8
-        (local.get $__int_scratch_1)
         i32.add
         (local.tee $__int_scratch_0)
         i32.const -134
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_1)
         i32.add
         (local.set $__int_scratch_1)
         i32.load
+        (local.set $__int_scratch_2)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         i32.store
         i32.const 4
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
+        i32.add
+        (local.tee $__int_scratch_2)
+        i32.const 4
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         i32.add
         (local.tee $__int_scratch_1)
-        i32.const 4
-        (local.get $__int_scratch_0)
-        i32.add
-        (local.tee $__int_scratch_0)
         i32.load
         i32.store
         i32.const 4
-        (local.get $__int_scratch_1)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.add
         i32.const 4
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.add
         global.get $ebx
@@ -7738,7 +8077,8 @@ let%expect_test "cld" =
         i32.eq
         (local.set $__int_scratch_0)
         global.set $esi
-        global.set $edi((id 20)
+        global.set $edi
+    ((id 20)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (Const __i32 8))
@@ -7774,21 +8114,22 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
   test_trans_block 0x0048c1e9;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 Stack) (2 Drop) (3 Stack) (4 (Local (Float 0)))
-      (5 (Tee (Int 2))) (6 Stack) (7 Drop) (8 (Tee (Float 0))) (9 Stack)
-      (10 Stack) (11 Stack) (12 (Local (Int 1))) (13 (Local (Int 0))) (14 Drop)
+     ((0 (Local (Int 1))) (1 Stack) (2 Drop) (3 Stack) (4 (Local (Float 0)))
+      (5 (Tee (Int 1) (Ref 6))) (6 Stack) (7 Drop) (8 (Tee (Float 0) (Ref 9)))
+      (9 Stack) (10 Stack) (11 Stack) (12 (Local (Int 0))) (13 Stack) (14 Drop)
       (15 Drop)))
+    ((int 2) (long 0) (float 1) (vec 0))
 
         i32.const 4
-        (local.set $__int_scratch_2)
+        (local.set $__int_scratch_1)
         global.get $ebp
-        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_1)
         i32.store offset -142
         i32.const 4820792
         f64.load
         (local.set $__float_scratch_0)
         global.get $__fpuStack__
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         f64.load
         (local.get $__float_scratch_0)
         call $__float_scale__
@@ -7797,14 +8138,14 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
         i32.const 4820776
         f64.load
         i32.const 0xDEADBEEF
-        (local.set $__int_scratch_1)
-        f64.ge
         (local.set $__int_scratch_0)
-        (local.get $__int_scratch_2)
+        f64.ge
+        (local.get $__int_scratch_1)
         (local.get $__float_scratch_0)
         f64.store
-        (local.get $__int_scratch_1)
-        global.set $eax((id 15)
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 15)
      (instrs
       ((0 (Const __i32 4))
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -7834,21 +8175,22 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
   test_trans_block 0x0048c217;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 Stack) (2 Drop) (3 Stack) (4 (Local (Float 0)))
-      (5 (Tee (Int 2))) (6 Stack) (7 Drop) (8 (Tee (Float 0))) (9 Stack)
-      (10 Stack) (11 Stack) (12 (Local (Int 1))) (13 Stack) (14 (Local (Int 0)))
+     ((0 (Local (Int 1))) (1 Stack) (2 Drop) (3 Stack) (4 (Local (Float 0)))
+      (5 (Tee (Int 1) (Ref 6))) (6 Stack) (7 Drop) (8 (Tee (Float 0) (Ref 9)))
+      (9 Stack) (10 Stack) (11 Stack) (12 (Local (Int 0))) (13 Stack) (14 Stack)
       (15 Drop) (16 Drop)))
+    ((int 2) (long 0) (float 1) (vec 0))
 
         i32.const 3
-        (local.set $__int_scratch_2)
+        (local.set $__int_scratch_1)
         global.get $ebp
-        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_1)
         i32.store offset -142
         i32.const 4820784
         f64.load
         (local.set $__float_scratch_0)
         global.get $__fpuStack__
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         f64.load
         (local.get $__float_scratch_0)
         call $__float_scale__
@@ -7857,15 +8199,15 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
         i32.const 4820768
         f64.load
         i32.const 0xDEADBEEF
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         f64.gt
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_1)
         (local.get $__float_scratch_0)
         f64.store
-        (local.get $__int_scratch_1)
-        global.set $eax((id 17)
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 17)
      (instrs
       ((0 (Const __i32 3))
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -7894,25 +8236,26 @@ let%expect_test "and je" =
   test_trans_block 0x0048c178;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 Drop) (3 (Local (Int 1))) (4 Drop)
-      (5 Drop) (6 Drop) (7 Stack) (8 (Tee (Int 0))) (9 Stack)
-      (10 (Local (Int 0))) (11 Drop)))
+     ((0 Stack) (1 Stack) (2 Drop) (3 (Local (Int 1))) (4 Drop) (5 Drop)
+      (6 Drop) (7 Stack) (8 (Local (Int 0))) (9 Stack) (10 (Local (Int 0)))
+      (11 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
         i32.load16_s offset -164
         global.get $eax
         (local.set $__int_scratch_1)
         i32.const 32
         i32.and
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.get $__int_scratch_0)
         i32.extend16_s
         (local.set $__int_scratch_0)
-        global.set $eax((id 6)
+        global.set $eax
+    ((id 6)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1
@@ -7933,24 +8276,26 @@ let%expect_test "or je" =
   test_trans_block 0x0048c15b;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 Stack) (3 (Tee (Int 0))) (4 Stack)
+     ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Int 0))) (4 Stack)
       (5 Stack) (6 (Local (Int 0))) (7 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $eax
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_1)
         i32.extend8_s
         (local.get $__int_scratch_1)
         i32.extend8_s
         i32.or
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         (i32.const 0xFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFFFF00) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.get $__int_scratch_0)
         i32.extend8_s
         i32.eqz
         (local.set $__int_scratch_0)
-        global.set $eax((id 4)
+        global.set $eax
+    ((id 4)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
        (1 (UniOp (var __i32) (op SignExtendLow8) (operand (Ref 0))))
@@ -7969,17 +8314,20 @@ let%expect_test "xchg" =
   test_trans_block 0x0047f3b0;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Variable esp)) (4 Stack)
-      (5 Stack) (6 Stack) (7 Drop) (8 Drop) (9 Drop) (10 (Local (Int 0)))
-      (11 Stack) (12 (Tee (Int 1))) (13 Drop) (14 Stack)
-      (15 (Variable __ret_addr__)) (16 Stack) (17 Drop) (18 Stack)
-      (19 (Variable esp)) (20 Drop)))
+     ((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))) (3 (Variable esp))
+      (4 Stack) (5 Stack) (6 Stack) (7 Drop) (8 Drop) (9 Drop)
+      (10 (Local (Int 0))) (11 Stack) (12 (Local (Int 2))) (13 Drop)
+      (14 (Local (Int 1))) (15 (Variable __ret_addr__)) (16 Stack) (17 Drop)
+      (18 (Local (Int 1))) (19 (Variable esp)) (20 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         global.get $eax
         (local.set $__int_scratch_0)
         i32.const 0
         (local.get $__int_scratch_0)
         i32.subtract
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_0)
         (global.get $esp)
         i32.add
         i32.const 4
@@ -7989,20 +8337,26 @@ let%expect_test "xchg" =
         (local.set $__int_scratch_0)
         i32.const 4
         i32.subtract
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_0)
         i32.store
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
         i32.load
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_1)
         (global.get $__ret_addr__)
         i32.eq
         (if (result) (then) (else unreachable))
         i32.const 4
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_1)
         i32.add
         (global.set $esp)
         (local.get $__int_scratch_0)
-        global.set $eax((id 1)
+        global.set $eax
+    ((id 1)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int)))))
        (1 (Const __i32 0))
@@ -8028,54 +8382,69 @@ let%expect_test "fsqrt" =
   test_trans_block 0x00461f7b;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 Drop) (3 (Local (Float 0))) (4 Stack)
-      (5 Stack) (6 (Tee (Float 0))) (7 (Tee (Int 0))) (8 Stack)
-      (9 (Local (Float 1))) (10 (Tee (Int 2))) (11 Drop) (12 Stack) (13 Stack)
-      (14 Drop) (15 Stack) (16 Stack) (17 Stack) (18 (Local (Int 0))) (19 Drop)
-      (20 Stack) (21 Stack) (22 Drop) (23 Drop)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Drop) (3 (Local (Float 1)))
+      (4 Stack) (5 Stack) (6 (Tee (Float 1) (Ref 9))) (7 (Tee (Int 2) (Ref 8)))
+      (8 Stack) (9 (Local (Float 0))) (10 (Tee (Int 0) (Ref 11))) (11 Drop)
+      (12 (Local (Float 0))) (13 (Local (Float 0))) (14 Drop)
+      (15 (Local (Float 0))) (16 (Local (Float 0))) (17 (Local (Int 2)))
+      (18 Stack) (19 Drop) (20 (Local (Int 0))) (21 (Local (Int 0))) (22 Drop)
+      (23 Drop)))
+    ((int 3) (long 0) (float 2) (vec 0))
 
         global.get $__fpuStack__
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_1)
         f64.load
         call $__float_sqrt__
-        (local.set $__float_scratch_0)
+        (local.set $__float_scratch_1)
         i32.const 4819540
         (f32.load) (f64.promote_f32)
-        (local.get $__float_scratch_0)
+        (local.get $__float_scratch_1)
         f64.div
-        (local.tee $__float_scratch_0)
+        (local.tee $__float_scratch_1)
         global.get $esi
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_2)
         (f32.load) (f64.promote_f32)
         f64.mult
-        (local.set $__float_scratch_1)
+        (local.set $__float_scratch_0)
         global.get $ebp
-        (local.tee $__int_scratch_2)
-        (local.get $__float_scratch_1)
+        (local.tee $__int_scratch_0)
+        (local.get $__float_scratch_0)
         i32.store offset -12
-        (local.get $__int_scratch_0)
-        (f32.load offset 4) (f64.promote_f32)
-        (local.get $__float_scratch_0)
-        f64.mult
         (local.get $__int_scratch_2)
-        i32.store offset -8
-        (local.get $__int_scratch_0)
-        (f32.load offset 8) (f64.promote_f32)
+        (f32.load offset 4) (f64.promote_f32)
+        (local.set $__float_scratch_0)
+        (local.get $__float_scratch_1)
         (local.get $__float_scratch_0)
         f64.mult
+        (local.set $__float_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__float_scratch_0)
+        i32.store offset -8
+        (local.get $__int_scratch_2)
+        (f32.load offset 8) (f64.promote_f32)
+        (local.set $__float_scratch_0)
+        (local.get $__float_scratch_1)
+        (local.get $__float_scratch_0)
+        f64.mult
+        (local.set $__float_scratch_0)
         i32.const -12
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_2)
         i32.add
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
+        (local.get $__float_scratch_0)
         i32.store offset -4
         i32.const -8
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
-        i32.add
         (local.get $__int_scratch_0)
+        i32.add
+        (local.set $__int_scratch_0)
         global.set $esi
-        global.set $__fpuStack__((id 6)
+        (local.get $__int_scratch_0)
+        global.set $__fpuStack__
+    ((id 6)
      (instrs
       ((0
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
@@ -8109,46 +8478,61 @@ let%expect_test "movsd" =
   test_trans_block 0x00461f64;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Drop) (2 (Tee (Int 0))) (3 Stack) (4 Drop) (5 Stack)
-      (6 (Tee (Int 1))) (7 Stack) (8 (Tee (Int 0))) (9 Stack) (10 Drop)
-      (11 Stack) (12 (Tee (Int 1))) (13 Stack) (14 (Tee (Int 0))) (15 Stack)
-      (16 Drop) (17 Stack) (18 Stack) (19 Stack) (20 Stack) (21 Drop) (22 Drop)))
+     ((0 (Tee (Int 0) (Ref 4))) (1 Drop) (2 (Tee (Int 2) (Ref 3))) (3 Stack)
+      (4 Drop) (5 (Local (Int 1))) (6 (Tee (Int 1) (Ref 10))) (7 (Local (Int 0)))
+      (8 (Tee (Int 0) (Ref 9))) (9 Stack) (10 Drop) (11 (Local (Int 2)))
+      (12 (Tee (Int 2) (Ref 16))) (13 (Local (Int 1)))
+      (14 (Tee (Int 1) (Ref 15))) (15 Stack) (16 Drop) (17 (Local (Int 0)))
+      (18 Stack) (19 (Local (Int 0))) (20 Stack) (21 Drop) (22 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         global.get $eax
-        (local.set $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         global.get $esi
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_2)
         i32.load
-        (local.get $__int_scratch_1)
         i32.store
         i32.const 4
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         i32.add
         (local.tee $__int_scratch_1)
         i32.const 4
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_0)
         i32.add
         (local.tee $__int_scratch_0)
         i32.load
         i32.store
         i32.const 4
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_2)
+        i32.add
+        (local.tee $__int_scratch_2)
+        i32.const 4
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         i32.add
         (local.tee $__int_scratch_1)
-        i32.const 4
-        (local.get $__int_scratch_0)
-        i32.add
-        (local.tee $__int_scratch_0)
         i32.load
         i32.store
         i32.const 4
-        (local.get $__int_scratch_1)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_0)
         i32.add
         i32.const 4
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.add
         global.set $esi
-        global.set $edi((id 3)
+        global.set $edi
+    ((id 3)
      (instrs
       ((0 (GetGlobalOp (var eax) (global ((name eax) (typ Int))))) (1 Nop)
        (2 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
@@ -8179,48 +8563,53 @@ let%expect_test "sbb" =
   test_trans_block 0x0048b8f3;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 (Variable esp)) (3 Drop) (4 (Tee (Int 5)))
-      (5 Stack) (6 (Tee (Int 2))) (7 (Local (Int 1))) (8 Stack)
-      (9 (Local (Int 1))) (10 (Tee (Int 5))) (11 (Tee (Int 1)))
-      (12 (Local (Int 3))) (13 (Local (Int 4))) (14 Stack) (15 Stack) (16 Stack)
-      (17 Stack) (18 (Local (Int 0))) (19 Drop) (20 Drop) (21 Drop) (22 Drop)))
+     ((0 (Tee (Int 3) (Ref 1))) (1 (Local (Float 0))) (2 (Variable esp))
+      (3 Drop) (4 (Tee (Int 4) (Ref 6))) (5 Stack) (6 (Local (Int 2)))
+      (7 (Local (Int 1))) (8 Stack) (9 (Local (Int 1)))
+      (10 (Tee (Int 4) (Ref 11))) (11 (Local (Int 1))) (12 Stack)
+      (13 (Local (Int 0))) (14 Stack) (15 Stack) (16 Stack) (17 (Local (Int 0)))
+      (18 (Local (Int 0))) (19 Drop) (20 Drop) (21 Drop) (22 Drop)))
+    ((int 5) (long 0) (float 1) (vec 0))
 
         global.get $__fpuStack__
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         f64.load
+        (local.set $__float_scratch_0)
         (global.get $esp)
+        (local.get $__float_scratch_0)
         i32.store
         (global.get $esp)
         i32.load
-        (local.tee $__int_scratch_5)
+        (local.tee $__int_scratch_4)
         i32.const 2147483647
         i32.add
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_2)
         i32.const 0
         (local.set $__int_scratch_1)
-        (local.get $__int_scratch_5)
+        (local.get $__int_scratch_2)
+        (local.get $__int_scratch_4)
         i32.lt_u
         (local.get $__int_scratch_1)
         i32.add
         (local.set $__int_scratch_1)
         global.get $eax
-        (local.tee $__int_scratch_5)
+        (local.tee $__int_scratch_4)
         (local.get $__int_scratch_1)
         i32.subtract
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_1)
         (global.get $esp)
         i32.load offset 20
-        (local.set $__int_scratch_3)
         i32.const 0
-        (local.set $__int_scratch_4)
-        (local.get $__int_scratch_5)
-        i32.gt_u
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_4)
+        i32.gt_u
+        (local.get $__int_scratch_0)
         i32.add
-        (local.get $__int_scratch_3)
         i32.subtract
         i32.const -8
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_0)
         i32.add
         (local.set $__int_scratch_0)
@@ -8230,7 +8619,8 @@ let%expect_test "sbb" =
         (local.get $__int_scratch_1)
         global.set $eax
         (local.get $__int_scratch_0)
-        global.set $__fpuStack__((id 3)
+        global.set $__fpuStack__
+    ((id 3)
      (instrs
       ((0
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
@@ -8268,17 +8658,21 @@ let%expect_test "adc" =
   test_trans_block 0x0048b8db;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 (Variable esp)) (3 Drop) (4 Stack)
-      (5 Stack) (6 (Tee (Int 1))) (7 Stack) (8 (Tee (Int 2))) (9 (Local (Int 5)))
-      (10 Stack) (11 (Tee (Int 5))) (12 Stack) (13 (Tee (Int 1)))
-      (14 (Local (Int 3))) (15 (Local (Int 4))) (16 Stack) (17 Stack) (18 Stack)
-      (19 Stack) (20 (Local (Int 0))) (21 Drop) (22 Drop) (23 Drop) (24 Drop)))
+     ((0 (Tee (Int 3) (Ref 1))) (1 (Local (Float 0))) (2 (Variable esp))
+      (3 Drop) (4 Stack) (5 Stack) (6 (Tee (Int 1) (Ref 8))) (7 Stack)
+      (8 (Local (Int 2))) (9 (Local (Int 5))) (10 Stack)
+      (11 (Tee (Int 5) (Ref 13))) (12 Stack) (13 (Local (Int 1)))
+      (14 (Local (Int 0))) (15 (Local (Int 4))) (16 Stack) (17 Stack) (18 Stack)
+      (19 (Local (Int 0))) (20 (Local (Int 0))) (21 Drop) (22 Drop) (23 Drop)
+      (24 Drop)))
+    ((int 6) (long 0) (float 1) (vec 0))
 
         global.get $__fpuStack__
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         f64.load
+        (local.set $__float_scratch_0)
         (global.get $esp)
+        (local.get $__float_scratch_0)
         i32.store
         (global.get $esp)
         i32.load
@@ -8287,9 +8681,10 @@ let%expect_test "adc" =
         (local.tee $__int_scratch_1)
         i32.const 2147483647
         i32.add
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_2)
         i32.const 0
         (local.set $__int_scratch_5)
+        (local.get $__int_scratch_2)
         (local.get $__int_scratch_1)
         i32.lt_u
         (local.get $__int_scratch_5)
@@ -8297,19 +8692,22 @@ let%expect_test "adc" =
         (local.tee $__int_scratch_5)
         global.get $eax
         i32.add
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_1)
         (global.get $esp)
         i32.load offset 20
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_0)
         i32.const 0
         (local.set $__int_scratch_4)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_5)
         i32.lt_u
         (local.get $__int_scratch_4)
         i32.add
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.add
         i32.const -8
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_0)
         i32.add
         (local.set $__int_scratch_0)
@@ -8319,7 +8717,8 @@ let%expect_test "adc" =
         (local.get $__int_scratch_1)
         global.set $eax
         (local.get $__int_scratch_0)
-        global.set $__fpuStack__((id 2)
+        global.set $__fpuStack__
+    ((id 2)
      (instrs
       ((0
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
@@ -8359,28 +8758,33 @@ let%expect_test "test reflexive jns" =
   test_trans_block 0x0048b8c7;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 (Local (Float 0))) (2 Stack) (3 Stack) (4 Stack)
-      (5 Stack) (6 (Local (Int 0))) (7 Drop) (8 Stack) (9 Stack) (10 Drop)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 (Local (Float 0))) (2 Stack)
+      (3 (Local (Float 0))) (4 Stack) (5 Stack) (6 Stack) (7 Drop)
+      (8 (Local (Int 0))) (9 Stack) (10 Drop)))
+    ((int 2) (long 0) (float 1) (vec 0))
 
         global.get $__fpuStack__
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_1)
         f64.load
         (local.set $__float_scratch_0)
         (local.get $__int_scratch_1)
         f64.load offset -8
         (local.get $__float_scratch_0)
         f64.sub
+        (local.set $__float_scratch_0)
         global.get $edx
         i32.const 0
         i32.ge_s
-        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__float_scratch_0)
         f64.store offset -8
         i32.const -8
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.add
-        global.set $__fpuStack__((id 1)
+        global.set $__fpuStack__
+    ((id 1)
      (instrs
       ((0
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
@@ -8407,11 +8811,14 @@ let%expect_test "fistp" =
   [%expect {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 4)))
-      (3 Stack) (4 (Tee (Int 1))) (5 Drop) (6 Drop) (7 Stack) (8 Stack) (9 Stack)
-      (10 (Variable esp)) (11 (Tee (Int 4))) (12 (Tee (Float 0))) (13 Drop)
-      (14 Stack) (15 Drop) (16 Stack) (17 Stack) (18 (Local (Int 3)))
-      (19 (Tee (Int 2))) (20 (Local (Int 0))) (21 Drop) (22 Drop) (23 Stack)
-      (24 Stack) (25 Drop) (26 Drop) (27 Drop) (28 Drop)))
+      (3 (Local (Int 1))) (4 (Tee (Int 1) (Ref 5))) (5 Drop) (6 Drop)
+      (7 (Local (Int 4))) (8 Stack) (9 Stack) (10 (Variable esp))
+      (11 (Tee (Int 4) (Ref 12))) (12 (Local (Float 1))) (13 Drop)
+      (14 (Local (Long 0))) (15 Drop) (16 Stack) (17 (Local (Float 0)))
+      (18 Stack) (19 (Tee (Int 3) (Ref 20))) (20 (Local (Int 0))) (21 Drop)
+      (22 Drop) (23 (Local (Int 2))) (24 (Local (Int 2))) (25 Drop) (26 Drop)
+      (27 Drop) (28 Drop)))
+    ((int 5) (long 1) (float 2) (vec 0))
 
         (global.get $esp)
         i32.load
@@ -8419,13 +8826,17 @@ let%expect_test "fistp" =
         global.get $ebp
         (local.set $__int_scratch_4)
         i32.const 4
+        (local.set $__int_scratch_1)
         (global.get $esp)
+        (local.get $__int_scratch_1)
         i32.subtract
         (local.tee $__int_scratch_1)
         (local.get $__int_scratch_4)
         i32.store
         i32.const 32
+        (local.set $__int_scratch_4)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_4)
         i32.subtract
         i32.const 4294967280
         i32.and
@@ -8433,39 +8844,47 @@ let%expect_test "fistp" =
         global.get $__fpuStack__
         (local.tee $__int_scratch_4)
         f64.load
-        (local.tee $__float_scratch_0)
+        (local.set $__float_scratch_1)
         (global.get $esp)
+        (local.get $__float_scratch_1)
         i32.store offset 24
-        (local.get $__float_scratch_0)
+        (local.get $__float_scratch_1)
         i64.trunc_f64_s
+        (local.set $__long_scratch_0)
         (global.get $esp)
+        (local.get $__long_scratch_0)
         i64.store offset 16
         (global.get $esp)
         i64.load offset 16
         f64.convert_i64_s
+        (local.set $__float_scratch_0)
         (global.get $esp)
         i32.load offset 24
-        (local.set $__int_scratch_3)
         (global.get $esp)
         i32.load offset 16
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_3)
         i32.eqz
         (local.set $__int_scratch_0)
         (local.get $__int_scratch_4)
-        (local.get $__float_scratch_0)
+        (local.get $__float_scratch_1)
         f64.store
         (local.get $__int_scratch_4)
+        (local.get $__float_scratch_0)
         f64.store offset 8
         i32.const 8
+        (local.set $__int_scratch_2)
         (local.get $__int_scratch_4)
-        i32.add
-        (local.get $__int_scratch_3)
-        global.set $edx
         (local.get $__int_scratch_2)
+        i32.add
+        (local.set $__int_scratch_2)
+        global.set $edx
+        (local.get $__int_scratch_3)
         global.set $eax
+        (local.get $__int_scratch_2)
         global.set $__fpuStack__
         (local.get $__int_scratch_1)
-        global.set $ebp((id 0)
+        global.set $ebp
+    ((id 0)
      (instrs
       ((0 (OutsideContext (var esp) (typ Int)))
        (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
@@ -8508,23 +8927,27 @@ let%expect_test "dec/dec js" =
   test_trans_block 0x0047d173;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 (Tee (Int 1))) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-      (5 Stack) (6 (Local (Int 0)))))
+     ((0 (Local (Int 1))) (1 (Tee (Int 0) (Ref 2))) (2 Stack) (3 (Local (Int 1)))
+      (4 Drop) (5 (Local (Int 0))) (6 Stack)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         i32.const 1
-        (local.set $__int_scratch_0)
+        (local.set $__int_scratch_1)
         global.get $ebp
-        (local.tee $__int_scratch_1)
-        i32.load offset -28
-        (local.get $__int_scratch_0)
-        i32.subtract
         (local.tee $__int_scratch_0)
+        i32.load offset -28
+        (local.get $__int_scratch_1)
+        i32.subtract
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
         i32.store offset -28
         i32.const 0
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.lt_s
-        (local.set $__int_scratch_0)((id 1)
+    ((id 1)
      (instrs
       ((0 (Const __i32 1))
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
@@ -8543,15 +8966,14 @@ let%expect_test "dec/dec js" =
 let%expect_test "jb" =
   test_trans_block 0x0044e4f5;
   [%expect {|
-    (locs ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Local (Int 0)))))
+    (locs ((0 Stack) (1 Stack) (2 Stack) (3 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
         i32.load offset 8
         i32.const 50
         i32.lt_u
-        (local.set $__int_scratch_0)((id 1)
+    ((id 1)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -8568,27 +8990,32 @@ let%expect_test "fsubr" =
   test_trans_block 0x00404715;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 Stack) (3 Drop) (4 Stack) (5 Stack)
-      (6 Drop) (7 Stack) (8 (Local (Float 0))) (9 Stack) (10 Stack)
-      (11 (Local (Float 0))) (12 Stack) (13 Drop) (14 Stack) (15 Stack)
-      (16 Stack) (17 Drop) (18 Stack) (19 Stack) (20 (Tee (Int 0))) (21 Drop)
-      (22 (Tee (Int 2))) (23 Stack) (24 (Local (Float 0))) (25 Stack) (26 Stack)
-      (27 Drop) (28 (Tee (Int 3))) (29 Stack) (30 (Local (Float 0))) (31 Stack)
-      (32 Stack) (33 Drop) (34 Stack) (35 Stack) (36 Stack) (37 Stack) (38 Stack)
-      (39 Stack) (40 (Local (Float 0))) (41 Stack) (42 (Variable esp))
-      (43 (Tee (Int 1))) (44 Stack) (45 Drop) (46 (Tee (Int 4))) (47 Drop)
-      (48 Stack) (49 Stack) (50 Drop) (51 Drop) (52 Drop) (53 Drop) (54 Drop)
-      (55 (Variable esp)) (56 (Local (Int 1))) (57 (Tee (Int 0))) (58 Drop)
-      (59 Stack) (60 Stack) (61 (Local (Int 0)))))
+     ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 Drop) (4 Stack)
+      (5 (Local (Int 0))) (6 Drop) (7 Stack) (8 (Local (Float 0))) (9 Stack)
+      (10 Stack) (11 (Local (Float 0))) (12 Stack) (13 Drop) (14 Stack)
+      (15 Stack) (16 Stack) (17 Drop) (18 Stack) (19 Stack)
+      (20 (Tee (Int 0) (Ref 21))) (21 Drop) (22 (Tee (Int 2) (Ref 25)))
+      (23 Stack) (24 (Local (Float 0))) (25 (Local (Float 1)))
+      (26 (Local (Float 1))) (27 Drop) (28 (Tee (Int 3) (Ref 31))) (29 Stack)
+      (30 (Local (Float 1))) (31 (Local (Float 0))) (32 (Local (Float 0)))
+      (33 Drop) (34 Stack) (35 Stack) (36 Stack) (37 Stack) (38 Stack) (39 Stack)
+      (40 (Local (Float 0))) (41 (Local (Int 1))) (42 (Variable esp))
+      (43 (Tee (Int 1) (Ref 45))) (44 Stack) (45 Drop)
+      (46 (Tee (Int 5) (Ref 47))) (47 Drop) (48 (Local (Int 4))) (49 Stack)
+      (50 Drop) (51 Drop) (52 Drop) (53 Drop) (54 Drop) (55 (Variable esp))
+      (56 (Local (Int 1))) (57 (Tee (Int 0) (Ref 58))) (58 Drop) (59 Stack)
+      (60 Stack) (61 Stack)))
+    ((int 6) (long 0) (float 2) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_1)
         i32.load offset -4
         i32.load8_u offset 37
         i32.const 2
         i32.shl
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.store offset -64
         (local.get $__int_scratch_1)
         i32.load offset -64
@@ -8624,20 +9051,28 @@ let%expect_test "fsubr" =
         (f32.load) (f64.promote_f32)
         (local.set $__float_scratch_0)
         (f32.load offset 8) (f64.promote_f32)
+        (local.set $__float_scratch_1)
         (local.get $__float_scratch_0)
+        (local.get $__float_scratch_1)
         f64.sub
+        (local.set $__float_scratch_1)
         (local.get $__int_scratch_1)
+        (local.get $__float_scratch_1)
         i32.store offset -16
         (local.get $__int_scratch_1)
         i32.load offset -4
         (local.tee $__int_scratch_3)
         i32.const 4973580
         (f32.load) (f64.promote_f32)
-        (local.set $__float_scratch_0)
+        (local.set $__float_scratch_1)
         (f32.load offset 12) (f64.promote_f32)
+        (local.set $__float_scratch_0)
+        (local.get $__float_scratch_1)
         (local.get $__float_scratch_0)
         f64.sub
+        (local.set $__float_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__float_scratch_0)
         i32.store offset -12
         (local.get $__int_scratch_1)
         (f32.load offset -16) (f64.promote_f32)
@@ -8652,16 +9087,20 @@ let%expect_test "fsubr" =
         f64.add
         (local.set $__float_scratch_0)
         i32.const 4
+        (local.set $__int_scratch_1)
         (global.get $esp)
+        (local.get $__int_scratch_1)
         i32.subtract
         (local.tee $__int_scratch_1)
         i32.const 4212587
         i32.store
         global.get $__fpuStack__
-        (local.tee $__int_scratch_4)
+        (local.tee $__int_scratch_5)
         (local.get $__float_scratch_0)
         f64.store offset 8
         i32.const 8
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_5)
         (local.get $__int_scratch_4)
         i32.add
         (local.get $__int_scratch_3)
@@ -8684,7 +9123,7 @@ let%expect_test "fsubr" =
         i32.load offset -8
         i32.const 4096
         i32.le_s
-        (local.set $__int_scratch_0)((id 7)
+    ((id 7)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -8762,28 +9201,32 @@ let%expect_test "rep movsd" =
   test_trans_block 0x00403ad5;
   [%expect {|
     (locs
-     ((0 (Local (Int 3))) (1 Stack) (2 Stack) (3 (Local (Int 0))) (4 Drop)
-      (5 Stack) (6 (Tee (Int 2))) (7 Drop) (8 (Tee (Int 1))) (9 Drop) (10 Stack)
-      (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack) (15 (Tee (Int 2)))
-      (16 Drop) (17 Stack) (18 (Local (Int 3))) (19 (Variable esp)) (20 Stack)
-      (21 (Tee (Int 0))) (22 Drop) (23 Stack) (24 Stack) (25 Stack)
-      (26 (Tee (Int 0))) (27 Stack) (28 Drop) (29 Drop) (30 Drop) (31 Drop)
-      (32 Drop) (33 Drop) (34 (Variable esp))))
+     ((0 (Tee (Int 3) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Int 0))) (4 Drop)
+      (5 (Local (Int 2))) (6 (Tee (Int 2) (Ref 9))) (7 Drop) (8 (Local (Int 1)))
+      (9 Drop) (10 Stack) (11 (Local (Int 1))) (12 Drop) (13 Stack) (14 Stack)
+      (15 (Local (Int 2))) (16 Drop) (17 (Local (Int 0))) (18 (Local (Int 0)))
+      (19 (Variable esp)) (20 (Local (Int 3))) (21 (Tee (Int 3) (Ref 22)))
+      (22 Drop) (23 Stack) (24 Stack) (25 (Local (Int 0)))
+      (26 (Tee (Int 0) (Ref 28))) (27 Stack) (28 Drop) (29 Drop) (30 Drop)
+      (31 Drop) (32 Drop) (33 Drop) (34 (Variable esp))))
+    ((int 4) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_3)
-        (local.get $__int_scratch_3)
+        (local.tee $__int_scratch_3)
         i32.load offset -604
         i32.const 5888
         i32.add
         (local.set $__int_scratch_0)
         i32.const -600
+        (local.set $__int_scratch_2)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_2)
         i32.add
         (local.tee $__int_scratch_2)
         i32.const 588
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         memory.copy
         (local.get $__int_scratch_0)
         (local.get $__int_scratch_1)
@@ -8796,22 +9239,29 @@ let%expect_test "rep movsd" =
         i32.load offset -152
         i32.const 4096
         i32.or
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_2)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_2)
         i32.store offset -152
         i32.const -600
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.add
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_0)
         i32.const 4
+        (local.set $__int_scratch_3)
         (global.get $esp)
-        i32.subtract
-        (local.tee $__int_scratch_0)
         (local.get $__int_scratch_3)
+        i32.subtract
+        (local.tee $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.store
         i32.const 4955716
         i32.load
         i32.const 4
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_0)
         i32.subtract
         (local.tee $__int_scratch_0)
@@ -8825,7 +9275,8 @@ let%expect_test "rep movsd" =
         global.set $edi
         (local.get $__int_scratch_0)
         call $__func44f770__
-        (global.set $esp)((id 3)
+        (global.set $esp)
+    ((id 3)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var esi) (op Load32) (addr (Ref 0)) (offset -604)))
@@ -8864,21 +9315,22 @@ let%expect_test "fabs" =
   test_trans_block 0x004023c9;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 Stack) (3 Stack) (4 (Tee (Int 2)))
-      (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack) (11 Stack)
-      (12 (Tee (Float 0))) (13 Drop) (14 (Tee (Float 0))) (15 Drop) (16 Drop)
-      (17 Stack) (18 Stack) (19 Stack) (20 (Local (Int 1))) (21 Drop) (22 Stack)
-      (23 (Local (Int 0))) (24 Drop) (25 Drop) (26 Drop)))
+     ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 Stack)
+      (4 (Tee (Int 1) (Ref 5))) (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack)
+      (10 Stack) (11 Stack) (12 (Local (Float 0))) (13 Drop)
+      (14 (Local (Float 0))) (15 Drop) (16 Drop) (17 Stack) (18 Stack) (19 Stack)
+      (20 (Local (Int 0))) (21 Drop) (22 Stack) (23 Stack) (24 Drop) (25 Drop)
+      (26 Drop)))
+    ((int 2) (long 0) (float 1) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         i32.load offset -8
         i32.const 588
         i32.mult
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.load offset -40
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         i32.add
         (f32.load offset 3396) (f64.promote_f32)
         i32.const 4819588
@@ -8887,30 +9339,32 @@ let%expect_test "fabs" =
         i32.const 4973576
         (f32.load) (f64.promote_f32)
         f64.sub
-        (local.tee $__float_scratch_0)
-        (local.get $__int_scratch_1)
+        (local.set $__float_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__float_scratch_0)
         i32.store offset -36
         (local.get $__float_scratch_0)
         f64.abs
-        (local.tee $__float_scratch_0)
-        (local.get $__int_scratch_1)
+        (local.set $__float_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__float_scratch_0)
         i32.store offset -44
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (local.get $__float_scratch_0)
         i32.store offset -4
-        (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         (f32.load offset -4) (f64.promote_f32)
         i32.const 4819720
         (f32.load) (f64.promote_f32)
         i32.const 0xDEADBEEF
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         f64.lt
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_2)
-        global.set $ecx
         (local.get $__int_scratch_1)
-        global.set $eax((id 23)
+        global.set $ecx
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 23)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -8)))
@@ -8945,15 +9399,14 @@ let%expect_test "fabs" =
 let%expect_test "jae" =
   test_trans_block 0x004027fc;
   [%expect {|
-    (locs ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Local (Int 0)))))
+    (locs ((0 Stack) (1 Stack) (2 Stack) (3 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
         i32.load offset -4
         i32.const 10
         i32.ge_u
-        (local.set $__int_scratch_0)((id 5)
+    ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -8968,161 +9421,59 @@ let%expect_test "jae" =
 
 let%expect_test "rep stosd (zeroed)" =
   test_trans_block 0x0040118c;
-  [%expect {|
-    (locs
-     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 1)))
-      (3 Stack) (4 (Tee (Int 2))) (5 Drop) (6 Drop) (7 Stack) (8 Stack)
-      (9 (Local (Int 1))) (10 Stack) (11 (Tee (Int 3))) (12 Drop) (13 Stack)
-      (14 Drop) (15 Stack) (16 Stack) (17 (Tee (Int 3))) (18 Stack) (19 Drop)
-      (20 Drop) (21 Drop) (22 Drop) (23 Stack) (24 Drop) (25 Drop)
-      (26 (Tee (Int 3))) (27 Stack) (28 Drop) (29 (Local (Int 2))) (30 Stack)
-      (31 Drop) (32 (Local (Int 2))) (33 Stack) (34 Drop) (35 Stack) (36 Drop)
-      (37 (Local (Int 1))) (38 Stack) (39 Drop) (40 Drop) (41 Drop)
-      (42 (Local (Int 0))) (43 Stack) (44 (Tee (Int 3))) (45 Stack) (46 Stack)
-      (47 Drop) (48 Stack) (49 (Variable esp)) (50 Drop) (51 Drop) (52 Drop)
-      (53 Drop)))
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("wrong value on stack" (expected (Ref 29)) (found (Ref 30)))
+  Raised at Base__Error.raise in file "src/error.ml" (inlined), line 9, characters 21-37
+  Called from Base__Error.raise_s in file "src/error.ml", line 10, characters 26-47
+  Called from Mir__Instr.fold_right in file "mir/instr.ml", line 513, characters 17-25
+  Called from Mir__Wasm_backend.validate_stack.(fun) in file "mir/wasm_backend.ml", line 287, characters 22-64
+  Called from Base__Array.foldi in file "src/array.ml", line 417, characters 11-36
+  Called from Mir__Wasm_backend.validate_stack in file "mir/wasm_backend.ml", lines 284-288, characters 4-53
+  Called from Test_towhowcaml.test_trans_block in file "test/test_towhowcaml.ml", line 38, characters 2-29
+  Called from Test_towhowcaml.(fun) in file "test/test_towhowcaml.ml", line 8972, characters 2-29
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
 
-        (global.get $esp)
-        i32.load
-        (global.set $__ret_addr__)
-        global.get $ebp
-        (local.set $__int_scratch_1)
-        i32.const 4
-        (global.get $esp)
-        i32.subtract
-        (local.tee $__int_scratch_2)
-        (local.get $__int_scratch_1)
-        i32.store
-        i32.const 36
-        (local.get $__int_scratch_2)
-        i32.subtract
-        global.get $edi
-        (local.set $__int_scratch_1)
-        i32.const 4
-        i32.subtract
-        (local.tee $__int_scratch_3)
-        (local.get $__int_scratch_1)
-        i32.store
-        global.get $ecx
-        (local.get $__int_scratch_2)
-        i32.store offset -36
-        (local.get $__int_scratch_2)
-        i32.load offset -36
-        i32.const 4
-        (local.get $__int_scratch_3)
-        i32.subtract
-        (local.tee $__int_scratch_3)
-        i32.const 4198781
-        i32.store
-        global.set $ecx
-        (local.get $__int_scratch_2)
-        global.set $ebp
-        (local.get $__int_scratch_3)
-        call $__func4011b0__
-        global.get $ebp
-        (local.tee $__int_scratch_3)
-        i32.load offset -36
-        i32.const 588
-        (local.set $__int_scratch_2)
-        i32.const 0
-        (local.get $__int_scratch_2)
-        memory.fill
-        i32.const 0
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_3)
-        i32.load offset -36
-        i32.const 4294967295
-        i32.store16 offset 468
-        (local.get $__int_scratch_3)
-        i32.load offset -36
-        (local.set $__int_scratch_1)
-        i32.load
-        (local.get $__int_scratch_3)
-        i32.load
-        (local.set $__int_scratch_0)
-        i32.const 4
-        (local.get $__int_scratch_3)
-        i32.add
-        (local.tee $__int_scratch_3)
-        i32.load
-        (global.get $__ret_addr__)
-        i32.eq
-        (if (result) (then) (else unreachable))
-        i32.const 4
-        (local.get $__int_scratch_3)
-        i32.add
-        (global.set $esp)
-        (local.get $__int_scratch_2)
-        global.set $ecx
-        (local.get $__int_scratch_1)
-        global.set $eax
-        global.set $edi
-        (local.get $__int_scratch_0)
-        global.set $ebp((id 0)
-     (instrs
-      ((0 (OutsideContext (var esp) (typ Int)))
-       (1 (LoadOp (var __ret_addr__) (op Load32) (addr (Ref 0))))
-       (2 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
-       (3 (Const __i32 4))
-       (4 (BiOp (var esp) (op Subtract) (lhs (Ref 0)) (rhs (Ref 3))))
-       (5 (StoreOp (op Store32) (addr (Ref 4)) (value (Ref 2)))) (6 Nop)
-       (7 (Const __i32 36))
-       (8 (BiOp (var esp) (op Subtract) (lhs (Ref 4)) (rhs (Ref 7))))
-       (9 (GetGlobalOp (var edi) (global ((name edi) (typ Int)))))
-       (10 (Const __i32 4))
-       (11 (BiOp (var esp) (op Subtract) (lhs (Ref 8)) (rhs (Ref 10))))
-       (12 (StoreOp (op Store32) (addr (Ref 11)) (value (Ref 9))))
-       (13 (GetGlobalOp (var ecx) (global ((name ecx) (typ Int)))))
-       (14 (StoreOp (op Store32) (addr (Ref 4)) (value (Ref 13)) (offset -36)))
-       (15 (LoadOp (var ecx) (op Load32) (addr (Ref 4)) (offset -36)))
-       (16 (Const __i32 4))
-       (17 (BiOp (var esp) (op Subtract) (lhs (Ref 11)) (rhs (Ref 16))))
-       (18 (Const __i32 4198781))
-       (19 (StoreOp (op Store32) (addr (Ref 17)) (value (Ref 18))))
-       (20 (SetGlobalOp (value (Ref 15)) (global ((name ecx) (typ Int)))))
-       (21 (SetGlobalOp (value (Ref 4)) (global ((name ebp) (typ Int)))))
-       (22 (CallOp (func __func4011b0__) (args ((Ref 17)))))
-       (23 (ReturnedOp (var esp) (typ Int))) (24 Nop) (25 Nop)
-       (26 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
-       (27 (LoadOp (var edi) (op Load32) (addr (Ref 26)) (offset -36))) (28 Nop)
-       (29 (Const __i32 588)) (30 (Const __i32 0))
-       (31 (Memset (count (Ref 29)) (value (Ref 30)) (dest (Ref 27))))
-       (32 (Const ecx 0))
-       (33 (LoadOp (var eax) (op Load32) (addr (Ref 26)) (offset -36))) (34 Nop)
-       (35 (Const __i32 4294967295))
-       (36 (StoreOp (op Store16) (addr (Ref 33)) (value (Ref 35)) (offset 468)))
-       (37 (LoadOp (var eax) (op Load32) (addr (Ref 26)) (offset -36)))
-       (38 (LoadOp (var edi) (op Load32) (addr (Ref 23)))) (39 Nop) (40 Nop)
-       (41 Nop) (42 (LoadOp (var ebp) (op Load32) (addr (Ref 26))))
-       (43 (Const __i32 4))
-       (44 (BiOp (var esp) (op Add) (lhs (Ref 26)) (rhs (Ref 43))))
-       (45 (LoadOp (var __i32) (op Load32) (addr (Ref 44))))
-       (46 (BiOp (var __i32) (op Equal) (lhs (Ref 45)) (rhs (Ref 1))))
-       (47 (AssertOp (condition (Ref 46)))) (48 (Const __i32 4))
-       (49 (BiOp (var esp) (op Add) (lhs (Ref 44)) (rhs (Ref 48))))
-       (50 (SetGlobalOp (value (Ref 32)) (global ((name ecx) (typ Int)))))
-       (51 (SetGlobalOp (value (Ref 37)) (global ((name eax) (typ Int)))))
-       (52 (SetGlobalOp (value (Ref 38)) (global ((name edi) (typ Int)))))
-       (53 (SetGlobalOp (value (Ref 42)) (global ((name ebp) (typ Int)))))))
-     (terminator Return) (roots ((Ref 1) (Ref 49))))
-    |}]
+  Trailing output
+  ---------------
+  (locs
+   ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 3)))
+    (3 (Local (Int 1))) (4 (Tee (Int 1) (Ref 5))) (5 Drop) (6 Drop)
+    (7 (Local (Int 3))) (8 Stack) (9 (Local (Int 3))) (10 Stack)
+    (11 (Local (Int 2))) (12 Drop) (13 (Local (Int 3))) (14 Drop) (15 Stack)
+    (16 (Local (Int 3))) (17 (Tee (Int 3) (Ref 19))) (18 Stack) (19 Drop)
+    (20 Drop) (21 Drop) (22 Drop) (23 Stack) (24 Drop) (25 Drop)
+    (26 (Tee (Int 3) (Ref 27))) (27 (Local (Int 1))) (28 Drop) (29 Stack)
+    (30 (Local (Int 2))) (31 Drop) (32 (Local (Int 2))) (33 Stack) (34 Drop)
+    (35 Stack) (36 Drop) (37 (Local (Int 1))) (38 Stack) (39 Drop) (40 Drop)
+    (41 Drop) (42 (Local (Int 0))) (43 (Local (Int 4)))
+    (44 (Tee (Int 4) (Ref 45))) (45 (Local (Int 3))) (46 Stack) (47 Drop)
+    (48 (Local (Int 3))) (49 (Variable esp)) (50 Drop) (51 Drop) (52 Drop)
+    (53 Drop)))
+  ((int 5) (long 0) (float 0) (vec 0))
+  |}]
 
 let%expect_test "fild/fiadd" =
   test_trans_block 0x00453df6;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 Drop) (4 Stack)
-      (5 (Tee (Int 3))) (6 Drop) (7 Stack) (8 Drop) (9 Stack) (10 Stack)
-      (11 Stack) (12 Stack) (13 (Tee (Int 1))) (14 (Tee (Int 2))) (15 Drop)
-      (16 Drop) (17 Stack) (18 Stack) (19 (Local (Float 0))) (20 Stack)
-      (21 (Variable esp)) (22 (Tee (Int 0))) (23 Stack) (24 Drop)
-      (25 (Tee (Int 4))) (26 Drop) (27 Stack) (28 Stack) (29 Drop) (30 Drop)
-      (31 Drop) (32 Drop) (33 Drop) (34 (Variable esp)) (35 Stack)
-      (36 (Tee (Int 0))) (37 Stack) (38 Drop) (39 Drop) (40 Drop)))
+     ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 Drop) (4 Stack)
+      (5 (Tee (Int 3) (Ref 7))) (6 Drop) (7 (Local (Int 1))) (8 Drop) (9 Stack)
+      (10 Stack) (11 Stack) (12 Stack) (13 (Tee (Int 1) (Ref 14)))
+      (14 (Local (Int 2))) (15 Drop) (16 Drop) (17 Stack) (18 Stack)
+      (19 (Local (Float 0))) (20 (Local (Int 0))) (21 (Variable esp))
+      (22 (Tee (Int 0) (Ref 24))) (23 Stack) (24 Drop)
+      (25 (Tee (Int 5) (Ref 26))) (26 Drop) (27 (Local (Int 4))) (28 Stack)
+      (29 Drop) (30 Drop) (31 Drop) (32 Drop) (33 Drop) (34 (Variable esp))
+      (35 Stack) (36 (Tee (Int 0) (Ref 39))) (37 Stack) (38 Drop) (39 Drop)
+      (40 Drop)))
+    ((int 6) (long 0) (float 1) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.tee $__int_scratch_0)
         i32.load offset 8
         i32.load8_u offset 559
         (local.get $__int_scratch_0)
@@ -9130,7 +9481,9 @@ let%expect_test "fild/fiadd" =
         i32.load8_u offset 555
         (local.tee $__int_scratch_3)
         i32.subtract
+        (local.set $__int_scratch_1)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.store offset -792
         (local.get $__int_scratch_0)
         i32.load offset -792
@@ -9142,8 +9495,9 @@ let%expect_test "fild/fiadd" =
         i32.load offset 8
         (local.tee $__int_scratch_1)
         i32.load8_u offset 555
-        (local.tee $__int_scratch_2)
+        (local.set $__int_scratch_2)
         (local.get $__int_scratch_0)
+        (local.get $__int_scratch_2)
         i32.store offset -796
         (local.get $__int_scratch_0)
         i32.load offset -796
@@ -9151,16 +9505,20 @@ let%expect_test "fild/fiadd" =
         f64.add
         (local.set $__float_scratch_0)
         i32.const 4
+        (local.set $__int_scratch_0)
         (global.get $esp)
+        (local.get $__int_scratch_0)
         i32.subtract
         (local.tee $__int_scratch_0)
         i32.const 4537877
         i32.store
         global.get $__fpuStack__
-        (local.tee $__int_scratch_4)
+        (local.tee $__int_scratch_5)
         (local.get $__float_scratch_0)
         f64.store offset 8
         i32.const 8
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_5)
         (local.get $__int_scratch_4)
         i32.add
         (local.get $__int_scratch_3)
@@ -9179,7 +9537,8 @@ let%expect_test "fild/fiadd" =
         global.get $eax
         i32.store8 offset 443
         (local.get $__int_scratch_0)
-        global.set $edx((id 510)
+        global.set $edx
+    ((id 510)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -9234,20 +9593,22 @@ let%expect_test "div" =
   test_trans_block 0x00452f62;
   [%expect {|
     (locs
-     ((0 (Local (Int 1))) (1 Stack) (2 (Variable esp)) (3 (Tee (Int 2)))
+     ((0 Stack) (1 (Local (Int 2))) (2 (Variable esp)) (3 (Tee (Int 2) (Ref 5)))
       (4 Stack) (5 Drop) (6 Drop) (7 Drop) (8 (Variable esp)) (9 Drop)
-      (10 (Tee (Int 2))) (11 (Tee (Int 1))) (12 (Tee (Int 0))) (13 Stack)
-      (14 (Tee (Int 0))) (15 Drop) (16 Drop) (17 Drop)))
+      (10 (Tee (Int 2) (Ref 13))) (11 (Tee (Int 1) (Ref 12)))
+      (12 (Tee (Int 0) (Ref 13))) (13 Stack) (14 (Local (Int 0))) (15 Drop)
+      (16 Drop) (17 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
 
         i32.const 4849184
-        (local.set $__int_scratch_1)
         i32.const 4
+        (local.set $__int_scratch_2)
         (global.get $esp)
+        (local.get $__int_scratch_2)
         i32.subtract
         (local.tee $__int_scratch_2)
         i32.const 4534107
         i32.store
-        (local.get $__int_scratch_1)
         global.set $ecx
         (local.get $__int_scratch_2)
         call $__func4318d0__
@@ -9262,12 +9623,14 @@ let%expect_test "div" =
         (local.get $__int_scratch_2)
         (local.get $__int_scratch_0)
         i32.rem_u
-        (local.tee $__int_scratch_0)
+        (local.set $__int_scratch_0)
         (local.get $__int_scratch_1)
+        (local.get $__int_scratch_0)
         i32.store offset -608
         (local.get $__int_scratch_0)
         global.set $edx
-        global.set $eax((id 341)
+        global.set $eax
+    ((id 341)
      (instrs
       ((0 (Const ecx 4849184)) (1 (Const __i32 4))
        (2 (OutsideContext (var esp) (typ Int)))
@@ -9296,33 +9659,39 @@ let%expect_test "fdiv" =
   test_trans_block 0x00452949;
   [%expect {|
     (locs
-     ((0 (Local (Int 3))) (1 Stack) (2 Stack) (3 Stack) (4 Drop)
-      (5 (Local (Int 2))) (6 (Variable esp)) (7 Stack) (8 (Tee (Int 0)))
-      (9 Drop) (10 (Tee (Int 2))) (11 Stack) (12 Drop) (13 Stack)
-      (14 (Local (Int 1))) (15 Stack) (16 (Tee (Int 0))) (17 Drop) (18 Stack)
-      (19 Stack) (20 (Local (Int 4))) (21 Stack) (22 (Tee (Int 0))) (23 Drop)
-      (24 Stack) (25 Stack) (26 (Tee (Int 0))) (27 Stack) (28 Drop) (29 Drop)
-      (30 Drop) (31 Drop) (32 Drop) (33 Drop) (34 (Variable esp)) (35 Stack)
-      (36 (Local (Int 0))) (37 Stack) (38 Drop) (39 Drop)))
+     ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Float 0)))
+      (4 Drop) (5 (Local (Int 2))) (6 (Variable esp)) (7 (Local (Int 4)))
+      (8 (Tee (Int 4) (Ref 9))) (9 Drop) (10 (Tee (Int 2) (Ref 11))) (11 Stack)
+      (12 Drop) (13 Stack) (14 (Local (Int 1))) (15 (Local (Int 5)))
+      (16 (Tee (Int 5) (Ref 17))) (17 Drop) (18 Stack) (19 Stack)
+      (20 (Local (Int 4))) (21 (Local (Int 3))) (22 (Tee (Int 3) (Ref 23)))
+      (23 Drop) (24 Stack) (25 (Local (Int 0))) (26 (Tee (Int 0) (Ref 28)))
+      (27 Stack) (28 Drop) (29 Drop) (30 Drop) (31 Drop) (32 Drop) (33 Drop)
+      (34 (Variable esp)) (35 Stack) (36 (Local (Int 0))) (37 Stack) (38 Drop)
+      (39 Drop)))
+    ((int 6) (long 0) (float 1) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_3)
-        (local.get $__int_scratch_3)
+        (local.tee $__int_scratch_0)
         (f32.load offset -500) (f64.promote_f32)
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         (f32.load offset -504) (f64.promote_f32)
         f64.div
-        (local.get $__int_scratch_3)
+        (local.set $__float_scratch_0)
+        (local.get $__int_scratch_0)
+        (local.get $__float_scratch_0)
         i32.store offset -508
         i32.const 0
         (local.set $__int_scratch_2)
         i32.const 4
+        (local.set $__int_scratch_4)
         (global.get $esp)
+        (local.get $__int_scratch_4)
         i32.subtract
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_4)
         (local.get $__int_scratch_2)
         i32.store
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.load offset -4
         (local.tee $__int_scratch_2)
         i32.load16_s offset 6
@@ -9330,25 +9699,31 @@ let%expect_test "fdiv" =
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.set $__int_scratch_1)
         i32.const 4
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_5)
+        (local.get $__int_scratch_4)
+        (local.get $__int_scratch_5)
         i32.subtract
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_5)
         (local.get $__int_scratch_1)
         i32.store
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.load offset -4
         i32.const 8
         i32.add
         (local.set $__int_scratch_4)
         i32.const 4
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_3)
+        (local.get $__int_scratch_5)
+        (local.get $__int_scratch_3)
         i32.subtract
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         (local.get $__int_scratch_4)
         i32.store
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.load offset 8
         i32.const 4
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_0)
         i32.subtract
         (local.tee $__int_scratch_0)
@@ -9369,7 +9744,8 @@ let%expect_test "fdiv" =
         (local.get $__int_scratch_0)
         i32.store
         (local.get $__int_scratch_0)
-        global.set $edx((id 279)
+        global.set $edx
+    ((id 279)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -500)))
@@ -9417,31 +9793,35 @@ let%expect_test "cdq/idiv" =
   test_trans_block 0x004529e3;
   [%expect {|
     (locs
-     ((0 (Local (Int 3))) (1 Stack) (2 Drop) (3 Drop) (4 Stack) (5 Drop)
-      (6 Stack) (7 Drop) (8 (Local (Int 1))) (9 (Variable esp)) (10 Stack)
-      (11 (Tee (Int 0))) (12 Drop) (13 (Tee (Int 1))) (14 Stack) (15 Drop)
-      (16 Stack) (17 (Local (Int 2))) (18 Stack) (19 (Tee (Int 0))) (20 Drop)
-      (21 Stack) (22 Stack) (23 (Local (Int 2))) (24 Stack) (25 (Tee (Int 0)))
-      (26 Drop) (27 Stack) (28 Stack) (29 (Tee (Int 0))) (30 Stack) (31 Drop)
-      (32 Drop) (33 Drop) (34 Drop) (35 Drop) (36 Drop) (37 (Variable esp))
-      (38 (Local (Int 0))) (39 Stack) (40 Drop)))
+     ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Drop) (3 Drop) (4 Stack) (5 Drop)
+      (6 Stack) (7 Drop) (8 (Local (Int 1))) (9 (Variable esp))
+      (10 (Local (Int 3))) (11 (Tee (Int 3) (Ref 12))) (12 Drop)
+      (13 (Tee (Int 1) (Ref 14))) (14 Stack) (15 Drop) (16 Stack)
+      (17 (Local (Int 2))) (18 (Local (Int 4))) (19 (Tee (Int 4) (Ref 20)))
+      (20 Drop) (21 Stack) (22 Stack) (23 (Local (Int 2))) (24 (Local (Int 3)))
+      (25 (Tee (Int 3) (Ref 26))) (26 Drop) (27 Stack) (28 (Local (Int 0)))
+      (29 (Tee (Int 0) (Ref 31))) (30 Stack) (31 Drop) (32 Drop) (33 Drop)
+      (34 Drop) (35 Drop) (36 Drop) (37 (Variable esp)) (38 (Local (Int 0)))
+      (39 Stack) (40 Drop)))
+    ((int 5) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_3)
-        (local.get $__int_scratch_3)
+        (local.tee $__int_scratch_0)
         i32.load offset -512
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.load offset -516
         i32.rem_s
         i32.const 0
         (local.set $__int_scratch_1)
         i32.const 4
+        (local.set $__int_scratch_3)
         (global.get $esp)
+        (local.get $__int_scratch_3)
         i32.subtract
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         (local.get $__int_scratch_1)
         i32.store
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.load offset -4
         (local.tee $__int_scratch_1)
         i32.load16_s offset 6
@@ -9449,25 +9829,31 @@ let%expect_test "cdq/idiv" =
         (i32.const 0xFFFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFF0000) (i32.and) (local.get __instr_scratch) (i32.or)
         (local.set $__int_scratch_2)
         i32.const 4
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_4)
+        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_4)
         i32.subtract
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_4)
         (local.get $__int_scratch_2)
         i32.store
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.load offset -4
         i32.const 8
         i32.add
         (local.set $__int_scratch_2)
         i32.const 4
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_3)
+        (local.get $__int_scratch_4)
+        (local.get $__int_scratch_3)
         i32.subtract
-        (local.tee $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         (local.get $__int_scratch_2)
         i32.store
-        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
         i32.load offset 8
         i32.const 4
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_3)
         (local.get $__int_scratch_0)
         i32.subtract
         (local.tee $__int_scratch_0)
@@ -9486,7 +9872,8 @@ let%expect_test "cdq/idiv" =
         (local.set $__int_scratch_0)
         global.get $eax
         (local.get $__int_scratch_0)
-        i32.store((id 286)
+        i32.store
+    ((id 286)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -512))) (2 Nop)
@@ -9535,37 +9922,40 @@ let%expect_test "imul" =
   test_trans_block 0x004539dd;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 Stack) (2 Stack) (3 (Tee (Int 1))) (4 (Tee (Int 2)))
-      (5 (Local (Int 3))) (6 Stack) (7 Stack) (8 Stack) (9 Stack)
-      (10 (Tee (Int 3))) (11 (Local (Int 0))) (12 Drop) (13 Drop) (14 Drop)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 (Tee (Int 0) (Ref 6)))
+      (4 (Tee (Int 1) (Ref 6))) (5 (Local (Int 2))) (6 Stack) (7 Stack) (8 Stack)
+      (9 (Local (Int 3))) (10 (Tee (Int 2) (Ref 11))) (11 Stack) (12 Drop)
+      (13 Drop) (14 Drop)))
+    ((int 4) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         i32.load offset -12
         i32.const 12
         i32.mult
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_2)
+        (local.tee $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset 8
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         i32.const 0
-        (local.set $__int_scratch_3)
+        (local.set $__int_scratch_2)
         i32.add
         i32.load offset 140
         i32.const 0
         i32.gt_s
+        (local.set $__int_scratch_3)
         (local.get $__int_scratch_3)
-        (i32.const 0xFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFFFF00) (i32.and) (local.get __instr_scratch) (i32.or)
-        (local.tee $__int_scratch_3)
-        i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_3)
-        global.set $edx
         (local.get $__int_scratch_2)
-        global.set $ecx
+        (i32.const 0xFF) (i32.and) (local.set __instr_scratch) (i32.const 0xFFFFFF00) (i32.and) (local.get __instr_scratch) (i32.or)
+        (local.tee $__int_scratch_2)
+        i32.eqz
+        (local.get $__int_scratch_2)
+        global.set $edx
         (local.get $__int_scratch_1)
-        global.set $eax((id 491)
+        global.set $ecx
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 491)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -12)))
@@ -9593,27 +9983,26 @@ let%expect_test "float jp 0x5" =
   test_trans_block 0x00451bfe;
   [%expect {|
     (locs
-     ((0 (Local (Int 2))) (1 (Tee (Int 2))) (2 Stack) (3 Stack) (4 Stack)
-      (5 (Local (Int 1))) (6 Drop) (7 Stack) (8 (Local (Int 0))) (9 Drop)
-      (10 Drop) (11 Drop)))
+     ((0 Stack) (1 (Tee (Int 1) (Ref 2))) (2 Stack) (3 Stack) (4 Stack)
+      (5 (Local (Int 0))) (6 Drop) (7 Stack) (8 Stack) (9 Drop) (10 Drop)
+      (11 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_2)
-        (local.get $__int_scratch_2)
         i32.load offset 8
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         (f32.load offset 40) (f64.promote_f32)
         i32.const 4819532
         (f32.load) (f64.promote_f32)
         i32.const 0xDEADBEEF
-        (local.set $__int_scratch_1)
+        (local.set $__int_scratch_0)
         f64.lt
         i32.eqz
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_2)
-        global.set $ecx
         (local.get $__int_scratch_1)
-        global.set $eax((id 148)
+        global.set $ecx
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 148)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -9634,20 +10023,20 @@ let%expect_test "jle" =
   test_trans_block 0x004536f0;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 (Tee (Int 1))) (2 Stack) (3 (Local (Int 0)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 (Tee (Int 0) (Ref 3))) (2 Stack) (3 Stack)
       (4 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
-        i32.load offset -728
         (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_0)
+        i32.load offset -728
+        (local.tee $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset -732
         i32.le_s
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_1)
-        global.set $eax((id 450)
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 450)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -728)))
@@ -9664,14 +10053,14 @@ let%expect_test "jle" =
 let%expect_test "jumptable" =
   test_trans_block 0x00450dec;
   [%expect {|
-    (locs ((0 (Local (Int 0))) (1 (Tee (Int 0))) (2 Drop)))
+    (locs ((0 Stack) (1 (Tee (Int 0) (Ref 2))) (2 Drop)))
+    ((int 1) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
         i32.load offset -312
         (local.tee $__int_scratch_0)
-        global.set $eax((id 6)
+        global.set $eax
+    ((id 6)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -312)))
@@ -9701,37 +10090,39 @@ let%expect_test "ja" =
   test_trans_block 0x00450de0;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 (Tee (Int 1))) (2 (Tee (Int 2))) (3 Drop) (4 Drop)
-      (5 Stack) (6 Stack) (7 (Tee (Int 3))) (8 Drop) (9 Stack) (10 Stack)
-      (11 (Local (Int 0))) (12 Drop) (13 Drop) (14 Drop)))
+     ((0 (Tee (Int 3) (Ref 1))) (1 (Tee (Int 0) (Ref 2))) (2 (Local (Int 1)))
+      (3 Drop) (4 Drop) (5 Stack) (6 Stack) (7 (Local (Int 2))) (8 Drop)
+      (9 Stack) (10 Stack) (11 Stack) (12 Drop) (13 Drop) (14 Drop)))
+    ((int 4) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         i32.load offset -4
-        (local.tee $__int_scratch_1)
+        (local.tee $__int_scratch_0)
         i32.load16_s
-        (local.tee $__int_scratch_2)
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_1)
+        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_1)
         i32.store offset -312
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_3)
         i32.load offset -312
         i32.const 1
         i32.add
-        (local.tee $__int_scratch_3)
-        (local.get $__int_scratch_0)
+        (local.set $__int_scratch_2)
+        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_2)
         i32.store offset -312
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_3)
         i32.load offset -312
         i32.const 82
         i32.gt_u
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_3)
-        global.set $edx
         (local.get $__int_scratch_2)
-        global.set $ecx
+        global.set $edx
         (local.get $__int_scratch_1)
-        global.set $eax((id 5)
+        global.set $ecx
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 5)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -9759,38 +10150,42 @@ let%expect_test "jg" =
   test_trans_block 4525496;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 Drop) (4 Stack)
-      (5 (Tee (Int 1))) (6 Drop) (7 (Tee (Int 2))) (8 (Tee (Int 3))) (9 Drop)
-      (10 Stack) (11 (Local (Int 0))) (12 Drop) (13 Drop) (14 Drop)))
+     ((0 (Tee (Int 3) (Ref 1))) (1 Stack) (2 (Local (Int 0))) (3 Drop) (4 Stack)
+      (5 (Local (Int 0))) (6 Drop) (7 (Tee (Int 1) (Ref 8)))
+      (8 (Tee (Int 2) (Ref 11))) (9 Drop) (10 Stack) (11 Stack) (12 Drop)
+      (13 Drop) (14 Drop)))
+    ((int 4) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.tee $__int_scratch_3)
         i32.load offset 8
         i32.load offset 480
-        (local.get $__int_scratch_0)
-        i32.store offset -4
-        (local.get $__int_scratch_0)
-        i32.load offset 8
-        i32.load offset 56
-        (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_0)
-        i32.store offset -56
-        (local.get $__int_scratch_0)
-        i32.load offset -4
-        (local.tee $__int_scratch_2)
-        i32.load16_s offset 4
-        (local.tee $__int_scratch_3)
-        (local.get $__int_scratch_0)
-        i32.load offset -56
-        i32.gt_s
         (local.set $__int_scratch_0)
         (local.get $__int_scratch_3)
-        global.set $edx
+        (local.get $__int_scratch_0)
+        i32.store offset -4
+        (local.get $__int_scratch_3)
+        i32.load offset 8
+        i32.load offset 56
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_3)
+        (local.get $__int_scratch_0)
+        i32.store offset -56
+        (local.get $__int_scratch_3)
+        i32.load offset -4
+        (local.tee $__int_scratch_1)
+        i32.load16_s offset 4
+        (local.tee $__int_scratch_2)
+        (local.get $__int_scratch_3)
+        i32.load offset -56
+        i32.gt_s
         (local.get $__int_scratch_2)
-        global.set $ecx
+        global.set $edx
         (local.get $__int_scratch_1)
-        global.set $eax((id 4)
+        global.set $ecx
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 4)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 8)))
@@ -9819,20 +10214,20 @@ let%expect_test "jge" =
   test_trans_block 4380548;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 (Tee (Int 1))) (2 Stack) (3 (Local (Int 0)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 (Tee (Int 0) (Ref 3))) (2 Stack) (3 Stack)
       (4 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
-        i32.load offset -4
         (local.tee $__int_scratch_1)
-        (local.get $__int_scratch_0)
+        i32.load offset -4
+        (local.tee $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset -16
         i32.ge_s
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_1)
-        global.set $eax((id 2)
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 2)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -4)))
@@ -9850,25 +10245,26 @@ let%expect_test _ =
   test_trans_block 0x0040127a;
   [%expect {|
     (locs
-     ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Tee (Int 1))) (4 Drop)
-      (5 Stack) (6 Stack) (7 (Local (Int 0))) (8 Drop)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Int 0))) (4 Drop)
+      (5 Stack) (6 Stack) (7 Stack) (8 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
 
         global.get $ebp
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_0)
+        (local.tee $__int_scratch_1)
         i32.load offset -24
         i32.const 1
         i32.subtract
-        (local.tee $__int_scratch_1)
+        (local.set $__int_scratch_0)
+        (local.get $__int_scratch_1)
         (local.get $__int_scratch_0)
         i32.store offset -24
-        (local.get $__int_scratch_0)
+        (local.get $__int_scratch_1)
         i32.load offset -24
         i32.const 0
         i32.lt_s
-        (local.set $__int_scratch_0)
-        (local.get $__int_scratch_1)
-        global.set $eax((id 4)
+        (local.get $__int_scratch_0)
+        global.set $eax
+    ((id 4)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -24)))
@@ -10503,137 +10899,184 @@ let%expect_test _ =
               (WasmIf (Block 27) WasmFallthrough
                (WasmSeq (WasmCode (Block 28)) WasmFallthrough))
               (WasmSeq (WasmCode (Block 29)) (WasmCodeReturn (Block 30)))))))))))))
-        ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 3))) (3 Stack)
-     (4 (Tee (Int 2))) (5 Drop) (6 (Local (Int 3))) (7 Stack) (8 (Tee (Int 2)))
-     (9 Drop) (10 Stack) (11 (Tee (Int 2))) (12 Stack) (13 Drop) (14 Drop)
-     (15 Stack) (16 (Local (Int 2))) (17 Drop) (18 Stack) (19 (Tee (Int 3)))
-     (20 Stack) (21 Drop) (22 Drop) (23 Drop) (24 Drop) (25 (Local (Int 3)))
-     (26 Stack) (27 Drop) (28 Drop) (29 Stack) (30 Drop) (31 Stack)
-     (32 (Tee (Int 2))) (33 Drop) (34 Stack) (35 (Tee (Int 2))) (36 Stack)
-     (37 Drop) (38 Drop) (39 Drop) (40 (Variable esp)) (41 (Tee (Int 2)))
-     (42 (Local (Int 3))) (43 Stack) (44 Drop) (45 (Local (Int 1))) (46 Stack)
-     (47 Drop) (48 (Local (Int 4))) (49 Stack) (50 Drop) (51 Stack) (52 Stack)
-     (53 (Local (Int 2))) (54 Stack) (55 Drop) (56 Stack) (57 (Local (Int 0)))
-     (58 Drop) (59 Drop) (60 Drop) (61 Drop))
+        (locs
+     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 0)))
+      (3 (Local (Int 1))) (4 (Tee (Int 1) (Ref 5))) (5 Drop) (6 (Local (Int 0)))
+      (7 (Local (Int 2))) (8 (Tee (Int 2) (Ref 9))) (9 Drop) (10 (Local (Int 0)))
+      (11 (Tee (Int 0) (Ref 13))) (12 Stack) (13 Drop) (14 Drop) (15 Stack)
+      (16 (Local (Int 0))) (17 Drop) (18 Stack) (19 (Tee (Int 2) (Ref 21)))
+      (20 Stack) (21 Drop) (22 Drop) (23 Drop) (24 Drop) (25 (Local (Int 2)))
+      (26 Stack) (27 Drop) (28 Drop) (29 (Local (Int 0))) (30 Drop)
+      (31 (Local (Int 0))) (32 (Local (Int 0))) (33 Drop) (34 (Local (Int 1)))
+      (35 (Tee (Int 1) (Ref 37))) (36 Stack) (37 Drop) (38 Drop) (39 Drop)
+      (40 (Variable esp)) (41 (Tee (Int 1) (Ref 42))) (42 (Local (Int 2)))
+      (43 Stack) (44 Drop) (45 (Local (Int 0))) (46 Stack) (47 Drop)
+      (48 (Local (Int 3))) (49 Stack) (50 Drop) (51 Stack) (52 Stack)
+      (53 (Local (Int 1))) (54 Stack) (55 Drop) (56 (Local (Int 4))) (57 Stack)
+      (58 Drop) (59 Drop) (60 Drop) (61 Drop)))
     ((int 5) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))) (3 Stack) (4 Drop)
-     (5 Drop))
+       (locs ((0 Stack) (1 Stack) (2 (Local (Int 0))) (3 Stack) (4 Drop) (5 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 2))) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Int 2)))
-     (5 Stack) (6 Drop) (7 (Local (Int 3))) (8 (Variable esp)) (9 Stack)
-     (10 (Tee (Int 0))) (11 Drop) (12 Stack) (13 (Tee (Int 1))) (14 Stack)
-     (15 (Tee (Int 0))) (16 Stack) (17 Drop) (18 Drop) (19 Drop) (20 Drop)
-     (21 Drop) (22 (Variable esp)) (23 Stack) (24 Stack) (25 Drop) (26 Drop)
-     (27 Stack) (28 (Local (Int 0))))
-    ((int 4) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 Stack) (2 (Tee (Int 1))) (3 Stack) (4 Stack)
-     (5 (Local (Int 0))) (6 Drop))
+       (locs
+     ((0 Stack) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Int 2))) (5 Stack)
+      (6 Drop) (7 (Local (Int 3))) (8 (Variable esp)) (9 (Local (Int 4)))
+      (10 (Tee (Int 4) (Ref 11))) (11 Drop) (12 Stack)
+      (13 (Tee (Int 1) (Ref 20))) (14 (Local (Int 0)))
+      (15 (Tee (Int 0) (Ref 17))) (16 Stack) (17 Drop) (18 Drop) (19 Drop)
+      (20 Drop) (21 Drop) (22 (Variable esp)) (23 Stack) (24 Stack) (25 Drop)
+      (26 Drop) (27 Stack) (28 Stack)))
+    ((int 5) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Tee (Int 0) (Ref 1))) (1 (Local (Int 1))) (2 (Tee (Int 0) (Ref 3)))
+      (3 Stack) (4 Stack) (5 Stack) (6 Drop)))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Tee (Int 1))) (2 Drop) (3 Stack) (4 (Local (Int 0)))
-     (5 Drop))
+       (locs
+     ((0 Stack) (1 (Tee (Int 0) (Ref 4))) (2 Drop) (3 Stack) (4 Stack) (5 Drop)))
+    ((int 1) (long 0) (float 0) (vec 0))
+       (locs ((0 Stack) (1 Stack) (2 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       (locs ((0 (Local (Int 0))) (1 Stack) (2 Drop)))
+    ((int 1) (long 0) (float 0) (vec 0))
+       (locs ((0 Stack) (1 Stack) (2 Stack) (3 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 Stack) (1 Stack) (2 (Local (Int 1))) (3 (Local (Int 0))) (4 Drop)
+      (5 Stack) (6 (Variable __input_compare_arg__))))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 (Local (Int 0))))
-    ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 Drop))
-    ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Local (Int 0))))
-    ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 Stack) (4 Drop) (5 Stack)
-     (6 (Variable __input_compare_arg__)))
-    ((int 1) (long 0) (float 0) (vec 0))
-       	((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Local (Int 0))))
-    ((int 1) (long 0) (float 0) (vec 0))
+       	(locs ((0 Stack) (1 Stack) (2 Stack) (3 Stack)))
+    ((int 0) (long 0) (float 0) (vec 0))
        
-    ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 Stack) (4 Drop) (5 Stack)
-     (6 (Variable __input_compare_arg__)))
+    (locs
+     ((0 Stack) (1 Stack) (2 (Local (Int 1))) (3 (Local (Int 0))) (4 Drop)
+      (5 Stack) (6 (Variable __input_compare_arg__))))
+    ((int 2) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Variable __input_compare_arg__)) (1 (Local (Int 0)))
+      (2 (Local (Int 0))) (3 Stack) (4 Drop) (5 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Variable __input_compare_arg__)) (1 (Local (Int 0))) (2 (Local (Int 0)))
-     (3 Stack) (4 Drop) (5 Drop))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Local (Int 0)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 (Local (Int 1)))
+      (6 (Tee (Int 1) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 1) (Ref 11))) (11 Stack) (12 (Local (Int 0)))
+      (13 (Variable esp)) (14 (Local (Int 0))) (15 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Local (Int 0)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 (Local (Int 1)))
+      (6 (Tee (Int 1) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 1) (Ref 11))) (11 Stack) (12 (Local (Int 0)))
+      (13 (Variable esp)) (14 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0) (Ref 4))) (3 Stack)
+      (4 Drop) (5 Drop) (6 (Variable esp)) (7 Stack)))
     ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 Stack) (12 Stack) (13 (Variable esp)) (14 (Local (Int 0))) (15 Drop))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Local (Int 0)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 (Local (Int 1)))
+      (6 (Tee (Int 1) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 1) (Ref 11))) (11 Stack) (12 (Local (Int 0)))
+      (13 (Variable esp)) (14 Drop)))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 Stack) (12 Stack) (13 (Variable esp)) (14 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0))) (3 Stack) (4 Drop)
-     (5 Drop) (6 (Variable esp)) (7 (Local (Int 0))))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0) (Ref 4))) (3 Stack)
+      (4 Drop) (5 Drop) (6 Stack) (7 (Local (Int 0))) (8 Stack) (9 Drop)
+      (10 Stack) (11 (Tee (Int 0) (Ref 13))) (12 Stack) (13 Drop) (14 Drop)
+      (15 (Variable esp)) (16 Stack) (17 Stack) (18 Stack)))
     ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 Stack) (12 Stack) (13 (Variable esp)) (14 Drop))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Local (Int 0)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 (Local (Int 1)))
+      (6 (Tee (Int 1) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 1) (Ref 11))) (11 Stack) (12 (Local (Int 0)))
+      (13 (Variable esp)) (14 Drop)))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0))) (3 Stack) (4 Drop)
-     (5 Drop) (6 Stack) (7 (Local (Int 0))) (8 Stack) (9 Drop) (10 Stack)
-     (11 (Tee (Int 0))) (12 Stack) (13 Drop) (14 Drop) (15 (Variable esp))
-     (16 Stack) (17 Stack) (18 (Local (Int 0))))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0) (Ref 4))) (3 Stack)
+      (4 Drop) (5 Drop) (6 Stack) (7 (Local (Int 0))) (8 Stack) (9 Drop)
+      (10 Stack) (11 (Tee (Int 0) (Ref 13))) (12 Stack) (13 Drop) (14 Drop)
+      (15 Stack) (16 (Local (Int 0))) (17 Stack) (18 Drop) (19 Stack)
+      (20 (Tee (Int 0) (Ref 22))) (21 Stack) (22 Drop) (23 Drop)
+      (24 (Variable esp)) (25 Stack) (26 Stack) (27 Stack)))
     ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 Stack) (12 Stack) (13 (Variable esp)) (14 Drop))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Local (Int 0)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 (Local (Int 1)))
+      (6 (Tee (Int 1) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 1) (Ref 11))) (11 Stack) (12 (Local (Int 0)))
+      (13 (Variable esp)) (14 Drop)))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0))) (3 Stack) (4 Drop)
-     (5 Drop) (6 Stack) (7 (Local (Int 0))) (8 Stack) (9 Drop) (10 Stack)
-     (11 (Tee (Int 0))) (12 Stack) (13 Drop) (14 Drop) (15 Stack)
-     (16 (Local (Int 0))) (17 Stack) (18 Drop) (19 Stack) (20 (Tee (Int 0)))
-     (21 Stack) (22 Drop) (23 Drop) (24 (Variable esp)) (25 Stack) (26 Stack)
-     (27 (Local (Int 0))))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0) (Ref 4))) (3 Stack)
+      (4 Drop) (5 Drop) (6 (Variable esp)) (7 Stack) (8 Stack) (9 Stack)))
     ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 Stack) (12 Stack) (13 (Variable esp)) (14 Drop))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Local (Int 0)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 (Local (Int 1)))
+      (6 (Tee (Int 1) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 1) (Ref 11))) (11 Stack) (12 (Local (Int 0)))
+      (13 (Variable esp)) (14 Drop)))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0))) (3 Stack) (4 Drop)
-     (5 Drop) (6 (Variable esp)) (7 Stack) (8 Stack) (9 (Local (Int 0))))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Tee (Int 1) (Ref 4))) (3 Stack)
+      (4 Drop) (5 Drop) (6 (Variable esp)) (7 (Local (Int 1))) (8 Stack)
+      (9 Drop) (10 (Local (Int 0))) (11 Stack)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Local (Int 0)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 (Local (Int 1)))
+      (6 (Tee (Int 1) (Ref 8))) (7 Stack) (8 Drop) (9 Drop)
+      (10 (Tee (Int 1) (Ref 11))) (11 Stack) (12 (Local (Int 0)))
+      (13 (Variable esp)) (14 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Tee (Int 2) (Ref 2))) (2 Drop) (3 (Local (Int 0)))
+      (4 (Local (Int 0))) (5 (Variable esp)) (6 (Local (Int 2)))
+      (7 (Tee (Int 2) (Ref 8))) (8 Drop) (9 (Local (Int 1)))
+      (10 (Tee (Int 1) (Ref 12))) (11 Stack) (12 Drop) (13 Drop) (14 Drop)
+      (15 Stack) (16 Stack) (17 (Tee (Int 1) (Ref 19))) (18 Stack) (19 Drop)
+      (20 Drop) (21 (Variable esp)) (22 (Local (Int 1)))
+      (23 (Tee (Int 0) (Ref 24))) (24 Drop) (25 Stack) (26 Drop) (27 Drop)
+      (28 Stack) (29 Stack) (30 Stack)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs ((0 Stack) (1 Stack) (2 Drop) (3 Drop)))
+    ((int 0) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 Stack) (6 (Local (Int 0)))
+      (7 (Variable esp)) (8 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 1))) (1 (Variable esp)) (2 (Local (Int 0)))
+      (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 Stack) (6 (Local (Int 1)))
+      (7 (Local (Int 2))) (8 (Tee (Int 2) (Ref 9))) (9 Drop) (10 (Local (Int 1)))
+      (11 (Local (Int 0))) (12 (Tee (Int 0) (Ref 13))) (13 Drop)
+      (14 (Local (Int 2))) (15 (Local (Int 2))) (16 Drop) (17 (Local (Int 1)))
+      (18 (Local (Int 0))) (19 (Tee (Int 0) (Ref 21))) (20 Stack) (21 Drop)
+      (22 Drop) (23 Stack) (24 (Local (Int 0))) (25 Stack) (26 (Local (Int 1)))
+      (27 Drop) (28 (Local (Int 0))) (29 (Tee (Int 0) (Ref 31))) (30 Stack)
+      (31 Drop) (32 Drop) (33 (Variable esp)) (34 (Local (Int 0))) (35 Drop)
+      (36 (Tee (Int 1) (Ref 37))) (37 Drop) (38 Stack) (39 Stack) (40 Stack)
+      (41 Drop)))
+    ((int 3) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
+      (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
+      (6 (Tee (Int 0) (Ref 8))) (7 Stack) (8 Drop) (9 Drop) (10 (Variable esp))))
+    ((int 2) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0) (Ref 4))) (3 Stack)
+      (4 Drop) (5 Drop) (6 (Variable esp))))
     ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 Stack) (12 Stack) (13 (Variable esp)) (14 Drop))
+       (locs
+     ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Int 1))) (4 Drop)
+      (5 Stack) (6 Drop) (7 (Local (Int 1))) (8 Stack) (9 Stack)
+      (10 (Tee (Int 1) (Ref 12))) (11 Stack) (12 Drop) (13 Drop) (14 Drop)
+      (15 (Tee (Int 1) (Ref 16))) (16 (Local (Int 0)))
+      (17 (Variable __ret_addr__)) (18 Stack) (19 Drop) (20 (Local (Int 0)))
+      (21 (Variable esp))))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0))) (3 Stack) (4 Drop)
-     (5 Drop) (6 (Variable esp)) (7 (Local (Int 0))) (8 Stack) (9 Drop)
-     (10 Stack) (11 (Local (Int 0))))
-    ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Tee (Int 0)))
-     (11 Stack) (12 Stack) (13 (Variable esp)) (14 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Tee (Int 0))) (2 Drop) (3 Stack) (4 (Local (Int 0)))
-     (5 (Variable esp)) (6 Stack) (7 (Tee (Int 1))) (8 Drop) (9 Stack)
-     (10 (Tee (Int 1))) (11 Stack) (12 Drop) (13 Drop) (14 Drop) (15 Stack)
-     (16 Stack) (17 (Tee (Int 1))) (18 Stack) (19 Drop) (20 Drop)
-     (21 (Variable esp)) (22 (Local (Int 1))) (23 (Tee (Int 0))) (24 Drop)
-     (25 Stack) (26 Drop) (27 Drop) (28 Stack) (29 Stack) (30 (Local (Int 0))))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 Drop) (3 Drop))
-    ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 Stack) (7 (Variable esp)) (8 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Local (Int 1))) (7 Stack) (8 (Tee (Int 0))) (9 Drop)
-     (10 (Local (Int 1))) (11 Stack) (12 (Tee (Int 0))) (13 Drop) (14 Stack)
-     (15 (Tee (Int 0))) (16 Drop) (17 Stack) (18 Stack) (19 (Tee (Int 0)))
-     (20 Stack) (21 Drop) (22 Drop) (23 Stack) (24 (Local (Int 0))) (25 Stack)
-     (26 (Tee (Int 1))) (27 Drop) (28 Stack) (29 (Tee (Int 1))) (30 Stack)
-     (31 Drop) (32 Drop) (33 (Variable esp)) (34 (Local (Int 1))) (35 Drop)
-     (36 (Tee (Int 0))) (37 Drop) (38 Stack) (39 Stack) (40 (Local (Int 0)))
-     (41 Drop))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 (Variable esp)) (2 Stack) (3 (Tee (Int 0))) (4 Drop)
-     (5 Stack) (6 (Tee (Int 0))) (7 Stack) (8 Drop) (9 Drop) (10 (Variable esp)))
-    ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Tee (Int 0))) (3 Stack) (4 Drop)
-     (5 Drop) (6 (Variable esp)))
-    ((int 1) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 Stack) (4 Drop) (5 Stack)
-     (6 Drop) (7 Stack) (8 Stack) (9 Stack) (10 (Tee (Int 0))) (11 Stack)
-     (12 Drop) (13 Drop) (14 Drop) (15 (Tee (Int 0))) (16 Stack)
-     (17 (Variable __ret_addr__)) (18 Stack) (19 Drop) (20 Stack)
-     (21 (Variable esp)))
-    ((int 1) (long 0) (float 0) (vec 0))
     |}]
 
 let%expect_test _ =
@@ -10746,29 +11189,34 @@ let%expect_test _ =
         (WasmSeq (WasmCode (Block 2)) WasmFallthrough))
        (WasmSeq (WasmCode (Block 3)) WasmFallthrough)))
      (WasmCodeReturn (Block 5)))
-        ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 2))) (3 Stack)
-     (4 (Tee (Int 1))) (5 Drop) (6 Drop) (7 (Tee (Int 2))) (8 Stack)
-     (9 (Variable esp)) (10 Drop) (11 Drop) (12 Stack) (13 Stack) (14 Stack)
-     (15 Stack) (16 (Local (Int 2))) (17 Drop) (18 Stack) (19 (Local (Int 0)))
-     (20 Drop) (21 Drop) (22 Drop))
+        (locs
+     ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 1)))
+      (3 (Local (Int 0))) (4 (Tee (Int 0) (Ref 5))) (5 Drop) (6 Drop)
+      (7 (Local (Int 1))) (8 (Local (Int 2))) (9 (Variable esp)) (10 Drop)
+      (11 Drop) (12 Stack) (13 Stack) (14 Stack) (15 Stack) (16 (Local (Int 1)))
+      (17 Drop) (18 Stack) (19 Stack) (20 Drop) (21 Drop) (22 Drop)))
     ((int 3) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 Stack) (2 (Local (Int 2))) (3 Stack) (4 Stack)
-     (5 (Local (Float 0))) (6 Stack) (7 Drop) (8 Stack) (9 Stack) (10 Stack)
-     (11 Stack) (12 (Local (Int 1))) (13 Drop) (14 Stack) (15 (Local (Int 0)))
-     (16 Drop) (17 Drop) (18 Drop))
+       (locs
+     ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 (Local (Int 1))) (3 Stack) (4 Stack)
+      (5 (Local (Float 0))) (6 Stack) (7 Drop) (8 Stack) (9 Stack) (10 Stack)
+      (11 Stack) (12 (Local (Int 0))) (13 Drop) (14 Stack) (15 Stack) (16 Drop)
+      (17 Drop) (18 Drop)))
+    ((int 2) (long 0) (float 1) (vec 0))
+       (locs
+     ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Int 2)))
+      (5 (Tee (Int 1) (Ref 6))) (6 Drop) (7 Stack) (8 Stack) (9 Stack) (10 Stack)
+      (11 (Local (Float 0))) (12 (Tee (Int 0) (Ref 13))) (13 Drop) (14 Drop)
+      (15 Drop) (16 Drop)))
     ((int 3) (long 0) (float 1) (vec 0))
-       ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Int 2)))
-     (5 (Tee (Int 1))) (6 Drop) (7 Stack) (8 Stack) (9 Stack) (10 Stack)
-     (11 (Local (Float 0))) (12 (Tee (Int 0))) (13 Drop) (14 Drop) (15 Drop)
-     (16 Drop))
-    ((int 3) (long 0) (float 1) (vec 0))
-       ()
+       (locs ())
     ((int 0) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 1))) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Int 0)))
-     (5 (Tee (Int 1))) (6 Drop) (7 Drop) (8 Drop))
+       (locs
+     ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Int 0)))
+      (5 (Tee (Int 1) (Ref 6))) (6 Drop) (7 Drop) (8 Drop)))
     ((int 2) (long 0) (float 0) (vec 0))
-       ((0 (Local (Int 0))) (1 Drop) (2 Stack) (3 Stack) (4 (Tee (Int 0))) (5 Stack)
-     (6 (Variable __ret_addr__)) (7 Stack) (8 Drop) (9 Stack) (10 (Variable esp))
-     (11 Drop))
-    ((int 1) (long 0) (float 0) (vec 0))
+       (locs
+     ((0 (Tee (Int 0) (Ref 2))) (1 Drop) (2 Stack) (3 (Local (Int 1)))
+      (4 (Tee (Int 1) (Ref 5))) (5 (Local (Int 0))) (6 (Variable __ret_addr__))
+      (7 Stack) (8 Drop) (9 (Local (Int 0))) (10 (Variable esp)) (11 Drop)))
+    ((int 2) (long 0) (float 0) (vec 0))
     |}]
