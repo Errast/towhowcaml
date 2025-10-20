@@ -111,6 +111,8 @@ type (_, _, _) sign_bi_op =
   | LongLTE : (long_, long_, int_) sign_bi_op
   | ShiftRight : (int_, int_, int_) sign_bi_op
   | LongShiftRight : (long_, long_, long_) sign_bi_op
+  | Remainder : (int_, int_, int_) sign_bi_op
+  | LongRemainder : (long_, long_, long_) sign_bi_op
 
 type _ expr =
   | Const : string -> int_ expr
@@ -129,8 +131,9 @@ type _ expr =
   | Deref8 : int_ expr * [ `Sext | `Zext ] * int -> int_ expr
   | Deref16 : int_ expr * [ `Sext | `Zext ] * int -> int_ expr
   | Splat : 'arg lane_tag * 'arg expr -> vec_ expr
+  | StmtExpr : statement list * 'out expr -> 'out expr
 
-type statement =
+and statement =
   | Set : 'a var * 'a expr -> statement
   | Alias : string * 'a expr -> statement
   | Store : int_ expr * int * (_, 'value, _) tag * 'value expr -> statement
@@ -188,6 +191,8 @@ let sign_bi_op_to_syntax : type arg1 arg2 out.
   | LongLTE -> LongLTE
   | ShiftRight -> ShiftRight
   | LongShiftRight -> LongShiftRight
+  | Remainder -> Remainder
+  | LongRemainder -> LongRemainder
 
 let tag_to_syntax : type t. t type_tag -> Mir.local_type = function
   | Int -> Int
@@ -232,8 +237,10 @@ let rec expr_to_syntax : type t. t expr -> Syntax.expr = function
   | LongConst num -> LongConst num
   | Splat (lane_shape, arg) ->
       Splat (tag_to_lane_shape lane_shape, expr_to_syntax arg)
+  | StmtExpr (stmts, expr) ->
+      StmtExpr (statements_to_syntax stmts, expr_to_syntax expr)
 
-let statements_to_syntax : statement list -> Syntax.statement list =
+and statements_to_syntax : statement list -> Syntax.statement list =
   let rec go : statement list -> Syntax.statement list -> Syntax.statement list
       =
    fun stmts acc ->
@@ -320,7 +327,7 @@ let fn : type arg_len ret_len local_len.
 let ( := ) : type t. t var -> t expr -> statement = fun lhs rhs -> Set (lhs, rhs)
 let ( ! ) : type t. t var -> t expr = fun var -> Var var
 
-let ( %= ) : type t. string -> t expr -> statement =
+let ( =% ) : type t. string -> t expr -> statement =
  fun lhs rhs -> Alias (lhs, rhs)
 
 let ( !% ) : type t. string -> t expr = fun alias -> Use alias
@@ -422,6 +429,8 @@ let ( << ) = mkbiop ShiftLeft
 let ( <<: ) = mkbiop LongShiftLeft
 let ( >> ) = mksbiop ShiftRight
 let ( >>: ) = mksbiop LongShiftRight
+let ( % ) = mksbiop Remainder
+let ( %: ) = mksbiop LongRemainder
 let load ?(offset = 0) size addr = Deref (addr, offset, size)
 
 let load_s ?(offset = 0) (size : ([< `I8 | `I16 ], _) size_tag) addr =
@@ -457,3 +466,4 @@ type at = At
 let at = At
 let store ?(offset = 0) size value At addr = Store (addr, offset, size, value)
 let return = Return
+let block stmts expr = StmtExpr (stmts, expr)

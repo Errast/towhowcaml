@@ -11,6 +11,8 @@ type sign_bi_op =
   | LongLTE
   | ShiftRight
   | LongShiftRight
+  | Remainder
+  | LongRemainder
 [@@deriving sexp]
 
 type bi_op =
@@ -58,9 +60,10 @@ type expr =
   | Deref16 of expr * bool * int
   | Splat of Mir.vec_lane_shape * expr
   | SignBiOp of { op : sign_bi_op; lhs : expr; rhs : expr; signed : bool }
+  | StmtExpr of statement list * expr
 [@@deriving sexp]
 
-type statement =
+and statement =
   | Let of { lhs : string; rhs : expr }
   | Alias of { lhs : string; rhs : expr }
   | Store of { addr : expr; offset : int; value : expr; size : Mir.local_type }

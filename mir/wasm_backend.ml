@@ -12,20 +12,6 @@ type 'a alloc_location =
   | Variable of string
 [@@deriving sexp, equal]
 
-module Bool_map : sig
-  type t
-
-  val make : int -> t
-  val set : t -> int -> bool -> unit
-  val get : t -> int -> bool
-end = struct
-  type t = bytes
-
-  let make len = Bytes.make len '\000'
-  let set t i b = Bytes.set t i (if b then '\001' else '\000')
-  let get t i = Char.equal '\001' @@ Bytes.get t i
-end
-
 let count_uses : Block.t -> (_, immutable) AP.t =
  fun block ->
   let arr = Array.create ~len:(AP.length block.instrs) 0 in
@@ -424,12 +410,12 @@ let output_block :
               | EqualsZero -> "i32.eqz"
               | LongEqualsZero -> "i64.eqz"
               | SignExtendLow8 -> "i32.extend8_s"
-              | SignExtendHigh8 -> "(i32.const 8) (i32.shr_u) (i32.extend8_s)"
+              | SignExtendHigh8 -> "i32.const 8 i32.shr_u i32.extend8_s"
               | SignExtend16 -> "i32.extend16_s"
-              | ZeroExtendLow8 -> "(i32.const 0xFF) (i32.and)"
+              | ZeroExtendLow8 -> "i32.const 0xFF i32.and"
               | ZeroExtendHigh8 ->
-                  "(i32.const 8) (i32.shr_u) (i32.const 0xFF) (i32.and)"
-              | ZeroExtend16 -> "(i32.const 0xFFFF) (i32.and)"
+                  "i32.const 8 i32.shr_u i32.const 0xFF i32.and"
+              | ZeroExtend16 -> "i32.const 0xFFFF i32.and"
               | FloatToInt32 -> "i32.trunc_f64_s"
               | LongToInt32 -> "i32.wrap_i64"
               | CountOnes -> "i32.popcnt"

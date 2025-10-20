@@ -600,7 +600,7 @@ let%expect_test "basic dsl" =
       Params.[ Int "a1"; Int "a2"; Int "a3" ]
       Returns.[ Int "r1"; Int "r2" ]
       Vars.[]
-      (fun Args.[ a1; a2; a3 ] RetVars.[ r1; r2 ]   Locals.[] ->
+      (fun Args.[ a1; a2; a3 ] RetVars.[ r1; r2 ] Locals.[] ->
         [
           if_
             (!a1 - i 1 >> u (i 2))
@@ -610,10 +610,12 @@ let%expect_test "basic dsl" =
             else_
             [ r1 := !a3 ]
             end_;
-          r2 := !a1 + load int ((!a1 * i 3) - !a2 + !a3);
+          "c" =% block [ "c" =% !a1 ] !%"c";
+          r2 := !%"c" + load int ((!a1 * i 3) - !a2 + !a3);
         ]))
   |> Mir.Func.sexp_of_t |> print_s;
-  [%expect {|
+  [%expect
+    {|
     ((name test)
      (signature
       ((args (((name a1) (typ Int)) ((name a2) (typ Int)) ((name a3) (typ Int))))
