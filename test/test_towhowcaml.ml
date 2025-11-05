@@ -37,12 +37,13 @@ let test_trans_block addr =
   let block = Array.Permissioned.get translated.blocks index in
   Mir.Wasm_backend.test block;
   Mir.Wasm_backend.run_block stdout block;
-  Out_channel.output_char stdout '\n' ;
+  Out_channel.output_char stdout '\n';
   print_s @@ Mir.Block.sexp_of_t block
 
 let%expect_test "small regs" =
   test_trans_block 0x0047bd35;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Tee (Int 4) (Ref 3))) (2 (Local (Int 9))) (3 Stack)
       (4 Drop) (5 (Local (Int 3))) (6 Drop) (7 (Local (Int 10))) (8 Drop)
@@ -815,7 +816,8 @@ let%expect_test "small regs" =
 
 let%expect_test "_sd" =
   test_trans_block 0x00484bb6;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 2))) (1 Stack) (2 (Local (Vec 6))) (3 Stack) (4 Stack)
       (5 Stack) (6 Stack) (7 (Local (Vec 9))) (8 (Local (Int 2))) (9 Stack)
@@ -1409,7 +1411,8 @@ let%expect_test "_sd" =
 
 let%expect_test "bt" =
   test_trans_block 0x00486fa8;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 Stack) (2 Stack) (3 (Variable esp)) (4 Stack) (5 Stack)
       (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack) (11 (Local (Int 0)))
@@ -1451,7 +1454,8 @@ let%expect_test "bt" =
 
 let%expect_test "bts" =
   test_trans_block 0x00486f8d;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 Stack) (2 Stack) (3 (Variable esp)) (4 Stack) (5 Stack)
       (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 (Local (Int 0))) (11 Drop)
@@ -1493,7 +1497,8 @@ let%expect_test "bts" =
 
 let%expect_test "rol, xlatb" =
   test_trans_block 0x00483ad4;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 3))) (1 Drop) (2 (Tee (Int 4) (Ref 3))) (3 Drop) (4 Stack)
       (5 (Tee (Int 3) (Ref 6))) (6 (Local (Float 0))) (7 (Local (Int 1)))
@@ -1640,7 +1645,8 @@ let%expect_test "rol, xlatb" =
 
 let%expect_test "shufpd" =
   test_trans_block 0x0048be1e;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Vec 0))) (1 Drop) (2 (Local (Vec 0))) (3 Drop)
       (4 (Local (Vec 4))) (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack)
@@ -1843,7 +1849,8 @@ let%expect_test "shufpd" =
 
 let%expect_test "movq, comisd jae" =
   test_trans_block 0x0048bed8;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 (Local (Float 0))) (2 Stack) (3 Stack)
       (4 (Tee (Vec 1) (Ref 5))) (5 Stack) (6 Stack) (7 (Local (Vec 0))) (8 Stack)
@@ -1892,7 +1899,8 @@ let%expect_test "movq, comisd jae" =
 
 let%expect_test "comisd jp" =
   test_trans_block 0x0048bdb6;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Vec 2)))
       (3 (Tee (Vec 2) (Ref 7))) (4 Drop) (5 Stack) (6 Stack) (7 (Local (Vec 1)))
@@ -1973,7 +1981,8 @@ let%expect_test "comisd jp" =
 
 let%expect_test "fprem" =
   test_trans_block 0x004892f4;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Local (Int 1))) (2 Stack) (3 Drop) (4 Stack)
       (5 (Local (Int 1))) (6 Stack) (7 Stack) (8 (Tee (Int 2) (Ref 10)))
@@ -2081,7 +2090,8 @@ let%expect_test "fprem" =
 
 let%expect_test "sub ja" =
   test_trans_block 0x0048929e;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 Stack) (2 Stack) (3 Stack) (4 Stack)
       (5 (Local (Int 1))) (6 Stack) (7 Stack) (8 (Tee (Int 0) (Ref 9))) (9 Stack)
@@ -2133,7 +2143,8 @@ let%expect_test "sub ja" =
 
 let%expect_test "sahf je" =
   test_trans_block 0x0048582f;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 2) (Ref 1))) (1 (Tee (Float 1) (Ref 4))) (2 Stack) (3 Stack)
       (4 (Tee (Float 0) (Ref 5))) (5 (Tee (Float 2) (Ref 7))) (6 (Local (Int 0)))
@@ -2203,7 +2214,8 @@ let%expect_test "sahf je" =
 
 let%expect_test "add jae" =
   test_trans_block 0x00488a1e;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Local (Int 1))) (2 (Tee (Int 0) (Ref 3))) (3 Stack)
       (4 Drop)))
@@ -2236,7 +2248,8 @@ let%expect_test "add jae" =
 
 let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
   test_trans_block 0x00484ef1;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 1))) (1 Stack) (2 Stack) (3 Stack)
       (4 (Tee (Int 1) (Ref 24))) (5 Stack) (6 Stack) (7 (Local (Vec 1)))
@@ -2358,7 +2371,8 @@ let%expect_test "pmaxsw, pcmpeqd, pmovmskb" =
 
 let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
   test_trans_block 0x00484fd8;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 Stack) (2 (Tee (Vec 3) (Ref 10))) (3 Stack) (4 Stack)
       (5 (Local (Vec 1))) (6 Stack) (7 Stack) (8 (Local (Vec 2)))
@@ -2458,7 +2472,8 @@ let%expect_test "xorpd, pinsrw, movlpd, mulsd" =
 
 let%expect_test "pextrw, mulsd" =
   test_trans_block 0x00485561;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 Stack) (2 (Local (Int 1))) (3 (Variable esp))
       (4 (Tee (Vec 1) (Ref 6))) (5 Stack) (6 Stack) (7 Drop) (8 Drop) (9 Stack)
@@ -2566,7 +2581,8 @@ let%expect_test "pextrw, mulsd" =
 
 let%expect_test "movsd" =
   test_trans_block 0x004852c9;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Vec 1))) (1 (Tee (Vec 0) (Ref 3))) (2 Stack) (3 Stack) (4 Stack)
       (5 Stack) (6 (Local (Vec 0))) (7 Stack) (8 Drop) (9 Drop) (10 Drop)))
@@ -2615,7 +2631,8 @@ let%expect_test "movsd" =
 
 let%expect_test "backward direction" =
   test_trans_block 0x0047d9d7;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 Stack) (2 (Tee (Int 1) (Ref 4))) (3 Stack) (4 (Local (Int 0)))
       (5 Stack) (6 (Local (Int 2))) (7 Stack) (8 (Tee (Int 0) (Ref 9))) (9 Drop)
@@ -2688,7 +2705,8 @@ let%expect_test "backward direction" =
 
 let%expect_test "int3" =
   test_trans_block 0x00487ff1;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 0))) (1 (Variable esp)) (2 (Local (Int 1)))
       (3 (Tee (Int 1) (Ref 4))) (4 Drop) (5 (Local (Int 0)))
@@ -2734,7 +2752,8 @@ let%expect_test "int3" =
 (* check this *)
 let%expect_test "mmx stuff" =
   test_trans_block 0x00476bce;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 3) (Ref 1))) (1 Stack) (2 Stack) (3 Stack) (4 (Local (Vec 3)))
       (5 (Tee (Int 0) (Ref 6))) (6 Stack) (7 Stack) (8 (Local (Vec 7)))
@@ -3324,7 +3343,8 @@ let%expect_test "mmx stuff" =
 
 let%expect_test "xor je" =
   test_trans_block 0x0046fcb3;
-  [%expect {|
+  [%expect
+    {|
     (locs ((0 Stack) (1 Stack) (2 (Tee (Int 0) (Ref 3))) (3 Stack) (4 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
 
@@ -3349,7 +3369,8 @@ let%expect_test "xor je" =
 
 let%expect_test "imul byte" =
   test_trans_block 0x0046e208;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 2) (Ref 1))) (1 Stack) (2 Drop) (3 Drop) (4 Drop) (5 Stack)
       (6 Drop) (7 Drop) (8 (Local (Int 0))) (9 Drop) (10 Drop) (11 Drop)
@@ -3371,7 +3392,7 @@ let%expect_test "imul byte" =
         (local.get $__int_scratch_0)
         i32.store8 offset 30
         (local.get $__int_scratch_0)
-        (i32.const 0xFF) (i32.and)
+        i32.const 0xFF i32.and
         (local.get $__int_scratch_2)
         i32.load
         i32.mult
@@ -3443,7 +3464,8 @@ let%expect_test "imul byte" =
 
 let%expect_test "tail indirect call" =
   test_trans_block 0x0047efac;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 5))) (1 (Variable esp)) (2 (Local (Int 2)))
       (3 (Tee (Int 2) (Ref 4))) (4 Drop) (5 Stack) (6 Stack) (7 (Local (Int 5)))
@@ -3561,7 +3583,8 @@ let%expect_test "tail indirect call" =
 
 let%expect_test "nonzero switch" =
   test_trans 0x0046af8f;
-  [%expect {|
+  [%expect
+    {|
     ((name func_46af4f)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -5838,7 +5861,8 @@ let%expect_test "nonzero switch" =
 
 let%expect_test "fistp dword" =
   test_trans_block 0x00465929;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 3) (Ref 1))) (1 (Local (Int 2))) (2 Stack) (3 Stack)
       (4 (Local (Int 1))) (5 Drop) (6 Drop) (7 Stack) (8 Stack)
@@ -6022,7 +6046,8 @@ let%expect_test "fistp dword" =
 
 let%expect_test "fsubrp" =
   test_trans_block 0x0046336d;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 (Tee (Int 0) (Ref 2))) (2 Stack) (3 (Local (Float 0)))
       (4 Drop)))
@@ -6050,7 +6075,8 @@ let%expect_test "fsubrp" =
 
 let%expect_test "psrlq, andpd, psubd" =
   test_trans_block 0x0047ee50;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 (Variable esp)) (2 Stack) (3 (Tee (Vec 1) (Ref 9))) (4 Stack)
       (5 (Local (Vec 3))) (6 Drop) (7 Drop) (8 Stack) (9 (Tee (Vec 0) (Ref 10)))
@@ -6141,7 +6167,8 @@ let%expect_test "psrlq, andpd, psubd" =
 
 let%expect_test "movq, psllq, cmpltpd" =
   test_trans_block 0x0047eed2;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 (Variable esp)) (2 Stack) (3 (Tee (Vec 1) (Ref 9))) (4 Stack)
       (5 Stack) (6 Stack) (7 (Tee (Vec 0) (Ref 9))) (8 Drop) (9 Stack) (10 Stack)
@@ -6200,7 +6227,8 @@ let%expect_test "movq, psllq, cmpltpd" =
 
 let%expect_test "branch return" =
   test_trans_block 0x0047ee10;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 Stack) (3 Stack)
       (4 Stack) (5 Stack)))
@@ -6227,7 +6255,8 @@ let%expect_test "branch return" =
 
 let%expect_test "and jbe" =
   test_trans_block 0x0046632e;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Tee (Int 0) (Ref 19)))
       (3 (Local (Int 1))) (4 (Local (Int 2))) (5 (Variable esp)) (6 Drop)
@@ -6327,7 +6356,8 @@ let%expect_test "and jbe" =
 
 let%expect_test "frndint" =
   test_trans_block 0x0044f059;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 Stack) (2 Stack) (3 Stack) (4 Stack) (5 (Local (Float 0)))
       (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack) (11 (Local (Float 1)))
@@ -6437,7 +6467,8 @@ let%expect_test "frndint" =
 
 let%expect_test "test eax,eax jae" =
   test_trans_block 0x0045dbcd;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 2) (Ref 1))) (1 (Tee (Int 1) (Ref 3))) (2 (Local (Int 2)))
       (3 (Local (Int 0))) (4 Stack) (5 (Local (Int 0))) (6 Drop) (7 Drop)))
@@ -6477,7 +6508,8 @@ let%expect_test "test eax,eax jae" =
 
 let%expect_test "test eax,eax jbe" =
   test_trans_block 0x0047e73c;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 (Local (Int 0))) (2 Drop) (3 Stack) (4 Drop)))
     ((int 2) (long 0) (float 0) (vec 0))
@@ -6507,7 +6539,8 @@ let%expect_test "test eax,eax jbe" =
 
 let%expect_test "shld" =
   test_trans_block 0x00481fa8;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 2) (Ref 1))) (1 (Tee (Int 3) (Ref 6))) (2 Stack) (3 Stack)
       (4 (Local (Int 0))) (5 Stack) (6 (Local (Int 1))) (7 (Local (Int 1)))
@@ -6570,7 +6603,8 @@ let%expect_test "shld" =
 
 let%expect_test "repne scasb" =
   test_trans_block 0x0047dcc4;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 3))) (1 Drop) (2 (Tee (Int 2) (Ref 3))) (3 (Local (Int 4)))
       (4 Drop) (5 (Local (Int 1))) (6 (Local (Int 5))) (7 Drop)
@@ -6623,7 +6657,7 @@ let%expect_test "repne scasb" =
         i32.load8_u offset -1
         (local.set $__int_scratch_1)
         (local.get $__int_scratch_2)
-        (i32.const 0xFF) (i32.and)
+        i32.const 0xFF i32.and
         (local.get $__int_scratch_1)
         i32.gt_u
         (local.set $__int_scratch_0)
@@ -6686,7 +6720,8 @@ let%expect_test "repne scasb" =
 
 let%expect_test "jecxz" =
   test_trans_block 0x0047dcb9;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 1)))
       (3 (Local (Int 0))) (4 (Tee (Int 0) (Ref 5))) (5 Drop) (6 Drop)
@@ -6780,7 +6815,8 @@ let%expect_test "jecxz" =
 
 let%expect_test "double fadd" =
   test_trans_block 0x00444017;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 (Tee (Int 1) (Ref 2))) (2 (Local (Int 2)))
       (3 (Tee (Int 0) (Ref 4))) (4 Drop) (5 Stack) (6 Stack) (7 Stack) (8 Stack)
@@ -6862,7 +6898,8 @@ let%expect_test "double fadd" =
 
 let%expect_test "rcr" =
   test_trans_block 0x00482a92;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 2))) (1 Stack) (2 (Local (Int 0))) (3 Drop) (4 Drop)
       (5 (Local (Int 2))) (6 Stack) (7 Stack) (8 Stack) (9 Stack) (10 Stack)
@@ -6950,7 +6987,8 @@ let%expect_test "rcr" =
 
 let%expect_test "dumb div" =
   test_trans_block 0x00482a7c;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Local (Int 2))) (2 (Tee (Int 1) (Ref 4))) (3 Drop)
       (4 (Tee (Int 0) (Ref 19))) (5 Stack) (6 Drop) (7 Stack)
@@ -7026,7 +7064,8 @@ let%expect_test "dumb div" =
 
 let%expect_test "mul" =
   test_trans_block 0x004816d4;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 Stack) (2 Stack) (3 Stack) (4 Stack)
       (5 (Tee (Long 1) (Ref 6))) (6 Stack) (7 (Local (Long 0))) (8 Stack)
@@ -7087,7 +7126,8 @@ let%expect_test "mul" =
 
 let%expect_test "stosw" =
   test_trans_block 0x00439633;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 3)))
       (3 (Local (Int 0))) (4 (Tee (Int 0) (Ref 5))) (5 Drop) (6 Drop)
@@ -7405,7 +7445,8 @@ let%expect_test "stosw" =
 
 let%expect_test "tail intrinsic" =
   test_trans_block 0x0047d136;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 Drop) (3 (Variable esp))))
     ((int 0) (long 0) (float 0) (vec 0))
@@ -7427,7 +7468,8 @@ let%expect_test "tail intrinsic" =
 
 let%expect_test "movsw" =
   test_trans_block 0x004399e1;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Drop) (1 (Local (Int 1))) (2 Stack) (3 Drop) (4 Drop)
       (5 (Local (Int 1))) (6 Stack) (7 Drop) (8 Stack) (9 Stack) (10 Drop)
@@ -7567,7 +7609,8 @@ let%expect_test "movsw" =
 
 let%expect_test "sub jne" =
   test_trans_block 0x0047dc43;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 0))) (1 Drop) (2 (Tee (Int 1) (Ref 3))) (3 Drop)
       (4 (Local (Int 0))) (5 Stack) (6 Stack) (7 Stack) (8 (Tee (Int 0) (Ref 9)))
@@ -7610,7 +7653,8 @@ let%expect_test "sub jne" =
 
 let%expect_test "rep stosd (nonzero)" =
   test_trans_block 0x0042d5ee;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 2))) (1 Stack) (2 Stack) (3 (Local (Int 1)))
       (4 (Local (Int 0))) (5 Drop) (6 Stack) (7 Drop) (8 Drop) (9 Drop)))
@@ -7651,7 +7695,8 @@ let%expect_test "rep stosd (nonzero)" =
 
 let%expect_test "rep movsb" =
   test_trans_block 0x004446bb;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 4) (Ref 1))) (1 Stack) (2 (Local (Int 1))) (3 Stack) (4 Stack)
       (5 Stack) (6 (Local (Int 1))) (7 Drop) (8 (Tee (Int 1) (Ref 24))) (9 Stack)
@@ -7824,7 +7869,8 @@ let%expect_test "rep movsb" =
 
 let%expect_test "repe cmpsd" =
   test_trans_block 0x00444521;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 2))) (1 Stack) (2 (Tee (Int 4) (Ref 3))) (3 Stack) (4 Stack)
       (5 (Local (Int 1))) (6 (Local (Int 3))) (7 Stack) (8 Drop)
@@ -7893,7 +7939,8 @@ let%expect_test "repe cmpsd" =
 
 let%expect_test "and jns" =
   test_trans_block 0x0043dbb0;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 (Tee (Int 0) (Ref 2))) (2 Stack) (3 Stack)
       (4 (Tee (Int 1) (Ref 6))) (5 Stack) (6 Stack) (7 Drop) (8 Drop)))
@@ -7932,7 +7979,8 @@ let%expect_test "and jns" =
 
 let%expect_test "fidivr" =
   test_trans_block 0x00414d50;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Float 0)))
       (4 Stack) (5 Stack) (6 (Local (Float 0))) (7 Drop) (8 Stack) (9 Stack)
@@ -8051,7 +8099,8 @@ let%expect_test "fidivr" =
 
 let%expect_test "tib offset 0" =
   test_trans_block 0x0043009a;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 2)))
       (3 (Local (Int 0))) (4 (Tee (Int 0) (Ref 5))) (5 Drop) (6 Drop)
@@ -8212,7 +8261,8 @@ let%expect_test "tib offset 0" =
 
 let%expect_test "tail call" =
   test_trans 0x0047d43c;
-  [%expect {|
+  [%expect
+    {|
     ((name func_47d43c)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -8235,7 +8285,8 @@ let%expect_test "tail call" =
 
 let%expect_test "shl reg" =
   test_trans_block 0x0040f3de;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Drop) (3 Stack)
       (4 (Tee (Int 1) (Ref 5))) (5 Stack) (6 (Tee (Int 2) (Ref 7)))
@@ -8280,7 +8331,8 @@ let%expect_test "shl reg" =
 
 let%expect_test "cld" =
   test_trans_block 0x0048c237;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 2) (Ref 2))) (1 Stack) (2 (Tee (Int 0) (Ref 5)))
       (3 (Local (Int 1))) (4 (Local (Int 1))) (5 (Local (Int 2))) (6 Drop)
@@ -8371,7 +8423,8 @@ let%expect_test "cld" =
 
 let%expect_test "fscale/fabs/fcomp sahf jae" =
   test_trans_block 0x0048c1e9;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 1))) (1 Stack) (2 Drop) (3 Stack) (4 (Local (Float 0)))
       (5 (Tee (Int 1) (Ref 6))) (6 Stack) (7 Drop) (8 (Tee (Float 0) (Ref 9)))
@@ -8432,7 +8485,8 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
 
 let%expect_test "fscale/fabs/fcomp sahf jbe" =
   test_trans_block 0x0048c217;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 1))) (1 Stack) (2 Drop) (3 Stack) (4 (Local (Float 0)))
       (5 (Tee (Int 1) (Ref 6))) (6 Stack) (7 Drop) (8 (Tee (Float 0) (Ref 9)))
@@ -8493,7 +8547,8 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
 
 let%expect_test "and je" =
   test_trans_block 0x0048c178;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 Stack) (2 Drop) (3 (Local (Int 1))) (4 Drop) (5 Drop)
       (6 Drop) (7 Stack) (8 (Tee (Int 0) (Ref 9))) (9 Stack) (10 (Local (Int 0)))
@@ -8532,7 +8587,8 @@ let%expect_test "and je" =
 
 let%expect_test "or je" =
   test_trans_block 0x0048c15b;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 (Tee (Int 0) (Ref 4)))
       (4 Stack) (5 Stack) (6 (Local (Int 0))) (7 Drop)))
@@ -8569,7 +8625,8 @@ let%expect_test "or je" =
 
 let%expect_test "xchg" =
   test_trans_block 0x0047f3b0;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 0))) (1 Stack) (2 Stack) (3 (Variable esp)) (4 Stack)
       (5 Stack) (6 Stack) (7 Drop) (8 Drop) (9 Drop) (10 (Local (Int 0)))
@@ -8632,7 +8689,8 @@ let%expect_test "xchg" =
 
 let%expect_test "fsqrt" =
   test_trans_block 0x00461f7b;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Drop) (3 (Local (Float 1)))
       (4 Stack) (5 Stack) (6 (Tee (Float 1) (Ref 9))) (7 (Tee (Int 2) (Ref 8)))
@@ -8728,7 +8786,8 @@ let%expect_test "fsqrt" =
 
 let%expect_test "movsd" =
   test_trans_block 0x00461f64;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 0) (Ref 4))) (1 Drop) (2 (Tee (Int 2) (Ref 3))) (3 Stack)
       (4 Drop) (5 (Local (Int 1))) (6 (Tee (Int 1) (Ref 10))) (7 (Local (Int 0)))
@@ -8813,7 +8872,8 @@ let%expect_test "movsd" =
 
 let%expect_test "sbb" =
   test_trans_block 0x0048b8f3;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 3) (Ref 1))) (1 (Local (Float 0))) (2 (Variable esp))
       (3 Drop) (4 (Tee (Int 5) (Ref 6))) (5 Stack) (6 (Tee (Int 2) (Ref 8)))
@@ -8911,7 +8971,8 @@ let%expect_test "sbb" =
 
 let%expect_test "adc" =
   test_trans_block 0x0048b8db;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 3) (Ref 1))) (1 (Local (Float 0))) (2 (Variable esp))
       (3 Drop) (4 Stack) (5 Stack) (6 (Tee (Int 1) (Ref 8))) (7 Stack)
@@ -9009,7 +9070,8 @@ let%expect_test "adc" =
 
 let%expect_test "test reflexive jns" =
   test_trans_block 0x0048b8c7;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 (Local (Float 0))) (2 Stack)
       (3 (Local (Float 0))) (4 Stack) (5 Stack) (6 Stack) (7 Drop)
@@ -9061,7 +9123,8 @@ let%expect_test "test reflexive jns" =
 
 let%expect_test "fistp" =
   test_trans_block 0x0048b8af;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 4)))
       (3 (Local (Int 1))) (4 (Tee (Int 1) (Ref 5))) (5 Drop) (6 Drop)
@@ -9178,7 +9241,8 @@ let%expect_test "fistp" =
 
 let%expect_test "dec/dec js" =
   test_trans_block 0x0047d173;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Local (Int 1))) (1 (Tee (Int 0) (Ref 2))) (2 Stack) (3 (Local (Int 1)))
       (4 Drop) (5 (Local (Int 0))) (6 Stack)))
@@ -9218,7 +9282,8 @@ let%expect_test "dec/dec js" =
 
 let%expect_test "jb" =
   test_trans_block 0x0044e4f5;
-  [%expect {|
+  [%expect
+    {|
     (locs ((0 Stack) (1 Stack) (2 Stack) (3 Stack)))
     ((int 0) (long 0) (float 0) (vec 0))
 
@@ -9241,7 +9306,8 @@ let%expect_test "jb" =
 
 let%expect_test "fsubr" =
   test_trans_block 0x00404715;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 Drop) (4 Stack)
       (5 (Local (Int 0))) (6 Drop) (7 Stack) (8 (Local (Float 0))) (9 Stack)
@@ -9452,7 +9518,8 @@ let%expect_test "fsubr" =
 
 let%expect_test "rep movsd" =
   test_trans_block 0x00403ad5;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 3) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Int 0))) (4 Drop)
       (5 (Local (Int 2))) (6 (Tee (Int 2) (Ref 9))) (7 Drop) (8 (Local (Int 1)))
@@ -9566,7 +9633,8 @@ let%expect_test "rep movsd" =
 
 let%expect_test "fabs" =
   test_trans_block 0x004023c9;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 Stack)
       (4 (Tee (Int 1) (Ref 5))) (5 Stack) (6 Stack) (7 Stack) (8 Stack) (9 Stack)
@@ -9651,7 +9719,8 @@ let%expect_test "fabs" =
 
 let%expect_test "jae" =
   test_trans_block 0x004027fc;
-  [%expect {|
+  [%expect
+    {|
     (locs ((0 Stack) (1 Stack) (2 Stack) (3 Stack)))
     ((int 0) (long 0) (float 0) (vec 0))
 
@@ -9674,7 +9743,8 @@ let%expect_test "jae" =
 
 let%expect_test "rep stosd (zeroed)" =
   test_trans_block 0x0040118c;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Variable esp)) (1 (Variable __ret_addr__)) (2 (Local (Int 3)))
       (3 (Local (Int 0))) (4 (Tee (Int 0) (Ref 5))) (5 Drop) (6 Drop)
@@ -9835,7 +9905,8 @@ let%expect_test "rep stosd (zeroed)" =
 
 let%expect_test "fild/fiadd" =
   test_trans_block 0x00453df6;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 Drop) (4 Stack)
       (5 (Tee (Int 3) (Ref 7))) (6 Drop) (7 (Local (Int 1))) (8 Drop) (9 Stack)
@@ -9968,7 +10039,8 @@ let%expect_test "fild/fiadd" =
 
 let%expect_test "div" =
   test_trans_block 0x00452f62;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 (Local (Int 2))) (2 (Variable esp)) (3 (Tee (Int 2) (Ref 5)))
       (4 Stack) (5 Drop) (6 Drop) (7 Drop) (8 (Variable esp)) (9 Drop)
@@ -10034,7 +10106,8 @@ let%expect_test "div" =
 
 let%expect_test "fdiv" =
   test_trans_block 0x00452949;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Float 0)))
       (4 Drop) (5 (Local (Int 2))) (6 (Variable esp)) (7 (Local (Int 4)))
@@ -10168,7 +10241,8 @@ let%expect_test "fdiv" =
 
 let%expect_test "cdq/idiv" =
   test_trans_block 0x004529e3;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 0) (Ref 1))) (1 Stack) (2 Drop) (3 Drop) (4 Stack) (5 Drop)
       (6 Stack) (7 Drop) (8 (Local (Int 1))) (9 (Variable esp))
@@ -10297,7 +10371,8 @@ let%expect_test "cdq/idiv" =
 
 let%expect_test "imul" =
   test_trans_block 0x004539dd;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 (Tee (Int 0) (Ref 6)))
       (4 (Tee (Int 1) (Ref 6))) (5 (Local (Int 2))) (6 Stack) (7 Stack) (8 Stack)
@@ -10356,7 +10431,8 @@ let%expect_test "imul" =
 
 let%expect_test "float jp 0x5" =
   test_trans_block 0x00451bfe;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 Stack) (1 (Tee (Int 1) (Ref 2))) (2 Stack) (3 Stack) (4 Stack)
       (5 (Local (Int 0))) (6 Drop) (7 Stack) (8 Stack) (9 Drop) (10 Drop)
@@ -10396,7 +10472,8 @@ let%expect_test "float jp 0x5" =
 
 let%expect_test "jle" =
   test_trans_block 0x004536f0;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 (Tee (Int 0) (Ref 3))) (2 Stack) (3 Stack)
       (4 Drop)))
@@ -10427,7 +10504,8 @@ let%expect_test "jle" =
 
 let%expect_test "jumptable" =
   test_trans_block 0x00450dec;
-  [%expect {|
+  [%expect
+    {|
     (locs ((0 Stack) (1 (Tee (Int 0) (Ref 2))) (2 Drop)))
     ((int 1) (long 0) (float 0) (vec 0))
 
@@ -10463,7 +10541,8 @@ let%expect_test "jumptable" =
 
 let%expect_test "ja" =
   test_trans_block 0x00450de0;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 3) (Ref 1))) (1 (Tee (Int 0) (Ref 2))) (2 (Local (Int 1)))
       (3 Drop) (4 Drop) (5 Stack) (6 Stack) (7 (Local (Int 2))) (8 Drop)
@@ -10523,7 +10602,8 @@ let%expect_test "ja" =
 
 let%expect_test "jg" =
   test_trans_block 4525496;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 3) (Ref 1))) (1 Stack) (2 (Local (Int 0))) (3 Drop) (4 Stack)
       (5 (Local (Int 0))) (6 Drop) (7 (Tee (Int 1) (Ref 8)))
@@ -10587,7 +10667,8 @@ let%expect_test "jg" =
 
 let%expect_test "jge" =
   test_trans_block 4380548;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 (Tee (Int 0) (Ref 3))) (2 Stack) (3 Stack)
       (4 Drop)))
@@ -10618,7 +10699,8 @@ let%expect_test "jge" =
 
 let%expect_test _ =
   test_trans_block 0x0040127a;
-  [%expect {|
+  [%expect
+    {|
     (locs
      ((0 (Tee (Int 1) (Ref 1))) (1 Stack) (2 Stack) (3 (Local (Int 0))) (4 Drop)
       (5 Stack) (6 Stack) (7 Stack) (8 Drop)))
@@ -10659,7 +10741,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   test_trans 0x47ea7d;
-  [%expect {|
+  [%expect
+    {|
     ((name func_47ea7d)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -11456,7 +11539,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   test_trans 4429197;
-  [%expect {|
+  [%expect
+    {|
     ((name func_43958d)
      (signature
       ((args (((name esp) (typ Int)))) (returns (((name esp) (typ Int))))))
@@ -11595,3 +11679,4 @@ let%expect_test _ =
       (8 Drop) (9 (Local (Int 0))) (10 (Variable esp)) (11 Drop)))
     ((int 2) (long 0) (float 0) (vec 0))
     |}]
+

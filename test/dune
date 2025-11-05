@@ -1,6 +1,13 @@
 (library
  (name test_towhowcaml)
- (libraries radatnet mir towhowcaml core elbrun)
+ (libraries
+  radatnet
+  mir
+  towhowcaml
+  core
+  elbrun
+  qcheck-core
+  qcheck-core.runner)
  (inline_tests)
  (preprocess
   (pps ppx_inline_test ppx_expect)))
