@@ -152,17 +152,22 @@ let lower_block max_block block_map local_vars used_locals block : Block.t =
         | LongLT -> B.long_less_than b ~lhs ~rhs ~signed
         | LongLTE -> B.long_less_than_equal b ~lhs ~rhs ~signed
         | ShiftRight -> B.shift_right b ~lhs ~rhs ~signed
-        | LongShiftRight -> B.long_shift_right b ~lhs ~rhs ~signed)
-  in
-  let aliases =
-    List.fold block.body ~init:StrMap.empty ~f:(fun aliases stmt ->
+        | LongShiftRight -> B.long_shift_right b ~lhs ~rhs ~signed
+        | Remainder -> B.remainder b ~lhs ~rhs ~signed
+        | LongRemainder -> B.long_remainder b ~lhs ~rhs ~signed)
+    | StmtExpr (stmts, expr) ->
+        let aliases = lower_statements aliases stmts in
+        lower_expr aliases expr
+  and lower_statements aliases stmts =
+    List.fold stmts ~init:aliases ~f:(fun aliases stmt ->
         try
           match stmt with
           | Let { lhs; rhs } ->
               B.try_change_var b lhs @@ lower_expr aliases rhs |> ignore;
               aliases
-          | Alias { lhs; rhs } ->
-              Map.add_exn aliases ~key:lhs ~data:(lower_expr aliases rhs)
+          | Alias bindings ->
+              List.fold bindings ~init:aliases ~f:(fun acc (lhs, rhs) ->
+                  Map.add_exn acc ~key:lhs ~data:(lower_expr aliases rhs))
           | Store { addr; offset; value; size = Int } ->
               let addr = lower_expr aliases addr in
               B.store32 b ~offset ~value:(lower_expr aliases value) ~addr;
@@ -191,6 +196,7 @@ let lower_block max_block block_map local_vars used_locals block : Block.t =
         with e ->
           Exn.reraise e @@ Sexp.to_string_hum @@ sexp_of_statement stmt)
   in
+  let aliases = lower_statements StrMap.empty block.body in
   let terminator : Block.terminator =
     match block.terminator with
     | Return | Goto (Block -1) -> Return
@@ -222,7 +228,8 @@ let lower : func_def -> Mir.Func.t =
     @@ List.map
          ~f:(fun v ->
            (v.name, { B.name = v.name; typ = v.typ; scope = `Local }))
-         (func_def.signature.returns @ func_def.signature.args |> List.stable_dedup ~compare:(Mir.compare_variable))
+         (func_def.signature.returns @ func_def.signature.args
+         |> List.stable_dedup ~compare:Mir.compare_variable)
     @ List.map ~f:(fun v -> (v.name, v)) func_def.locals
   in
   let used_locals = Hashtbl.create (module String) in

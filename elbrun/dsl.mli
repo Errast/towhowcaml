@@ -13,22 +13,6 @@ type _ var
 type (_, _) s = |
 type z = |
 
-
-module type HKTList = sig
-  type 'a elem
-  type 'len t = [] : z t | ( :: ) : 'a elem * 'len t -> ('len, 'a) s t
-  type 'a func = { f : 'b. 'b elem -> 'a } [@@unboxed]
-
-  val map_list : 'a func -> 'len t -> 'a list
-end
-
-module Params : HKTList with type 'a elem = 'a var_decl
-module Args : HKTList with type 'a elem = 'a var
-module Vars : HKTList with type 'a elem = 'a var_decl
-module Locals : HKTList with type 'a elem = 'a var
-module Returns : HKTList with type 'a elem = 'a var_decl
-module RetVars : HKTList with type 'a elem = 'a var
-
 type ('size, 'underlying, 'bitcast) tag = private
   | I8 : ([> `I8 ], int_, _) tag
   | I16 : ([> `I16 ], int_, _) tag
@@ -46,6 +30,25 @@ type 'underlying lane_tag =
 type 'a type_tag = ([ `Int | `Long | `Float | `Vec ], 'a) size_tag
 type _ expr
 type statement
+
+module type HKTList = sig
+  type 'a elem
+  type 'len t = [] : z t | ( :: ) : 'a elem * 'len t -> ('len, 'a) s t
+  type 'a func = { f : 'b. 'b elem -> 'a } [@@unboxed]
+  type 'a func2 = { f : 'b. 'b elem -> 'b elem -> 'a } [@@unboxed]
+
+  val map_list : 'a func -> 'len t -> 'a list
+  val zipmap_list : 'a func2 -> 'len t -> 'len t -> 'a list
+end
+
+module Params : HKTList with type 'a elem = 'a var_decl
+module Args : HKTList with type 'a elem = 'a var
+module Vars : HKTList with type 'a elem = 'a var_decl
+module Locals : HKTList with type 'a elem = 'a var
+module Returns : HKTList with type 'a elem = 'a var_decl
+module RetVars : HKTList with type 'a elem = 'a var
+module Bindings : HKTList with type 'a elem = 'a expr
+module Aliases : HKTList with type 'a elem = 'a expr
 
 val fn :
   string ->
@@ -74,7 +77,7 @@ val s : 'a expr -> 'a signed_arg
 val u : 'a expr -> 'a signed_arg
 val ( := ) : 't var -> 't expr -> statement
 val ( ! ) : 't var -> 't expr
-val ( %= ) : string -> 't expr -> statement
+val ( =% ) : string -> 't expr -> statement
 val ( !% ) : string -> 't expr
 
 type _ if_cont
@@ -120,6 +123,8 @@ val ( ^: ) : long_ bin_op
 val ( <<: ) : long_ bin_op
 val ( >> ) : int_ expr -> int_ signed_arg -> int_ expr
 val ( >>: ) : long_ expr -> long_ signed_arg -> long_ expr
+val ( % ) : int_ expr -> int_ signed_arg -> int_ expr
+val ( %: ) : long_ expr -> long_ signed_arg -> long_ expr
 val load : ?offset:int -> 't type_tag -> int_ expr -> 't expr
 
 val load_s :
@@ -144,3 +149,5 @@ val store :
   ?offset:int -> (_, 't, _) tag -> 't expr -> at -> int_ expr -> statement
 
 val return : statement
+val block : statement list -> 't expr -> 't expr
+val comp : 'len 't. 'len Bindings.t -> ('len Aliases.t -> 't expr) -> 't expr

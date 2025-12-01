@@ -65,7 +65,7 @@ type expr =
 
 and statement =
   | Let of { lhs : string; rhs : expr }
-  | Alias of { lhs : string; rhs : expr }
+  | Alias of (string * expr) list
   | Store of { addr : expr; offset : int; value : expr; size : Mir.local_type }
   | Store8 of { addr : expr; offset : int; value : expr }
   | Store16 of { addr : expr; offset : int; value : expr }

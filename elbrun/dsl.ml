@@ -25,19 +25,44 @@ module type HKTList = sig
   type 'a elem
   type 'len t = [] : z t | ( :: ) : 'a elem * 'len t -> ('len, 'a) s t
   type 'a func = { f : 'b. 'b elem -> 'a } [@@unboxed]
+  type 'a func2 = { f : 'b. 'b elem -> 'b elem -> 'a } [@@unboxed]
 
   val map_list : 'a func -> 'len t -> 'a list
+  val zipmap_list : 'a func2 -> 'len t -> 'len t -> 'a list
 end
 
 module HKTList (T : sig
   type 'a t
-end) : HKTList with type 'a elem = 'a T.t = struct
+end) : sig
+  include HKTList with type 'a elem = 'a T.t
+
+  module Map : (To : HKTList) -> sig
+    type func = { f : 'b. 'b elem -> 'b To.elem } [@@unboxed]
+
+    val map : 'len. func -> 'len t -> 'len To.t
+  end
+end = struct
   type 'a elem = 'a T.t
   type 'len t = [] : z t | ( :: ) : 'a T.t * 'len t -> ('len, 'a) s t
   type 'a func = { f : 'b. 'b T.t -> 'a } [@@unboxed]
+  type 'a func2 = { f : 'b. 'b T.t -> 'b T.t -> 'a } [@@unboxed]
 
   let[@tail_mod_cons] rec map_list : type len. 'a func -> len t -> 'a list =
    fun f xs -> match xs with [] -> [] | x :: xs -> f.f x :: map_list f xs
+
+  let[@tail_mod_cons] rec zipmap_list : type len.
+      'a func2 -> len t -> len t -> 'a list =
+   fun f xs ys ->
+    match (xs, ys) with
+    | [], [] -> []
+    | x :: xs, y :: ys -> f.f x y :: zipmap_list f xs ys
+
+  module Map (To : HKTList) = struct
+    type func = { f : 'b. 'b elem -> 'b To.elem } [@@unboxed]
+
+    let[@tail_mod_cons] rec map : type len. func -> len t -> len To.t =
+     fun f xs -> match xs with [] -> T.[] | x :: xs -> T.(f.f x :: map f xs)
+  end
 end
 
 module Params = HKTList (struct
@@ -52,6 +77,16 @@ module Vars = Params
 module Locals = Args
 module Returns = Params
 module RetVars = Args
+
+let erase_vars (type len) l : len Args.t =
+  let module M = Params.Map (Args) in
+  M.map
+    {
+      f =
+        (fun (type t) (Int s | Long s | Float s | Vec s : t Params.elem) ->
+          Var s);
+    }
+    l
 
 type ('size, 'underlying, 'bitcast) tag =
   | I8 : ([> `I8 ], int_, _) tag
@@ -135,13 +170,15 @@ type _ expr =
 
 and statement =
   | Set : 'a var * 'a expr -> statement
-  | Alias : string * 'a expr -> statement
+  | Alias : (string * expr_packed) list -> statement
   | Store : int_ expr * int * (_, 'value, _) tag * 'value expr -> statement
   | If of int_ expr * statement list * statement list
   | Label of string
   | Goto of string
   | Return
   | Sequence of statement list
+
+and expr_packed = Mk : _ expr -> expr_packed [@@unboxed]
 
 let uni_op_to_syntax : type arg out. (arg, out) uni_op -> Syntax.uni_op =
   function
@@ -282,8 +319,10 @@ and statements_to_syntax : statement list -> Syntax.statement list =
           (If { cond = expr_to_syntax cond; t = go t []; f = go f [] } :: acc)
     | Label str :: stmts -> go stmts (Label str :: acc)
     | Goto str :: stmts -> go stmts (Goto str :: acc)
-    | Alias (lhs, rhs) :: stmts ->
-        go stmts (Alias { lhs; rhs = expr_to_syntax rhs } :: acc)
+    | Alias bindings :: stmts ->
+        go stmts
+          (Alias (List.map (fun (l, Mk r) -> (l, expr_to_syntax r)) bindings)
+          :: acc)
     | Sequence seq :: stmts -> go (seq @ stmts) acc
   in
   fun stmts -> go stmts []
@@ -299,11 +338,9 @@ let fn : type arg_len ret_len local_len.
     statement list) ->
     Mir.Func.t =
  fun name params returns locals body ->
-  let rec erase : type t. t Params.t -> t Args.t = function
-    | [] -> []
-    | (Int s | Long s | Float s | Vec s) :: vs -> Var s :: erase vs
+  let statements =
+    body (erase_vars params) (erase_vars returns) (erase_vars locals)
   in
-  let statements = body (erase params) (erase returns) (erase locals) in
   let body = statements_to_syntax statements in
   let signature =
     Mir.
@@ -326,11 +363,17 @@ let fn : type arg_len ret_len local_len.
 
 let ( := ) : type t. t var -> t expr -> statement = fun lhs rhs -> Set (lhs, rhs)
 let ( ! ) : type t. t var -> t expr = fun var -> Var var
+let valid_dsl_alias str = String.length str > 0 && str.[0] <> '\n'
 
 let ( =% ) : type t. string -> t expr -> statement =
- fun lhs rhs -> Alias (lhs, rhs)
+ fun lhs rhs ->
+  assert (valid_dsl_alias lhs);
+  Alias [ (lhs, Mk rhs) ]
 
-let ( !% ) : type t. string -> t expr = fun alias -> Use alias
+let ( !% ) : type t. string -> t expr =
+ fun alias ->
+  assert (valid_dsl_alias alias);
+  Use alias
 
 type if_acc = (int_ expr * statement list) list
 
@@ -467,3 +510,33 @@ let at = At
 let store ?(offset = 0) size value At addr = Store (addr, offset, size, value)
 let return = Return
 let block stmts expr = StmtExpr (stmts, expr)
+
+module Aliases = HKTList (struct
+  type 'a t = 'a expr
+end)
+
+module Bindings = Aliases
+
+let counter = Atomic.make 0
+let comp =
+ fun (type len t) (bindings : len Bindings.t) (f : len Aliases.t -> t expr) :
+     t expr ->
+  let module M = Aliases.Map (Aliases) in
+  let list : len Aliases.t =
+    M.map
+      {
+        f =
+          (fun (type t) (_ : t expr) : t expr ->
+            !%(String.cat "\n" @@ Int.to_string
+              @@ Atomic.fetch_and_add counter 1));
+      }
+      bindings
+  in
+  block
+    [
+      Alias
+        (Aliases.zipmap_list
+           { f = ((fun (Use str) rhs -> (str, Mk rhs)) [@warning "-8"]) }
+           list bindings);
+    ]
+  @@ f list

@@ -86,7 +86,7 @@ statements:
 statement:
 	| lhs=IDENT; "=" rhs=expr  { [Let {lhs;rhs}] }
 	| lhs=GLOBAL_IDENT; "=" rhs=expr  { [Let {lhs;rhs}] }
-    | lhs=REF_IDENT; "=" rhs=expr { [Alias {lhs;rhs}] }
+    | lhs=REF_IDENT; "=" rhs=expr { [Alias [lhs,rhs]] }
 	| STORE offset=preceded(":", NUMBER)? size=size addr=expr "," value=expr { [Store {addr=addr;offset=or_zero offset;value;size}] }
 	| STORE offset=preceded(":", NUMBER)? I8 addr=expr "," value=expr { [Store8 {addr=addr;offset=or_zero offset;value}] }
 	| STORE offset=preceded(":", NUMBER)? I16 addr=expr "," value=expr { [Store16 {addr=addr;offset=or_zero offset;value}] }
