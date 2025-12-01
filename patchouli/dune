@@ -1,0 +1,19 @@
+(library
+ (name patchouli)
+ (preprocess
+  (pps ppx_jane))
+ (libraries core radatnet z3 menhirLib angstrom libsail)
+ (ocamlopt_flags
+  (:standard -O2)))
+
+(rule
+ (target lexer.ml)
+ (deps lexer.mll)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{bin:ocamllex} -q -o %{target} %{deps}))))
+
+(menhir
+ (modules parser)
+ (explain true))

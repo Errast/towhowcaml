@@ -14,7 +14,7 @@ type gpr_type = [ `RegLow8Bit | `RegHigh8Bit | `Reg16Bit | `Reg32Bit ]
 [@@deriving sexp, equal]
 
 type reg_32bit = [ `eax | `ebx | `ecx | `edx | `esi | `edi | `esp | `ebp | `eip ]
-[@@deriving sexp, equal]
+[@@deriving sexp, equal, compare]
 
 let reg_32bit_of_yojson : Yojson.Safe.t -> reg_32bit = function
   | `String "eax" -> `eax
@@ -75,7 +75,7 @@ let reg_low8bit_of_yojson = function
 let __reg_low8bit_of_yojson__ = reg_low8bit_of_yojson
 
 type x87_float = [ `st0 | `st1 | `st2 | `st3 | `st4 | `st5 | `st6 ]
-[@@deriving sexp, equal]
+[@@deriving sexp, equal, compare]
 
 let x87_float_of_yojson = function
   | `String "st(0)" -> `st0
@@ -128,8 +128,11 @@ type t =
   [ reg_32bit | reg_16bit | reg_low8bit | reg_high8bit | x87_float | mmx | sse ]
 [@@deriving of_yojson, sexp, equal]
 
+type flags = [ `OF | `SF | `ZF | `AF | `CF | `PF ]
+[@@deriving sexp, equal, compare]
+
 let to_32_bit (reg : [< reg_32bit | reg_16bit | reg_high8bit | reg_low8bit ]) :
-    reg_32bit =
+    [> reg_32bit ] =
   match reg with
   | `eax -> `eax
   | `ax -> `eax
@@ -227,7 +230,30 @@ let reg_type : t -> reg_type = function
   | #mmx -> `Mmx
   | #sse -> `Sse
 
-let x87_float_reg_index : x87_float -> int = function
+type _ reg_type' =
+  | RegLow8Bit : [> reg_low8bit ] reg_type'
+  | RegHigh8Bit : [> reg_high8bit ] reg_type'
+  | Reg16Bit : [> reg_16bit ] reg_type'
+  | Reg32Bit : [> reg_32bit ] reg_type'
+  | X87Float : [> x87_float ] reg_type'
+  | Mmx : [> mmx ] reg_type'
+  | Sse : [> sse ] reg_type'
+[@@deriving sexp_of]
+
+let equal_reg_type (lhs : [< t ] reg_type') (rhs : [< t ] reg_type') =
+  (* Heterogeneous equality *)
+  lhs = Obj.magic rhs
+
+let reg_type' : ([< t ] as 'a) -> 'a reg_type' = function
+  | #reg_32bit -> Reg32Bit
+  | #reg_low8bit -> RegLow8Bit
+  | #reg_high8bit -> RegHigh8Bit
+  | #reg_16bit -> Reg16Bit
+  | #x87_float -> X87Float
+  | #mmx -> Mmx
+  | #sse -> Sse
+
+let x87_float_to_index : x87_float -> int = function
   | `st0 -> 0
   | `st1 -> 1
   | `st2 -> 2
@@ -235,3 +261,12 @@ let x87_float_reg_index : x87_float -> int = function
   | `st4 -> 4
   | `st5 -> 5
   | `st6 -> 6
+
+let[@warning "-8"] x87_float_of_index_exn : int -> [> x87_float ] = function
+  | 0 -> `st0
+  | 1 -> `st1
+  | 2 -> `st2
+  | 3 -> `st3
+  | 4 -> `st4
+  | 5 -> `st5
+  | 6 -> `st6
