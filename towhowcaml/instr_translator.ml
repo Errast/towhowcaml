@@ -337,7 +337,7 @@ let load_operand_f c src =
   | Immediate { value; size = 4 } ->
       B.float_const c.builder @@ Mir.Bits.int32_to_float value
   | Register { reg = #X86reg.x87_float as reg; _ } ->
-      get_fpu_stack c @@ X86reg.x87_float_reg_index reg
+      get_fpu_stack c @@ X86reg.x87_float_to_index reg
   | Memory ({ segment = None | Some Es; _ } as mem) -> (
       let addr, offset = load_partial_address c mem in
       match mem.size with
@@ -353,7 +353,7 @@ let load_operand_f c src =
 let store_operand_f c value ~dest =
   match dest with
   | Register { reg = #X86reg.x87_float as reg; _ } ->
-      set_fpu_stack c value @@ X86reg.x87_float_reg_index reg
+      set_fpu_stack c value @@ X86reg.x87_float_to_index reg
   | Memory ({ segment = None | Some Es; size = 4 | 8 | 10; _ } as mem) -> (
       let addr, offset = load_partial_address c mem in
       match mem.size with

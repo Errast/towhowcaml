@@ -1,5 +1,12 @@
 type t
-type basic_opcode = { address : int; prefix : int; id : int; opex_str : string }
+
+type basic_opcode = {
+  address : int;
+  prefix : int;
+  id : int;
+  opex_str : string;
+  size : int;
+}
 
 external create : unit -> t = "radatnet_core_new"
 external run : t -> string -> string = "radatnet_core_cmd_str"

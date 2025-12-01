@@ -1,5 +1,5 @@
 type t
-type basic_opcode = { address : int; prefix : int; id : int; opex_str : string }
+type basic_opcode = { address : int; prefix : int; id : int; opex_str : string; size: int }
 
 val create : unit -> t
 val run : t -> string -> string

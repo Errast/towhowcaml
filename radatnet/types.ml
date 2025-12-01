@@ -34,8 +34,8 @@ let x86_segment_reg_of_yojson = function
 
 type mem_operand = {
   size : int;
-  base : X86reg.t option;[@sexp.omit_nil]
-  index : X86reg.t option;[@sexp.omit_nil]
+  base : X86reg.t option; [@sexp.omit_nil]
+  index : X86reg.t option; [@sexp.omit_nil]
   scale : int;
   displacement : int;
   segment : x86_segment_reg option; [@sexp.omit_nil]
@@ -102,6 +102,7 @@ type opcode = {
   id : X86_instr.t;
   address : int; [@key "addr"]
   prefix : int; [@default 0] (* not doing this type now *)
+  size : int;
 }
 [@@deriving of_yojson, sexp] [@@yojson.allow_extra_fields]
 
@@ -111,6 +112,7 @@ let opcode_of_basic_opcode (basic : Basic.basic_opcode) =
     id = X86_instr.t_of_int basic.id;
     address = basic.address;
     prefix = basic.prefix;
+    size = basic.size;
   }
 
 let opcode_prefix_none = 0

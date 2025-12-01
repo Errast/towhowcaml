@@ -53,7 +53,7 @@ let offset_to_block_id c offset =
         ~compare:(fun b o -> compare_int b.offset o)
         `First_equal_to offset
       |> Option.value_or_thunk ~default:(fun () ->
-             raise_s [%message "offset not found" (offset : int)])
+          raise_s [%message "offset not found" (offset : int)])
 
 let add_block_branches c id (block : block) =
   let add_branch b =
@@ -252,6 +252,7 @@ let call_0x483d4e_block_arr =
             opex = { operands = [ Immediate { value = 0x483d4e; size = 4 } ] };
             prefix = 0;
             address = Int.max_value;
+            size = 5;
           };
         |];
     };
@@ -269,6 +270,7 @@ let call_0x47dcf0_block_arr =
             opex = { operands = [ Immediate { value = 0x47dcf0; size = 4 } ] };
             prefix = 0;
             address = Int.max_value;
+            size = 5;
           };
         |];
     };

@@ -83,6 +83,7 @@ value radatnet_core_anal_op(value core, value address) {
   Field(op_value, 1) = Val_int(op.prefix);
   Field(op_value, 2) = Val_int(op.id);
   Field(op_value, 3) = opex;
+  Field(op_value, 4) = Val_int(op.size);
   r_anal_op_fini(&op);
   CAMLreturn(op_value);
 }

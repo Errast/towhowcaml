@@ -2,4 +2,4 @@
  (name towhowcaml)
  (preprocess
   (pps ppx_jane))
- (libraries core mir radatnet elbrun))
+ (libraries core mir radatnet elbrun z3))
