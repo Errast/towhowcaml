@@ -2,6 +2,8 @@
 
 (name towhowcaml)
 
+(generate_opam_files)
+
 (package
  (name towhowcaml)
  (allow_empty)
@@ -14,7 +16,8 @@
   menhir
   yojson
   ppx_yojson_conv
-  (qcheck-core :with-test)))
+  z3
+  qcheck-core))
 
 (using menhir 3.0)
 
