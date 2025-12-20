@@ -5,12 +5,13 @@
 #include <r_core.h>
 #include <x86.h>
 #include <stdint.h>
+#include <stdio.h>
 
 void radatnet_core_free(value core) {
 	r_core_free(*((void**) Data_custom_val(core)));
 }
 
-static struct custom_operations radare_core_ocaml_ops = {
+static const struct custom_operations radare_core_ocaml_ops = {
 	"radatnet.r_core",
 	radatnet_core_free,
 	custom_compare_default,
@@ -58,7 +59,7 @@ value radatnet_core_anal_op(value core, value address) {
   uint8_t buffer[15];
   r_io_read_at(core_ptr->io, Long_val(address), buffer, sizeof(buffer));
   RAnalOp op;
-  r_anal_op(core_ptr->anal, &op, Long_val(address), buffer, sizeof(buffer), R_ARCH_OP_MASK_OPEX);
+  r_anal_op(core_ptr->anal, &op, Long_val(address), buffer, sizeof(buffer), R_ARCH_OP_MASK_OPEX /*| R_ARCH_OP_MASK_VAL*/);
 
   switch(op.id) {
   	case X86_INS_FADD:
@@ -78,12 +79,12 @@ value radatnet_core_anal_op(value core, value address) {
   }
    
   opex = caml_alloc_initialized_string(op.opex.len, R_STRBUF_SAFEGET(&op.opex));
-  op_value = caml_alloc_small(4,0);
-  Field(op_value, 0) = Val_long(op.addr);
-  Field(op_value, 1) = Val_int(op.prefix);
-  Field(op_value, 2) = Val_int(op.id);
-  Field(op_value, 3) = opex;
-  Field(op_value, 4) = Val_int(op.size);
+  op_value = caml_alloc_small(5, 0);
+  Store_field(op_value, 0, Val_long(op.addr));
+  Store_field(op_value, 1, Val_int(op.prefix));
+  Store_field(op_value, 2, Val_int(op.id));
+  Store_field(op_value, 3, opex);
+  Store_field(op_value, 4, Val_int(op.size));
   r_anal_op_fini(&op);
   CAMLreturn(op_value);
 }

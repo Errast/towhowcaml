@@ -7,7 +7,8 @@ val vec_temp : ident
 val int_temp : ident
 val is_temp : ident -> bool
 
-type local = { name : string; scope : [ `Local | `Global ]; typ : local_type } [@@deriving sexp]
+type local = { name : string; scope : [ `Local | `Global ]; typ : local_type }
+[@@deriving sexp]
 
 type t [@@deriving sexp_of]
 
@@ -73,13 +74,20 @@ type ('r, 's) signed_vec_lane_bi_op_add =
   rhs:Instr.ref ->
   's
 
-type load_op_add = ?varName:ident -> ?offset:int -> t -> Instr.ref -> Instr.ref
+type load_op_add =
+  ?varName:ident -> ?offset:int -> ?plane:int -> t -> Instr.ref -> Instr.ref
 
 type sign_load_op_add =
-  ?varName:ident -> ?offset:int -> t -> Instr.ref -> signed:bool -> Instr.ref
+  ?varName:ident ->
+  ?offset:int ->
+  ?plane:int ->
+  t ->
+  Instr.ref ->
+  signed:bool ->
+  Instr.ref
 
 type store_op_add =
-  ?offset:int -> t -> value:Instr.ref -> addr:Instr.ref -> unit
+  ?offset:int -> ?plane:int -> t -> value:Instr.ref -> addr:Instr.ref -> unit
 
 val equals_zero : uni_op_add
 val long_equals_zero : uni_op_add
@@ -94,7 +102,7 @@ val long_to_int32 : uni_op_add
 val count_leading_zeros : uni_op_add
 val long_count_leading_zeros : uni_op_add
 val bitcast_long_to_float : uni_op_add
-val bitcast_float_to_long: uni_op_add
+val bitcast_float_to_long : uni_op_add
 val count_ones : uni_op_add
 val float_neg : uni_op_add
 val float_abs : uni_op_add
@@ -249,6 +257,7 @@ val vec_load64_zero_extend : load_op_add
 val vec_load :
   ?varName:ident ->
   ?offset:int ->
+  ?plane:int ->
   t ->
   dest:Instr.ref ->
   addr:Instr.ref ->
@@ -271,6 +280,7 @@ val vec_store128 : store_op_add
 
 val vec_store :
   ?offset:int ->
+  ?plane:int ->
   t ->
   addr:Instr.ref ->
   vec:Instr.ref ->
@@ -281,7 +291,16 @@ val vec_store :
 val set_global : t -> variable -> Instr.ref -> unit
 val mir_assert : t -> Instr.ref -> unit
 val unreachable : t -> unit -> unit
-val memset : t -> count:Instr.ref -> value:Instr.ref -> dest:Instr.ref -> unit
-val memcopy : t -> count:Instr.ref -> src:Instr.ref -> dest:Instr.ref -> unit
+
+val memset :
+  ?plane:int ->
+  t ->
+  count:Instr.ref ->
+  value:Instr.ref ->
+  dest:Instr.ref ->
+  unit
+
+val memcopy :
+  ?plane:int -> t -> count:Instr.ref -> src:Instr.ref -> dest:Instr.ref -> unit
 
 val try_change_var : t -> ident -> Instr.ref -> Instr.ref

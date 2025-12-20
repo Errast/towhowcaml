@@ -206,9 +206,9 @@ let store_operand c src ~dest =
         else addr_var
       in
       match address.size with
-      | 4 -> B.store32 c.builder ~value:src ~addr:addr_var ~offset
-      | 2 -> B.store16 c.builder ~value:src ~addr:addr_var ~offset
-      | 1 -> B.store8 c.builder ~value:src ~addr:addr_var ~offset
+      | 4 -> B.store32 c.builder ~value:src ~addr:addr_var ~offset ~plane:0
+      | 2 -> B.store16 c.builder ~value:src ~addr:addr_var ~offset ~plane:0
+      | 1 -> B.store8 c.builder ~value:src ~addr:addr_var ~offset ~plane:0
       | _ -> raise_m c [%message "Invalid store size" (dest : operand)])
   | Memory
       {
@@ -245,9 +245,12 @@ let load_operand_typed c src : Instr.ref * [> X86reg.gpr_type ] =
   | Memory ({ segment = None | Some Es; _ } as address) -> (
       let addr_var, offset = load_partial_address c address in
       match address.size with
-      | 4 -> (B.load32 c.builder addr_var ~offset, `Reg32Bit)
-      | 2 -> (B.load16 c.builder addr_var ~offset ~signed:false, `Reg16Bit)
-      | 1 -> (B.load8 c.builder addr_var ~offset ~signed:false, `RegLow8Bit)
+      | 4 -> (B.load32 c.builder addr_var ~offset ~plane:0, `Reg32Bit)
+      | 2 ->
+          (B.load16 c.builder addr_var ~offset ~plane:0 ~signed:false, `Reg16Bit)
+      | 1 ->
+          ( B.load8 c.builder addr_var ~offset ~plane:0 ~signed:false,
+            `RegLow8Bit )
       | _ -> raise_m c [%message "can't load operand" (src : operand)])
   | Memory
       {
@@ -317,8 +320,8 @@ let get_fpu_stack c index =
       let addr = B.newest_var c.builder Util.fpu_stack_pointer in
       let offset = offset * int_of_float_size in
       match float_size with
-      | `Single -> B.float_load32 c.builder addr ~offset
-      | `Double -> B.float_load64 c.builder addr ~offset)
+      | `Single -> B.float_load32 c.builder addr ~offset ~plane:0
+      | `Double -> B.float_load64 c.builder addr ~offset ~plane:0)
 
 let fpu_push c value =
   c.state.local_fpu_stack_height <- c.state.local_fpu_stack_height + 1;
@@ -341,8 +344,8 @@ let load_operand_f c src =
   | Memory ({ segment = None | Some Es; _ } as mem) -> (
       let addr, offset = load_partial_address c mem in
       match mem.size with
-      | 4 -> B.float_load32 c.builder addr ~offset
-      | 8 -> B.float_load64 c.builder addr ~offset
+      | 4 -> B.float_load32 c.builder addr ~offset ~plane:1
+      | 8 -> B.float_load64 c.builder addr ~offset ~plane:1
       | 10 ->
           let addr = load_complete_address c mem in
           B.call c.builder Util.load_big_float_func [ addr ];
@@ -425,10 +428,10 @@ let write_fpu_stack_changes ~state ~builder =
         if index <= stack_head then
           match float_size with
           | `Single ->
-              B.float_store32 builder ~addr ~value
+              B.float_store32 builder ~addr ~value ~plane:1
                 ~offset:(index * int_of_float_size)
           | `Double ->
-              B.float_store64 builder ~addr ~value
+              B.float_store64 builder ~addr ~value ~plane:1
                 ~offset:(index * int_of_float_size));
     Hashtbl.clear state.fpu_stack_changes;
 
@@ -602,7 +605,7 @@ let translate_float_comparison c ~after_pop =
   | `Once -> fpu_pop_off c |> ignore
   | `Twice ->
       fpu_pop_off c |> ignore;
-      fpu_pop_off |> ignore
+      fpu_pop_off c |> ignore
 
 let translate_float_store c ~after_pop =
   match operands c with
@@ -848,7 +851,9 @@ let translate_dec_comparison c ~result =
 
 let translate_inc_comparison c ~result =
   (* slightly different from add *)
-  match c.opcode.id with JNE -> extend_either c result | _ -> raise_comp_ops c
+  match c.opcode.id with
+  | JNE -> extend_either c result
+  | _ -> raise_comp_ops c
 
 let translate_result_comparison c ~result ~cf_zero ~of_zero =
   match c.opcode.id with

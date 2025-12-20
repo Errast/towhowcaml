@@ -132,9 +132,10 @@ let rec demand_low8 c wl i =
     when c.uses.(unref i) = 1 ->
       update c wl i @@ Instr.map (demand_low8 c wl) instr;
       i
-  | LoadOp { op = Load32; addr; offset; var } when c.uses.(unref i) = 1 ->
+  | LoadOp { op = Load32; addr; offset; plane; var } when c.uses.(unref i) = 1
+    ->
       update c wl i
-      @@ SignedLoadOp { var; offset; addr; op = Load8; signed = true };
+      @@ SignedLoadOp { var; offset; addr; op = Load8; signed = true; plane };
       i
   | SignedLoadOp ({ op = Load16; _ } as l) when c.uses.(unref i) = 1 ->
       update c wl i @@ SignedLoadOp { l with op = Load8 };
@@ -158,9 +159,10 @@ and demand_16 c wl i =
     when c.uses.(unref i) = 1 ->
       update c wl i @@ Instr.map (demand_16 c wl) instr;
       i
-  | LoadOp { op = Load32; addr; offset; var } when c.uses.(unref i) = 1 ->
+  | LoadOp { op = Load32; addr; offset; plane; var } when c.uses.(unref i) = 1
+    ->
       update c wl i
-      @@ SignedLoadOp { var; offset; addr; op = Load16; signed = true };
+      @@ SignedLoadOp { var; offset; addr; op = Load16; signed = true; plane };
       i
   | _ -> i
 
@@ -198,9 +200,10 @@ and demand_low64 c wl i =
       i
   | VecLoadLaneOp { shape = `I64 | `F64; lane = 1; dest_vec; _ } ->
       demand_low64 c wl dest_vec
-  | VecLoadLaneOp { shape = `I64 | `F64; lane = 0; addr; offset; var; _ }
+  | VecLoadLaneOp { shape = `I64 | `F64; lane = 0; addr; offset; plane; var; _ }
     when c.uses.(unref i) = 1 ->
-      update c wl i @@ LoadOp { op = VecLoad64ZeroExtend; addr; offset; var };
+      update c wl i
+      @@ LoadOp { op = VecLoad64ZeroExtend; addr; offset; plane; var };
       i
   | _ -> i
 
@@ -225,6 +228,7 @@ let peephole_opts c wl i =
                 signed = Poly.(v.op = SignExtendLow8);
                 addr = l.addr;
                 offset = l.offset;
+                plane = l.plane;
                 var = l.var;
               };
           DupVar { var = v.var; typ = Int; src = new_operand }
@@ -259,6 +263,7 @@ let peephole_opts c wl i =
                 signed = Poly.(v.op = SignExtend16);
                 addr = l.addr;
                 offset = l.offset;
+                plane = l.plane;
                 var = l.var;
               };
           DupVar { var = v.var; typ = Int; src = new_operand }
@@ -389,4 +394,3 @@ let opt (block : Block.t) =
     equal_array equal_int c.uses
     @@ count_uses instrs block.roots block.terminator);
   { block with instrs = AP.of_array instrs }
-

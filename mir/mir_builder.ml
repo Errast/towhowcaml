@@ -101,7 +101,7 @@ let new_var t ?ref varName typ =
         let info =
           Hashtbl.find t.currentVar varName
           |> Option.value_or_thunk ~default:(fun () ->
-                 new_info t varName ~add_ctx:false)
+              new_info t varName ~add_ctx:false)
         in
         if Poly.(info.typ <> typ) then
           raise
@@ -141,9 +141,9 @@ let newest_var_opt t varName =
 let get_var t (Instr.Ref.Ref var as instr_ref) =
   Vec.get t.instrs var |> Instr.assignment_var
   |> Option.value_or_thunk ~default:(fun () ->
-         raise_s
-           [%message
-             "Instr isn't an assignment" ~instr_ref:(instr_ref : Instr.Ref.t)])
+      raise_s
+        [%message
+          "Instr isn't an assignment" ~instr_ref:(instr_ref : Instr.Ref.t)])
 
 let verify_var (Instr.Ref.Ref var as instr_ref) typ ?(check_type = true) t =
   if var < 0 || var >= Vec.length t.instrs then
@@ -161,7 +161,7 @@ let verify_var (Instr.Ref.Ref var as instr_ref) typ ?(check_type = true) t =
     && (not (is_temp declared.name))
     && Hashtbl.find t.currentVar declared.name
        |> Option.value_map ~default:false ~f:(fun i ->
-              not @@ Instr.Ref.equal instr_ref i.index)
+           not @@ Instr.Ref.equal instr_ref i.index)
   then raise_s [%message "Outdated local" ~found:(declared : Variable.t)]
   else ()
 
@@ -237,13 +237,20 @@ type signed_bi_op_add =
   signed:bool ->
   Instr.ref
 
-type load_op_add = ?varName:ident -> ?offset:int -> t -> Instr.ref -> Instr.ref
+type load_op_add =
+  ?varName:ident -> ?offset:int -> ?plane:int -> t -> Instr.ref -> Instr.ref
 
 type sign_load_op_add =
-  ?varName:ident -> ?offset:int -> t -> Instr.ref -> signed:bool -> Instr.ref
+  ?varName:ident ->
+  ?offset:int ->
+  ?plane:int ->
+  t ->
+  Instr.ref ->
+  signed:bool ->
+  Instr.ref
 
 type store_op_add =
-  ?offset:int -> t -> value:Instr.ref -> addr:Instr.ref -> unit
+  ?offset:int -> ?plane:int -> t -> value:Instr.ref -> addr:Instr.ref -> unit
 
 let uni_op operand_typ op res_typ ?varName t operand =
   verify_var operand operand_typ t;
@@ -297,8 +304,7 @@ type ('r, 's) signed_vec_lane_bi_op_add =
   's
 
 (* pretty funny *)
-let sign_vec_bi_op :
-    type s r.
+let sign_vec_bi_op : type s r.
     Instr.signed_vec_lane_bi_op ->
     ?varName:ident ->
     t ->
@@ -330,21 +336,21 @@ let sign_vec_bi_op :
   | F32 -> not_signed_fun ()
   | F64 -> not_signed_fun ()
 
-let load_op op res_typ ?varName ?(offset = 0) t addr =
+let load_op op res_typ ?varName ?(offset = 0) ?(plane = 0) t addr =
   verify_var addr Int t;
   add_instr t
-  @@ Instr.LoadOp { var = new_var t varName res_typ; op; addr; offset }
+  @@ Instr.LoadOp { var = new_var t varName res_typ; op; addr; offset; plane }
 
-let sign_load_op op res_typ ?varName ?(offset = 0) t addr ~signed =
+let sign_load_op op res_typ ?varName ?(offset = 0) ?(plane = 0) t addr ~signed =
   verify_var addr Int t;
   add_instr t
   @@ Instr.SignedLoadOp
-       { var = new_var t varName res_typ; op; addr; offset; signed }
+       { var = new_var t varName res_typ; op; addr; offset; signed; plane }
 
-let store_op typ op ?(offset = 0) t ~value ~addr =
+let store_op typ op ?(offset = 0) ?(plane = 0) t ~value ~addr =
   verify_var value typ t;
   verify_var addr Int t;
-  add_instr t @@ Instr.StoreOp { op; addr; value; offset } |> ignore
+  add_instr t @@ Instr.StoreOp { op; addr; value; offset; plane } |> ignore
 
 let equals_zero = uni_op Int Instr.EqualsZero Int
 let long_equals_zero = uni_op Long Instr.LongEqualsZero Int
@@ -530,7 +536,7 @@ let vec_load32_zero_extend = load_op Instr.VecLoad32ZeroExtend Vec
 let vec_load64_zero_extend = load_op Instr.VecLoad64ZeroExtend Vec
 let vec_load128 = load_op Instr.VecLoad128 Vec
 
-let vec_load ?varName ?(offset = 0) t ~dest ~addr ~shape ~lane =
+let vec_load ?varName ?(offset = 0) ?(plane=0) t ~dest ~addr ~shape ~lane =
   verify_lane shape lane;
   verify_var dest Vec t;
   verify_var addr Int t;
@@ -543,6 +549,7 @@ let vec_load ?varName ?(offset = 0) t ~dest ~addr ~shape ~lane =
          shape;
          lane;
          offset;
+         plane;
        }
 
 let call t func args = add_instr t @@ Instr.CallOp { func; args } |> ignore
@@ -568,16 +575,17 @@ let landmine ?varName t typ =
 let store8 = store_op Int Store8
 let store16 = store_op Int Store16
 let store32 = store_op Int Store32
-let float_store32 = store_op Float Store32
+let float_store32 = store_op Float FloatStore32
 let float_store64 = store_op Float FloatStore64
 let long_store64 = store_op Long LongStore64
 let vec_store128 = store_op Vec VecStore128
 
-let vec_store ?(offset = 0) t ~addr ~vec ~shape ~lane =
+let vec_store ?(offset = 0) ?(plane=0) t ~addr ~vec ~shape ~lane =
   verify_lane shape lane;
   verify_var vec Vec t;
   verify_var addr Int t;
-  add_instr t @@ Instr.VecStoreLaneOp { value = vec; addr; shape; lane; offset }
+  add_instr t
+  @@ Instr.VecStoreLaneOp { value = vec; addr; shape; lane; offset; plane }
   |> ignore
 
 let set_global t (global : variable) value =
@@ -592,17 +600,17 @@ let mir_assert t condition =
 
 let unreachable t () = add_instr t Unreachable |> ignore
 
-let memset t ~count ~value ~dest =
+let memset ?(plane = 0) t ~count ~value ~dest =
   verify_var dest Int t;
   verify_var value Int t;
   verify_var count Int t;
-  add_instr t @@ Instr.Memset { dest; value; count } |> ignore
+  add_instr t @@ Instr.Memset { dest; value; count; plane } |> ignore
 
-let memcopy t ~count ~src ~dest =
+let memcopy ?(plane = 0) t ~count ~src ~dest =
   verify_var dest Int t;
   verify_var src Int t;
   verify_var count Int t;
-  add_instr t @@ Instr.Memcopy { dest; src; count } |> ignore
+  add_instr t @@ Instr.Memcopy { dest; src; count; plane } |> ignore
 
 let try_change_var t var ref =
   let (Instr.Ref.Ref index) = ref in

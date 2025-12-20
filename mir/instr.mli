@@ -230,13 +230,20 @@ type t =
       half_used : [ `HighOrder | `LowOrder ];
       operand : Ref.t;
     }
-  | LoadOp of { var : Variable.t; op : load_op; addr : Ref.t; offset : int }
+  | LoadOp of {
+      var : Variable.t;
+      op : load_op;
+      addr : Ref.t;
+      offset : int;
+      plane : int;
+    }
   | SignedLoadOp of {
       var : Variable.t;
       op : signed_load_op;
       addr : Ref.t;
       signed : bool;
       offset : int;
+      plane : int;
     }
   | VecLoadLaneOp of {
       var : Variable.t;
@@ -245,6 +252,7 @@ type t =
       shape : vec_lane_shape;
       lane : int;
       offset : int;
+      plane : int;
     }
   | CallOp of { func : ident; args : Ref.t list }
   | CallIndirectOp of { table_index : Ref.t; args : Ref.t list }
@@ -252,18 +260,25 @@ type t =
   | GetGlobalOp of { var : Variable.t; global : variable }
   | OutsideContext of { var : Variable.t; typ : local_type }
   | Landmine of { var : Variable.t; typ : local_type }
-  | StoreOp of { op : store_op; addr : Ref.t; value : Ref.t; offset : int }
+  | StoreOp of {
+      op : store_op;
+      addr : Ref.t;
+      value : Ref.t;
+      offset : int;
+      plane : int;
+    }
   | VecStoreLaneOp of {
       value : Ref.t;
       addr : Ref.t;
       shape : vec_lane_shape;
       lane : int;
       offset : int;
+      plane : int;
     }
   | SetGlobalOp of { value : Ref.t; global : variable }
   | AssertOp of { condition : Ref.t }
-  | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
-  | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t }
+  | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t; plane : int }
+  | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t; plane : int }
   | Unreachable
   | Nop
 [@@deriving sexp]

@@ -238,6 +238,7 @@ type t =
       op : load_op;
       addr : Ref.t;
       offset : int; [@default 0] [@sexp_drop_default.equal]
+      plane : int; [@default 0] [@sexp_drop_default.equal]
     }
   | SignedLoadOp of {
       var : Variable.t;
@@ -245,6 +246,7 @@ type t =
       addr : Ref.t;
       signed : bool;
       offset : int; [@default 0] [@sexp_drop_default.equal]
+      plane : int; [@default 0] [@sexp_drop_default.equal]
     }
   | VecLoadLaneOp of {
       var : Variable.t;
@@ -253,6 +255,7 @@ type t =
       shape : vec_lane_shape;
       lane : int;
       offset : int; [@default 0] [@sexp_drop_default.equal]
+      plane : int; [@default 0] [@sexp_drop_default.equal]
     }
   | CallOp of { func : ident; args : Ref.t list }
   | CallIndirectOp of { table_index : Ref.t; args : Ref.t list }
@@ -265,6 +268,7 @@ type t =
       addr : Ref.t;
       value : Ref.t;
       offset : int; [@default 0] [@sexp_drop_default.equal]
+      plane : int; [@default 0] [@sexp_drop_default.equal]
     }
   | VecStoreLaneOp of {
       value : Ref.t;
@@ -272,11 +276,22 @@ type t =
       shape : vec_lane_shape;
       lane : int;
       offset : int; [@default 0] [@sexp_drop_default.equal]
+      plane : int; [@default 0] [@sexp_drop_default.equal]
     }
   | SetGlobalOp of { value : Ref.t; global : variable }
   | AssertOp of { condition : Ref.t }
-  | Memset of { count : Ref.t; value : Ref.t; dest : Ref.t }
-  | Memcopy of { count : Ref.t; src : Ref.t; dest : Ref.t }
+  | Memset of {
+      count : Ref.t;
+      value : Ref.t;
+      dest : Ref.t;
+      plane : int; [@default 0] [@sexp_drop_default.equal]
+    }
+  | Memcopy of {
+      count : Ref.t;
+      src : Ref.t;
+      dest : Ref.t;
+      plane : int; [@default 0] [@sexp_drop_default.equal]
+    }
   | Unreachable
   | Nop
 [@@deriving sexp]
@@ -440,10 +455,17 @@ let replace_instr_ref t ~from ~into =
   | AssertOp _ -> AssertOp { condition = into }
   | Memset v when v.dest <> from && v.value <> from && v.count <> from -> t
   | Memset v ->
-      Memset { dest = swap v.dest; value = swap v.value; count = swap v.count }
+      Memset
+        {
+          v with
+          dest = swap v.dest;
+          value = swap v.value;
+          count = swap v.count;
+        }
   | Memcopy v when v.dest <> from && v.src <> from && v.count <> from -> t
   | Memcopy v ->
-      Memcopy { count = swap v.count; src = swap v.src; dest = swap v.dest }
+      Memcopy
+        { v with count = swap v.count; src = swap v.src; dest = swap v.dest }
   | Landmine _ | Unreachable | OutsideContext _ | ReturnedOp _ | GetGlobalOp _
   | Const _ | FloatConst _ | LongConst _ | VecConst _ | Nop ->
       t
@@ -474,8 +496,8 @@ let fold f s = function
   | StoreOp { addr = v1; value = v2; _ }
   | VecStoreLaneOp { addr = v1; value = v2; _ } ->
       f (f s v1) v2
-  | Memset { dest = v1; value = v2; count = v3 }
-  | Memcopy { dest = v1; src = v2; count = v3 } ->
+  | Memset { dest = v1; value = v2; count = v3;_ }
+  | Memcopy { dest = v1; src = v2; count = v3;_ } ->
       f (f (f s v1) v2) v3
   | CallOp v -> List.fold ~f ~init:s v.args
   | CallIndirectOp v ->
@@ -508,8 +530,8 @@ let foldi f s = function
   | StoreOp { addr = v1; value = v2; _ }
   | VecStoreLaneOp { addr = v1; value = v2; _ } ->
       f 1 (f 0 s v1) v2
-  | Memset { dest = v1; value = v2; count = v3 }
-  | Memcopy { dest = v1; src = v2; count = v3 } ->
+  | Memset { dest = v1; value = v2; count = v3;_ }
+  | Memcopy { dest = v1; src = v2; count = v3;_ } ->
       f 2 (f 1 (f 0 s v1) v2) v3
   | CallOp v -> List.foldi ~f ~init:s v.args
   | CallIndirectOp v ->
@@ -542,8 +564,8 @@ let fold_right f s = function
   | StoreOp { addr = v1; value = v2; _ }
   | VecStoreLaneOp { addr = v1; value = v2; _ } ->
       f v1 (f v2 s)
-  | Memset { dest = v1; value = v2; count = v3 }
-  | Memcopy { dest = v1; src = v2; count = v3 } ->
+  | Memset { dest = v1; value = v2; count = v3;_ }
+  | Memcopy { dest = v1; src = v2; count = v3;_ } ->
       f v1 (f v2 (f v3 s))
   | CallOp v -> List.fold_right ~f ~init:s v.args
   | CallIndirectOp v ->
@@ -581,8 +603,8 @@ let fold_righti f s = function
   | StoreOp { addr = v1; value = v2; _ }
   | VecStoreLaneOp { addr = v1; value = v2; _ } ->
       f 1 v1 (f 0 v2 s)
-  | Memset { dest = v1; value = v2; count = v3 }
-  | Memcopy { dest = v1; src = v2; count = v3 } ->
+  | Memset { dest = v1; value = v2; count = v3;_ }
+  | Memcopy { dest = v1; src = v2; count = v3;_ } ->
       f 2 v1 (f 1 v2 (f 0 v3 s))
   | CallOp v -> list_fold_righti ~f ~init:s v.args
   | CallIndirectOp v ->
@@ -686,14 +708,14 @@ let map f t =
       let r3 = f v.count in
       if Ref.equal r1 v.dest && Ref.equal r2 v.src && Ref.equal r3 v.count then
         t
-      else Memcopy { dest = r1; src = r2; count = r3 }
+      else Memcopy { v with dest = r1; src = r2; count = r3 }
   | Memset v ->
       let r1 = f v.dest in
       let r2 = f v.value in
       let r3 = f v.count in
       if Ref.equal r1 v.dest && Ref.equal r2 v.value && Ref.equal r3 v.count
       then t
-      else Memset { dest = r1; value = r2; count = r3 }
+      else Memset { v with dest = r1; value = r2; count = r3 }
   | CallOp v ->
       let r = List.map ~f v.args in
       if equal_list Ref.equal r v.args then t else CallOp { v with args = r }

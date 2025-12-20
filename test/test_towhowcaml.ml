@@ -1633,7 +1633,7 @@ let%expect_test "rol, xlatb" =
        (48 (Const __i32 16))
        (49 (BiOp (var ebx) (op Add) (lhs (Ref 47)) (rhs (Ref 48))))
        (50 (LoadOp (var __i32) (op Load32) (addr (Ref 49))))
-       (51 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 6))))
+       (51 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 6)) (plane 1)))
        (52 (SetGlobalOp (value (Ref 45)) (global ((name ecx) (typ Int)))))
        (53 (SetGlobalOp (value (Ref 41)) (global ((name eax) (typ Int)))))
        (54 (SetGlobalOp (value (Ref 49)) (global ((name ebx) (typ Int)))))
@@ -1826,7 +1826,8 @@ let%expect_test "shufpd" =
        (35 (OutsideContext (var esp) (typ Int)))
        (36
         (StoreOp (op LongStore64) (addr (Ref 35)) (value (Ref 34)) (offset 4)))
-       (37 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 35)) (offset 4)))
+       (37
+        (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 35)) (offset 4) (plane 1)))
        (38 (LoadOp (var __i32) (op Load32) (addr (Ref 35))))
        (39 (OutsideContext (var __ret_addr__) (typ Int)))
        (40 (BiOp (var __i32) (op Equal) (lhs (Ref 38)) (rhs (Ref 39))))
@@ -1835,7 +1836,8 @@ let%expect_test "shufpd" =
        (44
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
        (45
-        (StoreOp (op FloatStore64) (addr (Ref 44)) (value (Ref 37)) (offset 8)))
+        (StoreOp (op FloatStore64) (addr (Ref 44)) (value (Ref 37)) (offset 8)
+         (plane 1)))
        (46 (Const __i32 8))
        (47 (BiOp (var __fpuStack__) (op Add) (lhs (Ref 44)) (rhs (Ref 46))))
        (48 (SetGlobalOp (value (Ref 23)) (global ((name xmm3) (typ Vec)))))
@@ -2146,53 +2148,43 @@ let%expect_test "sahf je" =
   [%expect
     {|
     (locs
-     ((0 (Tee (Int 2) (Ref 1))) (1 (Tee (Float 1) (Ref 4))) (2 Stack) (3 Stack)
-      (4 (Tee (Float 0) (Ref 5))) (5 (Tee (Float 2) (Ref 7))) (6 (Local (Int 0)))
-      (7 (Local (Int 1))) (8 Stack) (9 Stack) (10 Drop) (11 Drop)
-      (12 (Local (Int 1))) (13 Stack) (14 Drop) (15 Drop)))
+     ((0 (Tee (Int 1) (Ref 1))) (1 (Tee (Float 0) (Ref 4))) (2 Stack) (3 Stack)
+      (4 (Tee (Float 1) (Ref 5))) (5 (Tee (Float 2) (Ref 7))) (6 (Local (Int 0)))
+      (7 (Local (Int 2))) (8 Stack) (9 Stack) (10 Drop) (11 Drop)))
     ((int 3) (long 0) (float 3) (vec 0))
 
         global.get $__fpuStack__
-        (local.tee $__int_scratch_2)
+        (local.tee $__int_scratch_1)
         f64.load
-        (local.tee $__float_scratch_1)
+        (local.tee $__float_scratch_0)
         i32.const 4841890
         f64.load
         f64.mult
-        (local.tee $__float_scratch_0)
+        (local.tee $__float_scratch_1)
         f64.nearest
         (local.tee $__float_scratch_2)
         i32.const 0xDEADBEEF
         (local.set $__int_scratch_0)
-        (local.get $__float_scratch_0)
-        f64.le
-        (local.set $__int_scratch_1)
-        (local.get $__float_scratch_2)
-        (local.get $__float_scratch_0)
-        f64.ge
-        (local.get $__int_scratch_1)
-        i32.eq
-        (local.get $__int_scratch_2)
         (local.get $__float_scratch_1)
-        f64.store
+        f64.le
+        (local.set $__int_scratch_2)
+        (local.get $__float_scratch_2)
+        (local.get $__float_scratch_1)
+        f64.ge
         (local.get $__int_scratch_2)
-        (local.get $__float_scratch_0)
-        f64.store offset 8
-        i32.const 8
-        (local.set $__int_scratch_1)
-        (local.get $__int_scratch_2)
+        i32.eq
         (local.get $__int_scratch_1)
-        i32.add
+        (local.get $__float_scratch_0)
+        f64.store
         (local.get $__int_scratch_0)
         global.set $eax
-        global.set $__fpuStack__
     ((id 1)
      (instrs
       ((0
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
        (1 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0))))
        (2 (Const __i32 4841890))
-       (3 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 2))))
+       (3 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 2)) (plane 1)))
        (4 (BiOp (var __fl) (op FloatMult) (lhs (Ref 1)) (rhs (Ref 3))))
        (5 (UniOp (var __fl) (op FloatRound) (operand (Ref 4))))
        (6 (Landmine (var eax) (typ Int)))
@@ -2200,13 +2192,8 @@ let%expect_test "sahf je" =
        (8
         (BiOp (var __i32) (op FloatGreaterThanEqual) (lhs (Ref 5)) (rhs (Ref 4))))
        (9 (BiOp (var __i32) (op Equal) (lhs (Ref 8)) (rhs (Ref 7))))
-       (10 (StoreOp (op FloatStore64) (addr (Ref 0)) (value (Ref 1))))
-       (11 (StoreOp (op FloatStore64) (addr (Ref 0)) (value (Ref 4)) (offset 8)))
-       (12 (Const __i32 8))
-       (13 (BiOp (var __fpuStack__) (op Add) (lhs (Ref 0)) (rhs (Ref 12))))
-       (14 (SetGlobalOp (value (Ref 6)) (global ((name eax) (typ Int)))))
-       (15
-        (SetGlobalOp (value (Ref 13)) (global ((name __fpuStack__) (typ Int)))))))
+       (10 (StoreOp (op FloatStore64) (addr (Ref 0)) (value (Ref 1)) (plane 1)))
+       (11 (SetGlobalOp (value (Ref 6)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 5)) (fail (Block 2)) (condition (Ref 9))))
      (roots ()))
@@ -6001,10 +5988,12 @@ let%expect_test "fistp dword" =
        (14 (Const __i32 4))
        (15 (BiOp (var esp) (op Subtract) (lhs (Ref 12)) (rhs (Ref 14))))
        (16 (StoreOp (op Store32) (addr (Ref 15)) (value (Ref 9))))
-       (17 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)))
+       (17
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)
+         (plane 1)))
        (18 (BiOp (var __fl) (op FloatMult) (lhs (Ref 8)) (rhs (Ref 17))))
        (19 (Const __i32 4819536))
-       (20 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 19))))
+       (20 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 19)) (plane 1)))
        (21 (BiOp (var __fl) (op FloatSub) (lhs (Ref 18)) (rhs (Ref 20))))
        (22 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 21)) (offset -8)))
        (23 (StoreOp (op FloatStore64) (addr (Ref 15)) (value (Ref 21))))
@@ -6023,7 +6012,9 @@ let%expect_test "fistp dword" =
        (38 (StoreOp (op Store32) (addr (Ref 37)) (value (Ref 36)) (offset -12)))
        (39 Nop) (40 (Const __i32 4))
        (41 (BiOp (var esp) (op Add) (lhs (Ref 34)) (rhs (Ref 40))))
-       (42 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 37)) (offset -12)))
+       (42
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 37)) (offset -12)
+         (plane 1)))
        (43 (UniOp (var __i32) (op FloatToInt32) (operand (Ref 42))))
        (44 (StoreOp (op Store32) (addr (Ref 37)) (value (Ref 43)) (offset -20)))
        (45 (LoadOp (var eax) (op Load32) (addr (Ref 37)) (offset -20)))
@@ -6069,7 +6060,7 @@ let%expect_test "fsubrp" =
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
        (2 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 1))))
        (3 (BiOp (var __fl) (op FloatSub) (lhs (Ref 0)) (rhs (Ref 2))))
-       (4 (StoreOp (op FloatStore64) (addr (Ref 1)) (value (Ref 3))))))
+       (4 (StoreOp (op FloatStore64) (addr (Ref 1)) (value (Ref 3)) (plane 1)))))
      (terminator (Goto (Block 38))) (roots ()))
     |}]
 
@@ -6423,28 +6414,28 @@ let%expect_test "frndint" =
     ((id 1)
      (instrs
       ((0 (Const __i32 4956072))
-       (1 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0))))
+       (1 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (plane 1)))
        (2 (UniOp (var __fl) (op FloatRound) (operand (Ref 1))))
        (3 (Const __i32 4819536))
-       (4 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 3))))
+       (4 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 3)) (plane 1)))
        (5 (BiOp (var __fl) (op FloatSub) (lhs (Ref 2)) (rhs (Ref 4))))
        (6 (Const __i32 4956100))
-       (7 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 6))))
+       (7 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 6)) (plane 1)))
        (8 (UniOp (var __fl) (op FloatRound) (operand (Ref 7))))
        (9 (Const __i32 4819536))
-       (10 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 9))))
+       (10 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 9)) (plane 1)))
        (11 (BiOp (var __fl) (op FloatSub) (lhs (Ref 8)) (rhs (Ref 10))))
        (12 (Const __i32 4956076))
-       (13 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 12))))
+       (13 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 12)) (plane 1)))
        (14 (UniOp (var __fl) (op FloatRound) (operand (Ref 13))))
        (15 (Const __i32 4819536))
-       (16 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 15))))
+       (16 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 15)) (plane 1)))
        (17 (BiOp (var __fl) (op FloatSub) (lhs (Ref 14)) (rhs (Ref 16))))
        (18 (Const __i32 4956132))
-       (19 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 18))))
+       (19 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 18)) (plane 1)))
        (20 (UniOp (var __fl) (op FloatRound) (operand (Ref 19))))
        (21 (Const __i32 4819536))
-       (22 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 21))))
+       (22 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 21)) (plane 1)))
        (23 (BiOp (var __fl) (op FloatSub) (lhs (Ref 20)) (rhs (Ref 22))))
        (24 (Const __i32 4956132))
        (25 (StoreOp (op Store32) (addr (Ref 24)) (value (Ref 23))))
@@ -6873,18 +6864,20 @@ let%expect_test "double fadd" =
        (3 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (4 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 2)) (offset -156)))
        (5 (Const __i32 5724880))
-       (6 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 5))))
+       (6 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 5)) (plane 1)))
        (7 (Const __i32 5724884))
-       (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7))))
+       (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7)) (plane 1)))
        (9 (BiOp (var __fl) (op FloatDiv) (lhs (Ref 6)) (rhs (Ref 8))))
        (10 (Const __i32 4819536))
-       (11 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 10))))
+       (11 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 10)) (plane 1)))
        (12 (BiOp (var __fl) (op FloatSub) (lhs (Ref 9)) (rhs (Ref 11))))
        (13 (BiOp (var __fl) (op FloatAdd) (lhs (Ref 12)) (rhs (Ref 12))))
        (14 (StoreOp (op Store32) (addr (Ref 3)) (value (Ref 13)) (offset -20)))
-       (15 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 3)) (offset -20)))
+       (15
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 3)) (offset -20)
+         (plane 1)))
        (16 (Const __i32 4819532))
-       (17 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 16))))
+       (17 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 16)) (plane 1)))
        (18 (Landmine (var eax) (typ Int))) (19 Nop)
        (20 (BiOp (var __i32) (op FloatLessThan) (lhs (Ref 15)) (rhs (Ref 17))))
        (21 (UniOp (var __i32) (op EqualsZero) (operand (Ref 20)))) (22 Nop)
@@ -8463,7 +8456,7 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (2 (StoreOp (op Store32) (addr (Ref 1)) (value (Ref 0)) (offset -142)))
        (3 (Const __i32 4820792))
-       (4 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 3))))
+       (4 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 3)) (plane 1)))
        (5
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
        (6 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 5))))
@@ -8471,12 +8464,12 @@ let%expect_test "fscale/fabs/fcomp sahf jae" =
        (8 (ReturnedOp (var __fl) (typ Float)))
        (9 (UniOp (var __fl) (op FloatAbs) (operand (Ref 8))))
        (10 (Const __i32 4820776))
-       (11 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 10))))
+       (11 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 10)) (plane 1)))
        (12 (Landmine (var eax) (typ Int)))
        (13
         (BiOp (var __i32) (op FloatGreaterThanEqual) (lhs (Ref 9))
          (rhs (Ref 11))))
-       (14 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 8))))
+       (14 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 8)) (plane 1)))
        (15 (SetGlobalOp (value (Ref 12)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 19)) (fail (Block 16)) (condition (Ref 13))))
@@ -8526,7 +8519,7 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
        (1 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (2 (StoreOp (op Store32) (addr (Ref 1)) (value (Ref 0)) (offset -142)))
        (3 (Const __i32 4820784))
-       (4 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 3))))
+       (4 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 3)) (plane 1)))
        (5
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
        (6 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 5))))
@@ -8534,11 +8527,11 @@ let%expect_test "fscale/fabs/fcomp sahf jbe" =
        (8 (ReturnedOp (var __fl) (typ Float)))
        (9 (UniOp (var __fl) (op FloatAbs) (operand (Ref 8))))
        (10 (Const __i32 4820768))
-       (11 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 10))))
+       (11 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 10)) (plane 1)))
        (12 (Landmine (var eax) (typ Int)))
        (13 (BiOp (var __i32) (op FloatGreaterThan) (lhs (Ref 9)) (rhs (Ref 11))))
        (14 (UniOp (var __i32) (op EqualsZero) (operand (Ref 13))))
-       (15 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 8))))
+       (15 (StoreOp (op FloatStore64) (addr (Ref 5)) (value (Ref 8)) (plane 1)))
        (16 (SetGlobalOp (value (Ref 12)) (global ((name eax) (typ Int)))))))
      (terminator
       (Branch (succeed (Block 19)) (fail (Block 18)) (condition (Ref 14))))
@@ -8761,17 +8754,19 @@ let%expect_test "fsqrt" =
        (1 (LoadOp (var __fl) (op FloatLoad64) (addr (Ref 0))))
        (2 (CallOp (func __float_sqrt__) (args ((Ref 1)))))
        (3 (ReturnedOp (var __fl) (typ Float))) (4 (Const __i32 4819540))
-       (5 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 4))))
+       (5 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 4)) (plane 1)))
        (6 (BiOp (var __fl) (op FloatDiv) (lhs (Ref 5)) (rhs (Ref 3))))
        (7 (GetGlobalOp (var esi) (global ((name esi) (typ Int)))))
-       (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7))))
+       (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7)) (plane 1)))
        (9 (BiOp (var __fl) (op FloatMult) (lhs (Ref 6)) (rhs (Ref 8))))
        (10 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (11 (StoreOp (op Store32) (addr (Ref 10)) (value (Ref 9)) (offset -12)))
-       (12 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7)) (offset 4)))
+       (12
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7)) (offset 4) (plane 1)))
        (13 (BiOp (var __fl) (op FloatMult) (lhs (Ref 6)) (rhs (Ref 12))))
        (14 (StoreOp (op Store32) (addr (Ref 10)) (value (Ref 13)) (offset -8)))
-       (15 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7)) (offset 8)))
+       (15
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7)) (offset 8) (plane 1)))
        (16 (BiOp (var __fl) (op FloatMult) (lhs (Ref 6)) (rhs (Ref 15))))
        (17 (Const __i32 -12))
        (18 (BiOp (var esi) (op Add) (lhs (Ref 10)) (rhs (Ref 17))))
@@ -9111,7 +9106,9 @@ let%expect_test "test reflexive jns" =
        (6
         (SignedBiOp (var __i32) (op GreaterThanEqual) (signed true) (lhs (Ref 4))
          (rhs (Ref 5))))
-       (7 (StoreOp (op FloatStore64) (addr (Ref 0)) (value (Ref 3)) (offset -8)))
+       (7
+        (StoreOp (op FloatStore64) (addr (Ref 0)) (value (Ref 3)) (offset -8)
+         (plane 1)))
        (8 (Const __i32 -8))
        (9 (BiOp (var __fpuStack__) (op Add) (lhs (Ref 0)) (rhs (Ref 8))))
        (10
@@ -9224,9 +9221,11 @@ let%expect_test "fistp" =
        (18 (LoadOp (var edx) (op Load32) (addr (Ref 10)) (offset 24)))
        (19 (LoadOp (var eax) (op Load32) (addr (Ref 10)) (offset 16)))
        (20 (UniOp (var __i32) (op EqualsZero) (operand (Ref 19))))
-       (21 (StoreOp (op FloatStore64) (addr (Ref 11)) (value (Ref 12))))
+       (21
+        (StoreOp (op FloatStore64) (addr (Ref 11)) (value (Ref 12)) (plane 1)))
        (22
-        (StoreOp (op FloatStore64) (addr (Ref 11)) (value (Ref 17)) (offset 8)))
+        (StoreOp (op FloatStore64) (addr (Ref 11)) (value (Ref 17)) (offset 8)
+         (plane 1)))
        (23 (Const __i32 8))
        (24 (BiOp (var __fpuStack__) (op Add) (lhs (Ref 11)) (rhs (Ref 23))))
        (25 (SetGlobalOp (value (Ref 18)) (global ((name edx) (typ Int)))))
@@ -9455,7 +9454,8 @@ let%expect_test "fsubr" =
        (7 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -64)))
        (8 (UniOp (var __fl) (op Int32ToFloatSigned) (operand (Ref 7))))
        (9 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -4)))
-       (10 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 9)) (offset 8)))
+       (10
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 9)) (offset 8) (plane 1)))
        (11 (BiOp (var __fl) (op FloatSub) (lhs (Ref 10)) (rhs (Ref 8))))
        (12 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset -60)))
        (13 (StoreOp (op Store32) (addr (Ref 12)) (value (Ref 11)) (offset 1044)))
@@ -9469,21 +9469,32 @@ let%expect_test "fsubr" =
        (21 (StoreOp (op Store32) (addr (Ref 18)) (value (Ref 20)) (offset 1028)))
        (22 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -4)))
        (23 (Const __i32 4973576))
-       (24 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 23))))
-       (25 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 22)) (offset 8)))
+       (24 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 23)) (plane 1)))
+       (25
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 22)) (offset 8) (plane 1)))
        (26 (BiOp (var __fl) (op FloatSub) (lhs (Ref 24)) (rhs (Ref 25))))
        (27 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 26)) (offset -16)))
        (28 (LoadOp (var edx) (op Load32) (addr (Ref 0)) (offset -4)))
        (29 (Const __i32 4973580))
-       (30 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 29))))
-       (31 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 28)) (offset 12)))
+       (30 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 29)) (plane 1)))
+       (31
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 28)) (offset 12)
+         (plane 1)))
        (32 (BiOp (var __fl) (op FloatSub) (lhs (Ref 30)) (rhs (Ref 31))))
        (33 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 32)) (offset -12)))
-       (34 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)))
-       (35 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)))
+       (34
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)
+         (plane 1)))
+       (35
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)
+         (plane 1)))
        (36 (BiOp (var __fl) (op FloatMult) (lhs (Ref 34)) (rhs (Ref 35))))
-       (37 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -12)))
-       (38 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -12)))
+       (37
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -12)
+         (plane 1)))
+       (38
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -12)
+         (plane 1)))
        (39 (BiOp (var __fl) (op FloatMult) (lhs (Ref 37)) (rhs (Ref 38))))
        (40 (BiOp (var __fl) (op FloatAdd) (lhs (Ref 36)) (rhs (Ref 39))))
        (41 (Const __i32 4)) (42 (OutsideContext (var esp) (typ Int)))
@@ -9493,7 +9504,8 @@ let%expect_test "fsubr" =
        (46
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
        (47
-        (StoreOp (op FloatStore64) (addr (Ref 46)) (value (Ref 40)) (offset 8)))
+        (StoreOp (op FloatStore64) (addr (Ref 46)) (value (Ref 40)) (offset 8)
+         (plane 1)))
        (48 (Const __i32 8))
        (49 (BiOp (var __fpuStack__) (op Add) (lhs (Ref 46)) (rhs (Ref 48))))
        (50 (SetGlobalOp (value (Ref 28)) (global ((name edx) (typ Int)))))
@@ -9693,20 +9705,23 @@ let%expect_test "fabs" =
        (3 (BiOp (var eax) (op Multiply) (lhs (Ref 1)) (rhs (Ref 2))))
        (4 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -40)))
        (5 (BiOp (var __i32) (op Add) (lhs (Ref 3)) (rhs (Ref 4))))
-       (6 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 5)) (offset 3396)))
+       (6
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 5)) (offset 3396)
+         (plane 1)))
        (7 (Const __i32 4819588))
-       (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7))))
+       (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7)) (plane 1)))
        (9 (BiOp (var __fl) (op FloatSub) (lhs (Ref 6)) (rhs (Ref 8))))
        (10 (Const __i32 4973576))
-       (11 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 10))))
+       (11 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 10)) (plane 1)))
        (12 (BiOp (var __fl) (op FloatSub) (lhs (Ref 9)) (rhs (Ref 11))))
        (13 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 12)) (offset -36)))
        (14 (UniOp (var __fl) (op FloatAbs) (operand (Ref 12))))
        (15 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 14)) (offset -44)))
        (16 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 14)) (offset -4)))
-       (17 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -4)))
+       (17
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -4) (plane 1)))
        (18 (Const __i32 4819720))
-       (19 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 18))))
+       (19 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 18)) (plane 1)))
        (20 (Landmine (var eax) (typ Int))) (21 Nop)
        (22 (BiOp (var __i32) (op FloatLessThan) (lhs (Ref 17)) (rhs (Ref 19))))
        (23 (UniOp (var __i32) (op EqualsZero) (operand (Ref 22)))) (24 Nop)
@@ -10001,7 +10016,9 @@ let%expect_test "fild/fiadd" =
        (8 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 7)) (offset -792)))
        (9 (LoadOp (var __i32) (op Load32) (addr (Ref 0)) (offset -792)))
        (10 (UniOp (var __fl) (op Int32ToFloatSigned) (operand (Ref 9))))
-       (11 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)))
+       (11
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -16)
+         (plane 1)))
        (12 (BiOp (var __fl) (op FloatMult) (lhs (Ref 10)) (rhs (Ref 11))))
        (13 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 8)))
        (14
@@ -10019,7 +10036,8 @@ let%expect_test "fild/fiadd" =
        (25
         (GetGlobalOp (var __fpuStack__) (global ((name __fpuStack__) (typ Int)))))
        (26
-        (StoreOp (op FloatStore64) (addr (Ref 25)) (value (Ref 19)) (offset 8)))
+        (StoreOp (op FloatStore64) (addr (Ref 25)) (value (Ref 19)) (offset 8)
+         (plane 1)))
        (27 (Const __i32 8))
        (28 (BiOp (var __fpuStack__) (op Add) (lhs (Ref 25)) (rhs (Ref 27))))
        (29 (SetGlobalOp (value (Ref 5)) (global ((name edx) (typ Int)))))
@@ -10198,8 +10216,12 @@ let%expect_test "fdiv" =
     ((id 279)
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
-       (1 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -500)))
-       (2 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -504)))
+       (1
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -500)
+         (plane 1)))
+       (2
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 0)) (offset -504)
+         (plane 1)))
        (3 (BiOp (var __fl) (op FloatDiv) (lhs (Ref 1)) (rhs (Ref 2))))
        (4 (StoreOp (op Store32) (addr (Ref 0)) (value (Ref 3)) (offset -508)))
        (5 (Const __i32 0)) (6 (OutsideContext (var esp) (typ Int)))
@@ -10457,9 +10479,10 @@ let%expect_test "float jp 0x5" =
      (instrs
       ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
        (1 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset 8)))
-       (2 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 1)) (offset 40)))
+       (2
+        (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 1)) (offset 40) (plane 1)))
        (3 (Const __i32 4819532))
-       (4 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 3))))
+       (4 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 3)) (plane 1)))
        (5 (Landmine (var eax) (typ Int))) (6 Nop)
        (7 (BiOp (var __i32) (op FloatLessThan) (lhs (Ref 2)) (rhs (Ref 4))))
        (8 (UniOp (var __i32) (op EqualsZero) (operand (Ref 7)))) (9 Nop)
@@ -11559,9 +11582,11 @@ let%expect_test _ =
           (10 (StoreOp (op Store32) (addr (Ref 9)) (value (Ref 7))))
           (11 (StoreOp (op Store32) (addr (Ref 4)) (value (Ref 7)) (offset -4)))
           (12 (LoadOp (var eax) (op Load32) (addr (Ref 4)) (offset -4)))
-          (13 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 12)) (offset 376)))
+          (13
+           (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 12)) (offset 376)
+            (plane 1)))
           (14 (Const __i32 4819544))
-          (15 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 14))))
+          (15 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 14)) (plane 1)))
           (16 (Landmine (var eax) (typ Int))) (17 Nop)
           (18
            (BiOp (var __i32) (op FloatLessThanEqual) (lhs (Ref 13))
@@ -11577,15 +11602,17 @@ let%expect_test _ =
          ((0 (GetGlobalOp (var ebp) (global ((name ebp) (typ Int)))))
           (1 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 12)))
           (2 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset -4)))
-          (3 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 1))))
-          (4 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 2)) (offset 376)))
+          (3 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 1)) (plane 1)))
+          (4
+           (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 2)) (offset 376)
+            (plane 1)))
           (5 (BiOp (var __fl) (op FloatAdd) (lhs (Ref 3)) (rhs (Ref 4))))
           (6 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 12)))
           (7 (StoreOp (op Store32) (addr (Ref 6)) (value (Ref 5))))
           (8 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 12)))
-          (9 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 8))))
+          (9 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 8)) (plane 1)))
           (10 (Const __i32 4819540))
-          (11 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 10))))
+          (11 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 10)) (plane 1)))
           (12 (Landmine (var eax) (typ Int))) (13 Nop)
           (14
            (BiOp (var __i32) (op FloatGreaterThanEqual) (lhs (Ref 9))
@@ -11605,9 +11632,9 @@ let%expect_test _ =
           (5 (LoadOp (var ecx) (op Load32) (addr (Ref 0)) (offset 8)))
           (6 (StoreOp (op Store32) (addr (Ref 5)) (value (Ref 4))))
           (7 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 12)))
-          (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7))))
+          (8 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 7)) (plane 1)))
           (9 (Const __i32 4819540))
-          (10 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 9))))
+          (10 (LoadOp (var __fl) (op FloatLoad32) (addr (Ref 9)) (plane 1)))
           (11 (BiOp (var __fl) (op FloatSub) (lhs (Ref 8)) (rhs (Ref 10))))
           (12 (LoadOp (var eax) (op Load32) (addr (Ref 0)) (offset 12)))
           (13 (StoreOp (op Store32) (addr (Ref 12)) (value (Ref 11)))) (14 Nop)

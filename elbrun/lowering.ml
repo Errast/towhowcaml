@@ -127,18 +127,18 @@ let lower_block max_block block_map local_vars used_locals block : Block.t =
         | LongShiftLeft -> B.long_shift_left b ~lhs ~rhs
         | LongXor -> B.long_xor b ~lhs ~rhs)
     | Deref { addr; offset; size = Int } ->
-        B.load32 b ~offset @@ lower_expr aliases addr
+        B.load32 b ~offset ~plane:0 @@ lower_expr aliases addr
     | Deref { addr; offset; size = Float } ->
-        B.float_load64 b ~offset @@ lower_expr aliases addr
+        B.float_load64 b ~offset ~plane:0 @@ lower_expr aliases addr
     | Deref { addr; offset; size = Long } ->
-        B.long_load64 b ~offset @@ lower_expr aliases addr
+        B.long_load64 b ~offset ~plane:0 @@ lower_expr aliases addr
     | Deref { addr; offset; size = Vec } ->
-        B.vec_load128 b ~offset @@ lower_expr aliases addr
+        B.vec_load128 b ~offset ~plane:0 @@ lower_expr aliases addr
     | Splat (shape, expr) -> B.vec_splat b ~shape @@ lower_expr aliases expr
     | Deref8 (addr, signed, offset) ->
-        B.load8 b ~signed ~offset @@ lower_expr aliases addr
+        B.load8 b ~signed ~offset ~plane:0 @@ lower_expr aliases addr
     | Deref16 (addr, signed, offset) ->
-        B.load16 b ~signed ~offset @@ lower_expr aliases addr
+        B.load16 b ~signed ~offset ~plane:0 @@ lower_expr aliases addr
     | SignBiOp { lhs; rhs; signed; op } -> (
         let lhs = lower_expr aliases lhs in
         let rhs = lower_expr aliases rhs in
@@ -170,27 +170,33 @@ let lower_block max_block block_map local_vars used_locals block : Block.t =
                   Map.add_exn acc ~key:lhs ~data:(lower_expr aliases rhs))
           | Store { addr; offset; value; size = Int } ->
               let addr = lower_expr aliases addr in
-              B.store32 b ~offset ~value:(lower_expr aliases value) ~addr;
+              B.store32 b ~offset ~plane:0 ~value:(lower_expr aliases value)
+                ~addr;
               aliases
           | Store { addr; offset; value; size = Float } ->
               let addr = lower_expr aliases addr in
-              B.float_store64 b ~offset ~value:(lower_expr aliases value) ~addr;
+              B.float_store64 b ~offset ~plane:0
+                ~value:(lower_expr aliases value) ~addr;
               aliases
           | Store { addr; offset; value; size = Long } ->
               let addr = lower_expr aliases addr in
-              B.long_store64 b ~offset ~value:(lower_expr aliases value) ~addr;
+              B.long_store64 b ~offset ~plane:0
+                ~value:(lower_expr aliases value) ~addr;
               aliases
           | Store { addr; offset; value; size = Vec } ->
               let addr = lower_expr aliases addr in
-              B.vec_store128 b ~offset ~value:(lower_expr aliases value) ~addr;
+              B.vec_store128 b ~offset ~plane:0
+                ~value:(lower_expr aliases value) ~addr;
               aliases
           | Store8 { addr; offset; value } ->
               let addr = lower_expr aliases addr in
-              B.store8 b ~offset ~value:(lower_expr aliases value) ~addr;
+              B.store8 b ~offset ~plane:0 ~value:(lower_expr aliases value)
+                ~addr;
               aliases
           | Store16 { addr; offset; value } ->
               let addr = lower_expr aliases addr in
-              B.store16 b ~offset ~value:(lower_expr aliases value) ~addr;
+              B.store16 b ~offset ~plane:0 ~value:(lower_expr aliases value)
+                ~addr;
               aliases
           | If _ | Label _ | Goto _ | GotoId _ | Return -> failwith "bad"
         with e ->
