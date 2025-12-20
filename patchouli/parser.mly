@@ -2,12 +2,14 @@
 	open Types
 %}
 %token<string> IDENT 
-%token<Radatnet.X86reg.t> REG
+%token<int> INT_LIT
+%token<Types.regs> REG
 %token SEMI ";"
 %token COMMA ","
 %token COLON_EQ ":="
 %token EQ "="
 %token STAR "*"
+%token PLUS "+"
 %token LPAREN "(" RPAREN ")"
 %token IF THEN ELSE FI
 %token EOF
@@ -30,14 +32,20 @@ expr:
 	| eq_expr { $1 }
 
 eq_expr:
-	| lhs=mul_expr "=" rhs=mul_expr { Eq (lhs,rhs) }
+	| lhs=add_expr "=" rhs=add_expr { Eq (lhs,rhs) }
+	| add_expr { $1 }
+
+add_expr:
+	| lhs=mul_expr "+" rhs=mul_expr { Add (lhs,rhs) }
 	| mul_expr { $1 }
 
 mul_expr:
 	| lhs=atomic_expr "*" rhs=atomic_expr { Mul (lhs,rhs) }
 	| atomic_expr { $1 }
 
+
 atomic_expr:
 	| i=IDENT { Ident i }
 	| fn=IDENT "(" args=separated_list(",", expr)  ")" { FunCall (fn, args) }
+	| i=INT_LIT { Int i }
 	| "("e=expr ")" { e }

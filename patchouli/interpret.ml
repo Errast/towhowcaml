@@ -17,6 +17,7 @@ type ctx = {
   it could be partially evaluated *)
   memory : Array.t;
   fp_offset : int;
+  min_fp_offset : int;
 }
 
 let lift_value = function
@@ -26,25 +27,8 @@ let lift_value = function
 let eval_assign ctx lhs rhs =
   { ctx with env = Map.set ctx.env ~key:lhs ~data:rhs }
 
-let fp_index_to_phys_reg = function
-  | -7 -> `st__7
-  | -6 -> `st__6
-  | -5 -> `st__5
-  | -4 -> `st__4
-  | -3 -> `st__3
-  | -2 -> `st__2
-  | -1 -> `st__1
-  | 0 -> `st0
-  | 1 -> `st1
-  | 2 -> `st2
-  | 3 -> `st3
-  | 4 -> `st4
-  | 5 -> `st5
-  | 6 -> `st6
-  | _ -> failwith "invalid fp_index"
-
 let x87_reg_to_phys_reg ctx reg =
-  ctx.fp_offset - Reg.x87_float_to_index reg |> fp_index_to_phys_reg
+  ctx.fp_offset - Reg.x87_float_to_index reg |> Phys_reg.fp_index_to_phys_reg
 
 let load_reg ctx reg =
   match reg with
@@ -94,24 +78,42 @@ let eval_mul lhs rhs =
   | SymbolicFloat lhs, SymbolicFloat rhs -> SymbolicFloat FP.(lhs * rhs)
   | _ -> failwith "cannot eval mul"
 
+let eval_add lhs rhs =
+  match (lhs, rhs) with
+  | SymbolicBV bv, Int i | Int i, SymbolicBV bv ->
+      SymbolicBV Bitvec.(bv + of_int (get_sort bv) i)
+  | SymbolicBV lhs, SymbolicBV rhs -> SymbolicBV Bitvec.(lhs + rhs)
+  | SymbolicFloat lhs, SymbolicFloat rhs -> SymbolicFloat FP.(lhs + rhs)
+  | _ -> failwith "cannot eval add"
+
 let eval_funcall_expr =
  fun ctx name args ->
   match (name, args) with
   | "ConvertToDoubleExtendedPrecisionFP", [ SymbolicBV bv ] ->
-      SymbolicFloat (FP.of_bv bv)
+      SymbolicFloat (FP.of_bv (FP.double ()) ~signed:true bv)
+  | "AddSignedOverflowed", [ SymbolicBV lhs; SymbolicBV rhs ] ->
+      SymbolicBool (not_ @@ Bitvec.add_wont_overflow lhs rhs ~signed:true)
+  | "AddUnsignedOverflowed", [ SymbolicBV lhs; SymbolicBV rhs ] ->
+      SymbolicBool (not_ @@ Bitvec.add_wont_overflow lhs rhs ~signed:false)
+  | "SignBit", [ SymbolicBV bv ] ->
+      SymbolicBool Bitvec.(bv $>= of_int (get_sort bv) 0)
+  | "ParityBit", [ SymbolicBV bv ] ->
+      SymbolicBool (Bitvec.parity8 (Bitvec.extract 7 0 bv))
   | _ -> failwith "no such funcs"
 
 let eval_funcall_stmt ctx name args =
   match (name, args) with
   | "PopRegisterStack", [] ->
-      (* This is just blatantly not true? *)
-      assert (ctx.fp_offset > 0);
-      { ctx with fp_offset = ctx.fp_offset - 1 }
-  | ""
+      {
+        ctx with
+        fp_offset = ctx.fp_offset - 1;
+        min_fp_offset = Int.min (ctx.fp_offset - 1) ctx.min_fp_offset;
+      }
   | _ -> failwith "no funcs"
 
-let rec eval_assign_reg ({ reg_map; _ } as ctx) lhs rhs =
+let rec eval_assign_reg ({ reg_map; _ } as ctx) (lhs : regs) rhs =
   let[@warning "-8"] get_bv_exn (SymbolicBV bv) = bv in
+  let[@warning "-8"] get_bool_exn (SymbolicBool b) = b in
   let subword_reg ctx reg high_bit low_bit =
     let big_reg = Reg.to_32_bit reg in
     let prev = Reg_map.get reg_map big_reg in
@@ -128,7 +130,7 @@ let rec eval_assign_reg ({ reg_map; _ } as ctx) lhs rhs =
     | #Reg.reg_low8bit as reg -> subword_reg ctx reg 7 0
     | #Reg.flags as reg ->
         Reg_map.set_lazy reg_map ~key:reg
-          ~data:(lazy (eval_expr ctx rhs |> get_bv_exn))
+          ~data:(lazy (eval_expr ctx rhs |> get_bool_exn))
     | #Reg.x87_float as reg ->
         let[@warning "-8"] (SymbolicFloat rhs) = eval_expr ctx rhs in
         let phys_reg = x87_reg_to_phys_reg ctx reg in
@@ -139,10 +141,12 @@ let rec eval_assign_reg ({ reg_map; _ } as ctx) lhs rhs =
 
 and eval_expr ctx = function
   | Reg reg -> load_reg ctx reg
+  | Int i -> Int i
   | Ident id -> begin
       try Map.find_exn ctx.env id with Not_found_s _ -> Atom id
     end
   | Eq (lhs, rhs) -> eval_eq (eval_expr ctx lhs) (eval_expr ctx rhs)
+  | Add (lhs, rhs) -> eval_add (eval_expr ctx lhs) (eval_expr ctx rhs)
   | Mul (lhs, rhs) -> eval_mul (eval_expr ctx lhs) (eval_expr ctx rhs)
   | FunCall (name, args) ->
       eval_funcall_expr ctx name @@ List.map ~f:(eval_expr ctx) args
@@ -186,21 +190,24 @@ let rec eval_if ctx cond then_ else_ =
       let false_ctx = List.fold_left ~init:ctx ~f:eval_statement else_ in
       (* So we're saying any branches must be partially-evaluated away
       where not all do the same thing to fp_offset *)
-      assert (Int.(true_ctx.fp_offset = false_ctx.fp_offset));
+      assert (
+        Int.(
+          true_ctx.fp_offset = false_ctx.fp_offset
+          && true_ctx.min_fp_offset = false_ctx.min_fp_offset));
       let merged_env = merge_env cond true_ctx.env false_ctx.env in
       let merged_regs =
         merge_phys_regs cond true_ctx.reg_map false_ctx.reg_map
       in
       let merged_mem =
         if phys_equal true_ctx.memory false_ctx.memory then true_ctx.memory
-        else fun ptr ->
-          if_ cond ~then_:(true_ctx.memory ptr) ~else_:(false_ctx.memory ptr)
+        else if_ cond ~then_:true_ctx.memory ~else_:false_ctx.memory
       in
       {
         env = merged_env;
         memory = merged_mem;
         reg_map = merged_regs;
         fp_offset = true_ctx.fp_offset;
+        min_fp_offset = true_ctx.fp_offset;
       }
   | _ -> failwith "cannot eval if"
 

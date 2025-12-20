@@ -2,7 +2,7 @@
  (name patchouli)
  (preprocess
   (pps ppx_jane))
- (libraries core radatnet z3 menhirLib angstrom libsail)
+ (libraries core radatnet z3 menhirLib smt_util)
  (ocamlopt_flags
   (:standard -O2)))
 

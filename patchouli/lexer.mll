@@ -15,6 +15,7 @@ rule token = parse
 	| ":=" { COLON_EQ }
 	| '=' { EQ }
 	| '*' | "∗" { STAR }
+	| '+' { PLUS }
 	| '(' { LPAREN }
 	| ')' { RPAREN }
 	| "IF" { IF }
@@ -39,5 +40,6 @@ rule token = parse
 	| "PF" { REG `PF}
 	| "AF" { REG `AF}
 	| (['a'-'z' 'A'-'Z']+ as id) { IDENT id }
+	| (['0'-'9']+ as digits) { INT_LIT (int_of_string digits) }
 	| eof { EOF  }
 	| _ as c { failwith @@ Printf.sprintf "%C, %s" c @@ lexbuf_contents lexbuf }

@@ -22,8 +22,8 @@ let add = parse {|
   CF := AddUnsignedOverflow(DEST,SRC);
   DEST := DEST + SRC;
   SF := SignBit(DEST);
-  ZF := DEST = 0
-  PF := ParityBit(DEST)
+  ZF := DEST = 0;
+  PF := ParityBit(DEST);
   (* No one cares about AF *)
   |}
 

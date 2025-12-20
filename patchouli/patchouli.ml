@@ -1,12 +1,20 @@
 open! Core
-open Types
+include Types
 open Smt_util
 module Types = Types
 open Radatnet
 module Parser = Parser
 module Interpret = Interpret
 
-type ctx = Interpret.ctx
+type ctx = Interpret.ctx = {
+  env : value String.Map.t;
+  reg_map : Reg_map.t;
+  (* If this was a function from a value instead of an Smt thing,
+  it could be partially evaluated *)
+  memory : Array.t;
+  fp_offset : int;
+  min_fp_offset : int;
+}
 
 let empty_context () : ctx =
   {
@@ -14,29 +22,13 @@ let empty_context () : ctx =
     reg_map = Reg_map.empty ();
     memory = Array.uninterpreted "memory" (Bitvec.dword ()) (Bitvec.byte ());
     fp_offset = 0;
+    min_fp_offset = 0;
   }
 
-let rec load_address : ctx -> int -> expr -> expr =
- fun ctx size addr ->
-  if size = 1 then ctx.memory addr
-  else
-    Bitvec.concat (ctx.memory addr)
-      (load_address ctx (size - 1) (Bitvec.inc addr))
+let load_address ctx size addr = load_address ctx.memory size addr
 
-let rec store_address : ctx -> int -> expr -> expr -> ctx =
-  let rec go mem size addr data =
-    if size < 0 then mem
-    else
-      let byte_addr = Bitvec.(addr + of_int (dword ()) Int.(size - 1)) in
-      let mem =
-        mem.%[byte_addr] <-
-          Bitvec.extract ((size * 8) - 1) ((size * 8) - 8) data
-      in
-      go mem size addr data
-  in
-  fun ctx size addr data ->
-    assert (size * 8 = (get_sort data |> Bitvec.sort_size));
-    { ctx with memory = go ctx.memory size addr data }
+let store_address ctx addr data =
+  { ctx with memory = store_address ctx.memory addr data }
 
 let[@warning "-8"] sort_of_size =
   let open Bitvec in
@@ -87,7 +79,7 @@ let store_operand ctx op data =
   | Memory mem_op ->
       assert (mem_op.size * 8 = (get_sort data |> Bitvec.sort_size));
       let addr = calc_address ctx mem_op in
-      store_address ctx mem_op.size addr data
+      store_address ctx addr data
 
 let eval_instruction : ctx -> Radatnet.Types.opcode -> ctx =
   let flush_dest (ctx : ctx) dest_op =
@@ -108,14 +100,16 @@ let eval_instruction : ctx -> Radatnet.Types.opcode -> ctx =
           Bitvec.(Reg_map.get ctx.reg_map `eip + of_int (dword ()) instr.size)
     in
     match (instr.id, instr.opex.operands) with
-    | _, [] -> Interpret.eval_statements { ctx with env;reg_map } pseudocode
+    | _, [] -> Interpret.eval_statements { ctx with env; reg_map } pseudocode
     | (ADD | FADD | FADDP | FIADD), [ dest_op; src_op ] ->
         let env =
           Map.set env ~key:"SRC" ~data:(load_operand ctx src_op)
           |> Map.set ~key:"DEST" ~data:(load_operand ctx dest_op)
           |> Map.set ~key:"Operands" ~data:(Int 2)
         in
-        let ctx = Interpret.eval_statements { ctx with env;reg_map } pseudocode in
+        let ctx =
+          Interpret.eval_statements { ctx with env; reg_map } pseudocode
+        in
         flush_dest ctx dest_op
     | instr, operands ->
         raise_s

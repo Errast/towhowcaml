@@ -1,0 +1,7 @@
+(library
+ (name smt_util)
+ (preprocess
+  (pps ppx_jane))
+ (libraries core z3)
+ (ocamlopt_flags
+  (:standard -O2)))

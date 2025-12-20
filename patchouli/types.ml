@@ -1,17 +1,21 @@
 open! Core
 open Radatnet
 
+type regs = [ X86reg.t | X86reg.flags ] [@@deriving sexp]
+
 type expr =
   | Ident of string
-  | Reg of X86reg.t
+  | Int of int
+  | Reg of regs
   | FunCall of string * expr list
   | Mul of expr * expr
+  | Add of expr * expr
   | Eq of expr * expr
 [@@deriving sexp]
 
 type statement =
   | Assign of string * expr
-  | AssignReg of X86reg.t * expr
+  | AssignReg of regs * expr
   | FunCall of string * expr list
   | If of { cond : expr; then_ : statement list; else_ : statement list }
 [@@deriving sexp]
@@ -29,11 +33,8 @@ type value =
 [@@deriving sexp, equal]
 
 module Phys_reg = struct
-  type t =
-    [ X86reg.reg_32bit
-    | X86reg.flags
-    | X86reg.x87_float
-    | (* Indexes go from -7 to 7 *)
+  type floats =
+    [ (* Indexes go from -7 to 7 *)
       (* These are negatives totally *)
       `st__1
     | `st__2
@@ -41,8 +42,12 @@ module Phys_reg = struct
     | `st__4
     | `st__5
     | `st__6
-    | `st__7 ]
-  [@@deriving equal, compare, sexp]
+    | `st__7
+    | X86reg.x87_float ]
+  [@@deriving equal, compare, sexp, enumerate]
+
+  type t = [ X86reg.reg_32bit | X86reg.flags | floats ]
+  [@@deriving equal, compare, sexp, enumerate]
 
   include Comparator.Make (struct
     type nonrec t = t
@@ -51,7 +56,7 @@ module Phys_reg = struct
     let compare = compare
   end)
 
-  let to_sort : t -> Z3.Sort.sort = function
+  let to_sort : [< t ] -> Z3.Sort.sort = function
     | #X86reg.reg_32bit -> Smt_util.Bitvec.dword ()
     | #X86reg.flags -> Smt_util.bool ()
     | #X86reg.x87_float
@@ -79,6 +84,39 @@ module Phys_reg = struct
     | `st__5 -> "st(-5)"
     | `st__6 -> "st(-6)"
     | `st__7 -> "st(-7)"
+
+  let fp_index_to_phys_reg = function
+    | -7 -> `st__7
+    | -6 -> `st__6
+    | -5 -> `st__5
+    | -4 -> `st__4
+    | -3 -> `st__3
+    | -2 -> `st__2
+    | -1 -> `st__1
+    | 0 -> `st0
+    | 1 -> `st1
+    | 2 -> `st2
+    | 3 -> `st3
+    | 4 -> `st4
+    | 5 -> `st5
+    | 6 -> `st6
+    | _ -> failwith "invalid fp_index"
+
+  let float_to_fp_index : [< floats ] -> int = function
+    | `st__7 -> -7
+    | `st__6 -> -6
+    | `st__5 -> -5
+    | `st__4 -> -4
+    | `st__3 -> -3
+    | `st__2 -> -2
+    | `st__1 -> -1
+    | `st0 -> 0
+    | `st1 -> 1
+    | `st2 -> 2
+    | `st3 -> 3
+    | `st4 -> 4
+    | `st5 -> 5
+    | `st6 -> 6
 end
 
 module Reg_map : sig
@@ -101,44 +139,17 @@ module Reg_map : sig
       right:Smt_util.expr lazy_t ->
       'a) ->
     'a
+
+  val fold :
+    t ->
+    init:'a ->
+    f:(key:Phys_reg.t -> data:Smt_util.expr lazy_t -> 'a -> 'a) ->
+    'a
 end = struct
   type data = Smt_util.expr lazy_t
   type t = (Phys_reg.t, data, Phys_reg.comparator_witness) Map.t
 
-  let phys_regs =
-    Set.of_list
-      (module Phys_reg)
-      [
-        `eax;
-        `ebx;
-        `ecx;
-        `edx;
-        `esi;
-        `edi;
-        `esp;
-        `ebp;
-        `eip;
-        `OF;
-        `SF;
-        `ZF;
-        `AF;
-        `CF;
-        `PF;
-        `st0;
-        `st1;
-        `st2;
-        `st3;
-        `st4;
-        `st5;
-        `st6;
-        `st__1;
-        `st__2;
-        `st__3;
-        `st__4;
-        `st__5;
-        `st__6;
-        `st__7;
-      ]
+  let phys_regs = Set.of_list (module Phys_reg) Phys_reg.all
 
   let undefined reg =
     let name = "fresh" ^ Phys_reg.to_ident reg in
@@ -163,4 +174,6 @@ end = struct
         | _, `Left _ | _, `Right _ -> failwith "you can't remove/add phys_regs"
         | key, `Unequal (left, right) -> f acc key ~left ~right)
       ~init
+
+  let fold = Map.fold
 end
