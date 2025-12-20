@@ -3,6 +3,6 @@
  (foreign_stubs
   (language c)
   (names bits))
- (libraries core)
+ (libraries core smt_util)
  (preprocess
   (pps ppx_jane)))
