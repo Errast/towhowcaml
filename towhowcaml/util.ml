@@ -7,7 +7,7 @@ type intrinsic = { addr : int; signature : func_sig; name : string }
 
 let addr_to_func_name = Printf.sprintf "__func%x__"
 let addr_to_index_func : ident = "__addrToIndex__"
-let fpu_stack_pointer : ident = "__fpuStack__" 
+let fpu_stack_pointer : ident = "__fpuStack__"
 let input_compare_arg : ident = "__input_compare_arg__"
 let float_sqrt_func : ident = "__float_sqrt__"
 let float_sine_func : ident = "__float_sine__"
@@ -18,7 +18,6 @@ let seh_frame_global = { name = "__seh_frame__"; typ = Int }
 let int_diff_func : ident = "__int_diff__"
 let byte_diff_func : ident = "__byte_diff__"
 let int_memset_func : ident = "__int_memset__"
-let ret_addr_local : ident = "__ret_addr__"
 let find_byte_func : ident = "__find_byte__"
 let load_big_float_func : ident = "__load_big_float__"
 let store_big_float_func : ident = "__store_big_float__"
@@ -30,15 +29,15 @@ let std_call =
   X86reg.
     {
       args = [ { name = to_ident `esp; typ = Int } ];
-      returns = [ { name = to_ident `esp; typ = Int } ];
+      (* I think this order lines up better for chromium/s calling convention, idk *)
+      returns =
+        [
+          { name = to_ident `eip; typ = Int };
+          { name = to_ident `esp; typ = Int };
+        ];
     }
 
-let fast_call =
-  X86reg.
-    {
-      args = [ { name = to_ident `esp; typ = Int } ];
-      returns = [ { name = to_ident `esp; typ = Int } ];
-    }
+let fast_call = std_call
 
 let used_locals =
   let open Builder in
@@ -46,8 +45,8 @@ let used_locals =
   @@ List.map ~f:(fun l -> (l.name, l))
   @@ [
        { name = input_compare_arg; scope = `Local; typ = Int };
-       { name = ret_addr_local; scope = `Local; typ = Int };
        { name = X86reg.to_ident `esp; scope = `Local; typ = Int };
+       { name = X86reg.to_ident `eip; scope = `Local; typ = Int };
        { name = fpu_stack_pointer; scope = `Global; typ = Int };
      ]
   @ List.map

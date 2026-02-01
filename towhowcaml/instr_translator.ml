@@ -632,11 +632,11 @@ let translate_float_store_status_word c =
       B.const c.builder 0 |> store_operand c ~dest
   | _ -> raise_ops c
 
-let translate_call_start c ~push_addr =
+let translate_call_start c ~nontail =
   add_comparison c [];
   add_float_comparison c [];
   (* push address onto the stack *)
-  (if push_addr then
+  (if nontail then
      let esp =
        B.sub c.builder ~rhs:(B.const c.builder 4) ~lhs:(newest_var c `esp)
          ~varName:(X86reg.to_ident `esp)
@@ -644,20 +644,25 @@ let translate_call_start c ~push_addr =
      B.store32 c.builder ~addr:esp ~value:(B.const c.builder c.opcode.address));
   write_globals c.state c.builder
 
-let translate_call_end _ = ()
+let translate_call_end c ~nontail =
+  if nontail then
+    B.mir_assert c.builder
+    @@ B.equal c.builder
+         ~lhs:(B.newest_var c.builder @@ X86reg.to_ident `eip)
+         ~rhs:(B.const c.builder @@ c.opcode.address + c.opcode.size)
 
-let translate_direct_call c func_name func_sig ~push_addr =
-  translate_call_start c ~push_addr;
+let translate_direct_call c func_name func_sig ~nontail =
+  translate_call_start c ~nontail;
   let args =
     List.map ~f:(fun a -> B.newest_var c.builder a.name) func_sig.args
   in
   B.call c.builder func_name args |> ignore;
   List.iter func_sig.returns ~f:(fun { name; typ } ->
       B.returned c.builder ~varName:name typ |> ignore);
-  translate_call_end c
+  translate_call_end c ~nontail
 
-let translate_indirect_call c ~addr func_sig ~push_addr =
-  translate_call_start c ~push_addr;
+let translate_indirect_call c ~addr func_sig ~nontail =
+  translate_call_start c ~nontail;
   let args =
     (* maybe check the types line up? *)
     List.map ~f:(fun a -> B.newest_var c.builder a.name) func_sig.args
@@ -665,9 +670,9 @@ let translate_indirect_call c ~addr func_sig ~push_addr =
   B.call_indirect c.builder addr args;
   List.iter func_sig.returns ~f:(fun { name; typ } ->
       B.returned c.builder ~varName:name typ |> ignore);
-  translate_call_end c
+  translate_call_end c ~nontail
 
-let translate_call c ~push_addr =
+let translate_call c ~nontail =
   match operands c with
   (* intrinsics! *)
   | [
@@ -684,17 +689,16 @@ let translate_call c ~push_addr =
   ]
     when Hashtbl.mem c.intrinsics addr ->
       let intrinisc = Hashtbl.find_exn c.intrinsics addr in
-      translate_direct_call c intrinisc.name intrinisc.signature ~push_addr
+      translate_direct_call c intrinisc.name intrinisc.signature ~nontail
   | [ Immediate { value; _ } ] ->
       translate_direct_call c
         (Util.addr_to_func_name value)
-        Util.fast_call ~push_addr
+        Util.fast_call ~nontail
   | [ Memory ({ size = 4; _ } as mem) ] ->
-      translate_indirect_call c Util.fast_call ~push_addr
+      translate_indirect_call c Util.fast_call ~nontail
         ~addr:(load_complete_address c mem)
   | [ Register { size = 4; reg } ] ->
-      translate_indirect_call c Util.fast_call ~addr:(newest_var c reg)
-        ~push_addr
+      translate_indirect_call c Util.fast_call ~addr:(newest_var c reg) ~nontail
   | _ -> raise_ops c
 
 let translate_input_cond c =
@@ -2001,7 +2005,7 @@ let translate_no_prefix c =
   | FST -> translate_float_store c ~after_pop:false
   | FSTP -> translate_float_store c ~after_pop:true
   | FNSTSW -> translate_float_store_status_word c
-  | CALL -> translate_call c ~push_addr:true
+  | CALL -> translate_call c ~nontail:true
   (*TODO: there is currently no way to tell FADD from FADDP
     https://github.com/capstone-engine/capstone/issues/1456 *)
   | FADD -> translate_float_bi_op c B.float_add `None
@@ -2207,7 +2211,7 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
     } ->
         if tail_position then (
           (* tail call*)
-          translate_call { intrinsics; builder; state; opcode } ~push_addr:false;
+          translate_call { intrinsics; builder; state; opcode } ~nontail:false;
           Return)
         else Unconditional { target = value }
     | {
@@ -2234,21 +2238,20 @@ let translate_terminator intrinsics builder state opcode ~tail_position =
         let intrinisc = Hashtbl.find_exn intrinsics displacement in
         translate_direct_call
           { intrinsics; builder; state; opcode }
-          intrinisc.name intrinisc.signature ~push_addr:false;
+          intrinisc.name intrinisc.signature ~nontail:false;
         Return
     | { id = JMP; prefix = 0; opex = { operands = [ addr ] }; _ }
       when tail_position ->
         let context = { intrinsics; builder; state; opcode } in
         translate_indirect_call context
           ~addr:(load_operand context addr)
-          Util.fast_call ~push_addr:false;
+          Util.fast_call ~nontail:false;
         Return
     | { id = RET; prefix = 0; opex = { operands }; _ } when tail_position ->
         let esp = X86reg.to_ident `esp in
-        let new_ret_addr = B.load32 builder (B.newest_var builder esp) in
-        B.mir_assert builder
-        @@ B.equal builder ~lhs:new_ret_addr
-             ~rhs:(B.newest_var builder Util.ret_addr_local);
+        B.load32 ~varName:(X86reg.to_ident `eip) builder
+          (B.newest_var builder esp)
+        |> ignore;
         let pop_size =
           match operands with
           | [] -> 4
